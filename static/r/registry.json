@@ -1,0 +1,327 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "svelte-bits",
+  "homepage": "https://sveltebits.xyz",
+  "items": [
+    {
+      "name": "animated-content",
+      "type": "registry:component",
+      "title": "Animated Content",
+      "description": "Scroll-triggered entrance animation with distance, direction, scale and opacity controls. Powered by GSAP + ScrollTrigger.",
+      "categories": [
+        "animations"
+      ],
+      "files": [
+        {
+          "path": "AnimatedContent.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/AnimatedContent.svelte"
+        }
+      ]
+    },
+    {
+      "name": "fade-content",
+      "type": "registry:component",
+      "title": "Fade Content",
+      "description": "Scroll-triggered fade-in (with optional blur) entrance using GSAP + ScrollTrigger, with optional auto-disappearance.",
+      "categories": [
+        "animations"
+      ],
+      "files": [
+        {
+          "path": "FadeContent.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/FadeContent.svelte"
+        }
+      ]
+    },
+    {
+      "name": "magic-rings",
+      "type": "registry:component",
+      "title": "Magic Rings",
+      "description": "WebGL2 concentric ring animation with mouse parallax, hover scale, and click burst. Real three.js shader.",
+      "categories": [
+        "animations"
+      ],
+      "files": [
+        {
+          "path": "MagicRings.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/MagicRings.svelte"
+        }
+      ]
+    },
+    {
+      "name": "noise",
+      "type": "registry:component",
+      "title": "Noise",
+      "description": "Full-viewport animated film-grain canvas overlay.",
+      "categories": [
+        "animations"
+      ],
+      "files": [
+        {
+          "path": "Noise.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Noise.svelte"
+        }
+      ]
+    },
+    {
+      "name": "splash-cursor",
+      "type": "registry:component",
+      "title": "Splash Cursor",
+      "description": "Liquid splash burst at cursor with curling ripples and waves.",
+      "categories": [
+        "animations"
+      ],
+      "files": [
+        {
+          "path": "SplashCursor.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/SplashCursor.svelte"
+        }
+      ]
+    },
+    {
+      "name": "star-border",
+      "type": "registry:component",
+      "title": "Star Border",
+      "description": "Button-like wrapper with two animated radial-gradient sweeps tracing the top and bottom border.",
+      "categories": [
+        "animations"
+      ],
+      "files": [
+        {
+          "path": "StarBorder.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/StarBorder.svelte"
+        }
+      ]
+    },
+    {
+      "name": "aurora",
+      "type": "registry:component",
+      "title": "Aurora",
+      "description": "WebGL aurora background with configurable color stops, amplitude, blend and speed. Real OGL shader, not a CSS gradient.",
+      "categories": [
+        "backgrounds"
+      ],
+      "files": [
+        {
+          "path": "Aurora.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Aurora.svelte"
+        }
+      ]
+    },
+    {
+      "name": "color-bends",
+      "type": "registry:component",
+      "title": "Color Bends",
+      "description": "Three.js shader background with warped color bands, pointer parallax, noise, and rotation controls.",
+      "categories": [
+        "backgrounds"
+      ],
+      "files": [
+        {
+          "path": "ColorBends.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ColorBends.svelte"
+        }
+      ]
+    },
+    {
+      "name": "dot-field",
+      "type": "registry:component",
+      "title": "Dot Field",
+      "description": "Interactive dotted canvas background with cursor bulge, glow, sparkle, and wave controls.",
+      "categories": [
+        "backgrounds"
+      ],
+      "files": [
+        {
+          "path": "DotField.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/DotField.svelte"
+        }
+      ]
+    },
+    {
+      "name": "faulty-terminal",
+      "type": "registry:component",
+      "title": "Faulty Terminal",
+      "description": "OGL terminal-style shader background with scanlines, glitches, curvature, mouse reaction, and load animation.",
+      "categories": [
+        "backgrounds"
+      ],
+      "files": [
+        {
+          "path": "FaultyTerminal.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/FaultyTerminal.svelte"
+        }
+      ]
+    },
+    {
+      "name": "hyperspeed",
+      "type": "registry:component",
+      "title": "Hyperspeed",
+      "description": "Three.js hyperspeed road background with bloom, SMAA, distortion presets, animated light trails, and hold-to-accelerate interaction.",
+      "categories": [
+        "backgrounds"
+      ],
+      "files": [
+        {
+          "path": "Hyperspeed.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Hyperspeed.svelte"
+        }
+      ]
+    },
+    {
+      "name": "liquid-ether",
+      "type": "registry:component",
+      "title": "Liquid Ether",
+      "description": "Interactive liquid shader with flowing distortion and customizable colors.",
+      "categories": [
+        "backgrounds"
+      ],
+      "files": [
+        {
+          "path": "LiquidEther.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/LiquidEther.svelte"
+        }
+      ]
+    },
+    {
+      "name": "shape-grid",
+      "type": "registry:component",
+      "title": "Shape Grid",
+      "description": "Animated grid of squares, hexagons, circles, or triangles with hover trail and configurable scroll direction.",
+      "categories": [
+        "backgrounds"
+      ],
+      "files": [
+        {
+          "path": "ShapeGrid.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ShapeGrid.svelte"
+        }
+      ]
+    },
+    {
+      "name": "dock",
+      "type": "registry:component",
+      "title": "Dock",
+      "description": "macOS-style magnification dock with spring physics. Each item scales smoothly based on cursor distance.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "Dock.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Dock.svelte"
+        }
+      ]
+    },
+    {
+      "name": "flying-posters",
+      "type": "registry:component",
+      "title": "Flying Posters",
+      "description": "3D posters rotate on scroll infinitely.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "FlyingPosters.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/FlyingPosters.svelte"
+        }
+      ]
+    },
+    {
+      "name": "blur-text",
+      "type": "registry:component",
+      "title": "Blur Text",
+      "description": "Per-word/letter blur-in animation triggered when scrolled into view, with configurable direction, easing and stepped keyframes.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "BlurText.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/BlurText.svelte"
+        }
+      ]
+    },
+    {
+      "name": "glitch-text",
+      "type": "registry:component",
+      "title": "Glitch Text",
+      "description": "RGB-split glitch effect on text using clip-path keyframe animation, with optional hover-only mode.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "GlitchText.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/GlitchText.svelte"
+        }
+      ]
+    },
+    {
+      "name": "gradient-text",
+      "type": "registry:component",
+      "title": "Gradient Text",
+      "description": "Animated multi-color gradient text with optional border, direction, yoyo and pause-on-hover.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "GradientText.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/GradientText.svelte"
+        }
+      ]
+    },
+    {
+      "name": "shiny-text",
+      "type": "registry:component",
+      "title": "Shiny Text",
+      "description": "Animated shiny gradient sweep across text, with yoyo + direction controls.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "ShinyText.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ShinyText.svelte"
+        }
+      ]
+    },
+    {
+      "name": "split-text",
+      "type": "registry:component",
+      "title": "Split Text",
+      "description": "Splits text into characters / words for staggered entrance animation.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "SplitText.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/SplitText.svelte"
+        }
+      ]
+    }
+  ]
+}

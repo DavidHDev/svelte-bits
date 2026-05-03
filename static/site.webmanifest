@@ -1,0 +1,17 @@
+{
+	"name": "Svelte Bits",
+	"short_name": "Svelte Bits",
+	"description": "An open source collection of high quality, animated, interactive & fully customizable Svelte components.",
+	"start_url": "/",
+	"display": "standalone",
+	"theme_color": "#120F17",
+	"background_color": "#120F17",
+	"icons": [
+		{
+			"src": "/favicon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	]
+}

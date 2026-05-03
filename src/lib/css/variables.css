@@ -1,0 +1,54 @@
+:root {
+  /* Background colors */
+  --bg-body: #14110E;
+  --bg-card: #1D1814;
+  --bg-elevated: #1D1814;
+  --bg-hover: #3A312A;
+
+  /* Border colors */
+  --border-primary: #322A24;
+  --border-secondary: #322A24;
+  --border-subtle: #322A24;
+
+  /* Brand colors — Svelte orange */
+  --color-primary: #FF8A4C;
+  --color-accent: #FF8A4C;
+  --color-accent-muted: #FFB089;
+
+  /* Text colors */
+  --text-primary: #fff;
+  --text-secondary: #f5f5f5;
+  --text-muted: #aaaaaa;
+  --text-dimmed: #a1a1aa;
+  --text-link: #ffffff;
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 50px;
+
+  /* Shadows */
+  --shadow-dropdown: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-primary: 0 2px 8px rgba(255, 62, 0, 0.4);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* Shared gradient for section titles */
+  --gradient-title: linear-gradient(135deg, #fff 0%, #ffb089 20%, #ff8a4c 40%, #ff3e00 60%, #ff8a4c 80%, #fff 100%);
+}
+
+/* Shared keyframes — used by section titles across multiple components */
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}

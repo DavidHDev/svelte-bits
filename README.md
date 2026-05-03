@@ -1,3 +1,94 @@
-# Svelte Bits
+<div align="center">
+	<br>
+	<br>
+  <picture>
+    <img src="src/lib/assets/logo/svelte-bits-logo.svg" alt="svelte-bits logo" width="600">
+  </picture>
+	<br>
+	<br>
+  <strong>A creative library of animated Svelte components.</strong>
+  <br />
+  <sub>Stand out with free, customizable animations for text, backgrounds, and UI.</sub>
+	<br>
+	<br>
+  <a href="https://github.com/DavidHDev/svelte-bits/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/DavidHDev/svelte-bits"></a>
+  <a href="https://github.com/DavidHDev/svelte-bits/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/License-MIT+Commons_Clause-orange"></a>
+  <br>
+  <br>
+  <a href="https://sveltebits.xyz/">Documentation</a> · <a href="https://sveltebits.xyz/get-started/installation">Quick Start</a> · <a href="https://github.com/DavidHDev/react-bits">React Bits</a>
+</div>
 
-WIP
+<br />
+
+## Why Svelte Bits?
+
+Svelte Bits helps you **ship stunning Svelte interfaces faster**. Instead of spending hours crafting animations from scratch, grab a polished component and customize it to fit your project.
+
+> **Text Animations** · **Animations** · **Components** · **Backgrounds**
+
+## Features
+
+- **React Bits parity** — a Svelte port of the React Bits landing page, docs, and component collection
+- **Copy-paste components** — every component is a standalone `.svelte` file
+- **TypeScript + Tailwind** — one focused variant per component, no framework boilerplate
+- **Real animation stacks** — ports keep the original dependencies, shaders, physics, and behavior
+- **Fully customizable** — tweak props or edit the source directly
+- **Cloudflare-ready docs** — the site builds with the SvelteKit Cloudflare adapter
+
+## Installation
+
+Svelte Bits supports manual copy-paste and shadcn registry installs.
+
+```bash
+# Example: add Aurora via shadcn
+npx shadcn@latest add https://sveltebits.xyz/r/aurora.json
+```
+
+Each component page includes its dependencies, usage snippet, props, and full source. See the [installation guide](https://sveltebits.xyz/get-started/installation) for details.
+
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+Build the registry and production site:
+
+```bash
+npm run build
+```
+
+Run Svelte diagnostics:
+
+```bash
+npm run check
+```
+
+## Cloudflare Deployment
+
+This repo uses `@sveltejs/adapter-cloudflare` in `svelte.config.js`, so `npm run build` emits a Cloudflare-compatible SvelteKit build.
+
+For Cloudflare Pages, use:
+
+| Setting | Value |
+| ------- | ----- |
+| Build command | `npm run build` |
+| Build output directory | `.svelte-kit/cloudflare` |
+| Node.js version | `20` or newer |
+
+## Contributing
+
+Svelte Bits is being built incrementally from [React Bits](https://github.com/DavidHDev/react-bits). Component ports must preserve the upstream implementation as closely as possible, including dependencies, shaders, spring configs, props, and behavior.
+
+## Maintainer
+
+**[David Haz](https://github.com/DavidHDev)** — creator & lead maintainer
+
+## Credit
+
+Svelte Bits is an official Svelte port inspired by [React Bits](https://github.com/DavidHDev/react-bits). React Bits occasionally draws inspiration from publicly available code examples, rewritten as full-fledged customizable components.
+
+## License
+
+[MIT + Commons Clause](https://github.com/DavidHDev/svelte-bits/blob/main/LICENSE.md)

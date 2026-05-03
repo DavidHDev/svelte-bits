@@ -1,0 +1,173 @@
+/* Misc styles shared across landing + docs */
+
+/* Announcement bar (used in docs/landing if we ship one) */
+.announcement-bar {
+  max-width: 1440px;
+  width: calc(100% - 4em);
+  position: fixed;
+  bottom: 2em;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: white;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  gap: 12px;
+}
+
+.announcement-content {
+  width: 100%;
+  text-align: left;
+  padding-right: 50px;
+}
+
+.announcement-link {
+  color: white;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: all 0.2s ease;
+}
+
+.announcement-link:hover {
+  text-decoration-thickness: 2px;
+  opacity: 0.9;
+}
+
+.announcement-link:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.announcement-actions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.announcement-share,
+.announcement-close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50px;
+  transition:
+    background-color 0.2s ease,
+    border 0.2s ease;
+}
+
+.announcement-close {
+  position: absolute;
+  background-color: #111;
+  top: 16px;
+  right: 16px;
+}
+
+.announcement-share {
+  font-size: 12px;
+  white-space: nowrap;
+  gap: 4px;
+  width: 100%;
+  border: 2px solid transparent;
+  background-color: #111;
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.announcement-share:hover {
+  border: 2px solid #111;
+}
+
+.announcement-share:focus,
+.announcement-close:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+}
+
+.announcement-share-text {
+  display: inline;
+}
+
+@media (min-width: 768px) {
+  .announcement-bar {
+    padding: 16px;
+    font-size: 14px;
+    border-radius: 50px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+  }
+  .announcement-content {
+    flex: 1;
+    padding-right: 12px;
+  }
+  .announcement-actions {
+    width: auto;
+    gap: 8px;
+  }
+  .announcement-close {
+    position: static;
+  }
+  .announcement-share {
+    padding: 4px 8px;
+    gap: 4px;
+    font-size: 13px;
+    width: auto;
+    background-color: transparent;
+    border-radius: 50px;
+    margin-top: 0;
+  }
+  .announcement-share-text {
+    display: inline;
+  }
+}
+
+.announcement-padding {
+  padding-top: 48px;
+  transition: padding-top 0.3s ease;
+}
+
+/* Shared scrollbar styling for results / docs lists */
+.results-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.results-container::-webkit-scrollbar-track {
+  background: var(--bg-body);
+}
+
+.results-container::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+.results-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-primary) var(--bg-body);
+}
+
+/* Background content glass effect (used by background showcase wrappers) */
+.bg-content-glass {
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}

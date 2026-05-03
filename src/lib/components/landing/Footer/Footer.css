@@ -1,0 +1,193 @@
+/* ══════════════════════════════════════════════
+   Footer
+   ══════════════════════════════════════════════ */
+
+.ln-footer {
+  position: relative;
+  width: 100%;
+  padding: 0 0 60px;
+  background: #17130f;
+  overflow: hidden;
+}
+
+/* ─── Ambient glow ─── */
+
+.ln-footer-glow {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 260px;
+  background: radial-gradient(
+    ellipse,
+    rgba(255, 138, 76, 0.05) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Top separator ─── */
+
+.ln-footer-separator {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 30%,
+    rgba(255, 255, 255, 0.08) 70%,
+    transparent 100%
+  );
+  margin-bottom: 60px;
+}
+
+/* ─── Inner container ─── */
+
+.ln-footer-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1324px;
+  margin: 0 auto;
+  padding: 0 24px;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.ln-footer-inner.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Top row ─── */
+
+.ln-footer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 48px;
+}
+
+/* ─── Brand column ─── */
+
+.ln-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ln-footer-logo {
+  height: 28px;
+  width: auto;
+  opacity: 0.9;
+  align-self: flex-start;
+}
+
+.ln-footer-tagline {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* ─── Navigation ─── */
+
+.ln-footer-nav {
+  display: flex;
+  gap: 80px;
+}
+
+.ln-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ln-footer-col-title {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.25);
+  margin-bottom: 4px;
+}
+
+.ln-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.ln-footer-link:hover {
+  color: rgba(255, 138, 76, 0.95);
+}
+
+/* ─── Bottom row ─── */
+
+.ln-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 64px;
+}
+
+.ln-footer-attribution {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Geist', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+  margin: 0;
+}
+
+.ln-footer-creator {
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.ln-footer-creator:hover {
+  color: rgba(255, 138, 76, 0.95);
+}
+
+.ln-footer-copy {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.18);
+  margin: 0;
+}
+
+/* ─── Responsive ─── */
+
+@media (max-width: 600px) {
+  .ln-footer-separator {
+    margin-bottom: 40px;
+  }
+
+  .ln-footer-top {
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  .ln-footer-nav {
+    gap: 48px;
+  }
+
+  .ln-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 48px;
+  }
+}

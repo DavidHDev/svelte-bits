@@ -2,7 +2,9 @@
 	<br>
 	<br>
   <picture>
-    <img src="src/lib/assets/logo/svelte-bits-logo.svg" alt="svelte-bits logo" width="600">
+    <source media="(prefers-color-scheme: light)" srcset="src/lib/assets/logo/svelte-bits-logo-black.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="src/lib/assets/logo/svelte-bits-logo.svg">
+    <img src="src/lib/assets/logo/svelte-bits-logo-black.svg" alt="svelte-bits logo" width="600">
   </picture>
 	<br>
 	<br>

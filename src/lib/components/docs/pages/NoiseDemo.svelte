@@ -10,32 +10,34 @@
 
 	const DEFAULTS = {
 		patternSize: 250,
-		patternScaleX: 1,
-		patternScaleY: 1,
-		patternRefreshInterval: 2,
+		patternScaleX: 2,
+		patternScaleY: 2,
 		patternAlpha: 15
 	};
 
 	let patternSize = $state(DEFAULTS.patternSize);
 	let patternScaleX = $state(DEFAULTS.patternScaleX);
 	let patternScaleY = $state(DEFAULTS.patternScaleY);
-	let patternRefreshInterval = $state(DEFAULTS.patternRefreshInterval);
 	let patternAlpha = $state(DEFAULTS.patternAlpha);
+	let renderKey = $state(0);
 
 	const hasChanges = $derived(
 		patternSize !== DEFAULTS.patternSize ||
 			patternScaleX !== DEFAULTS.patternScaleX ||
 			patternScaleY !== DEFAULTS.patternScaleY ||
-			patternRefreshInterval !== DEFAULTS.patternRefreshInterval ||
 			patternAlpha !== DEFAULTS.patternAlpha
 	);
+
+	function forceRerender() {
+		renderKey += 1;
+	}
 
 	function reset() {
 		patternSize = DEFAULTS.patternSize;
 		patternScaleX = DEFAULTS.patternScaleX;
 		patternScaleY = DEFAULTS.patternScaleY;
-		patternRefreshInterval = DEFAULTS.patternRefreshInterval;
 		patternAlpha = DEFAULTS.patternAlpha;
+		forceRerender();
 	}
 
 	const usage = $derived(`${'<' + 'script lang="ts">'}
@@ -47,17 +49,16 @@ ${'</' + 'script>'}
     patternSize={${patternSize}}
     patternScaleX={${patternScaleX}}
     patternScaleY={${patternScaleY}}
-    patternRefreshInterval={${patternRefreshInterval}}
     patternAlpha={${patternAlpha}}
   />
 </div>`);
 
 	const props: PropRow[] = [
-		{ name: 'patternSize', type: 'number', default: '250', description: 'Conceptual pattern grain size (carried through for compatibility).' },
-		{ name: 'patternScaleX', type: 'number', default: '1', description: 'Horizontal scale of the noise pattern.' },
-		{ name: 'patternScaleY', type: 'number', default: '1', description: 'Vertical scale of the noise pattern.' },
+		{ name: 'patternSize', type: 'number', default: '250', description: 'Defines the size of the grain pattern.' },
+		{ name: 'patternScaleX', type: 'number', default: '1', description: 'Scaling factor for the X-axis of the grain pattern.' },
+		{ name: 'patternScaleY', type: 'number', default: '1', description: 'Scaling factor for the Y-axis of the grain pattern.' },
 		{ name: 'patternRefreshInterval', type: 'number', default: '2', description: 'Number of frames between regenerations of the grain.' },
-		{ name: 'patternAlpha', type: 'number', default: '15', description: 'Per-pixel alpha (0–255) controlling overall noise intensity.' }
+		{ name: 'patternAlpha', type: 'number', default: '15', description: 'Opacity of the grain pattern (0-255).' }
 	];
 </script>
 
@@ -69,14 +70,13 @@ ${'</' + 'script>'}
 
 <TabsLayout onreset={reset} {hasChanges} componentName="Noise" {usage} source={noiseSource} {props}>
 	{#snippet preview()}
-		<div style="position:relative;width:100%;min-height:400px;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#1a1a2e,#16213e);">
-			<Noise
-				{patternSize}
-				{patternScaleX}
-				{patternScaleY}
-				{patternRefreshInterval}
-				{patternAlpha}
-			/>
+		<div class="relative min-h-[400px] w-full overflow-hidden rounded-[14px] bg-[#111]">
+			<p class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-[clamp(3rem,12vw,6rem)] font-black leading-none text-[#333]">
+				Ooh, edgy!
+			</p>
+			{#key renderKey}
+				<Noise {patternSize} {patternScaleX} {patternScaleY} {patternAlpha} />
+			{/key}
 		</div>
 	{/snippet}
 	{#snippet code()}
@@ -88,16 +88,14 @@ ${'</' + 'script>'}
 	{/snippet}
 	{#snippet customize()}
 		<Customize>
-			<PreviewSlider title="Pattern Size" min={50} max={500} step={10} value={patternSize}
-				onChange={(v) => (patternSize = v)} />
-			<PreviewSlider title="Pattern Scale X" min={0.5} max={4} step={0.1} value={patternScaleX}
-				onChange={(v) => (patternScaleX = v)} />
-			<PreviewSlider title="Pattern Scale Y" min={0.5} max={4} step={0.1} value={patternScaleY}
-				onChange={(v) => (patternScaleY = v)} />
-			<PreviewSlider title="Refresh Interval" min={1} max={20} step={1} value={patternRefreshInterval}
-				onChange={(v) => (patternRefreshInterval = v)} />
-			<PreviewSlider title="Pattern Alpha" min={0} max={255} step={1} value={patternAlpha}
-				onChange={(v) => (patternAlpha = v)} />
+			<PreviewSlider title="Pattern Size" min={50} max={500} step={10} value={patternSize} valueUnit="px"
+				onChange={(v) => { patternSize = v; forceRerender(); }} />
+			<PreviewSlider title="Scale X" min={0.1} max={5} step={0.1} value={patternScaleX}
+				onChange={(v) => { patternScaleX = v; forceRerender(); }} />
+			<PreviewSlider title="Scale Y" min={0.1} max={5} step={0.1} value={patternScaleY}
+				onChange={(v) => { patternScaleY = v; forceRerender(); }} />
+			<PreviewSlider title="Pattern Alpha" min={0} max={25} step={5} value={patternAlpha}
+				onChange={(v) => { patternAlpha = v; forceRerender(); }} />
 		</Customize>
 	{/snippet}
 	{#snippet propTable()}

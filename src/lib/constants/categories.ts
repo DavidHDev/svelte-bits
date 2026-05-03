@@ -1,5 +1,6 @@
 export const NEW: string[] = [
-	'True Focus'
+	'True Focus',
+	'Count Up'
 ];
 
 export const UPDATED: string[] = [
@@ -204,6 +205,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'hyperspeed',
 	'flying-posters',
 	'true-focus',
+	'count-up'
 ]);
 
 // Helper: is this subcategory label fully ported?

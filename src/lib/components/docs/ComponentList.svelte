@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { ComponentIndexItem } from '$lib/constants/componentIndex';
 	import { getSavedComponents, removeSavedComponent, toggleSavedComponent } from '$lib/utils/favorites';
+	import { fuzzyMatch } from '$lib/utils/fuzzy';
 
 	type Props = {
 		title: string;
@@ -27,32 +28,6 @@
 	let hoveredKey = $state<string | null>(null);
 	let savedSet = $state<Set<string>>(new Set());
 	let videoRefs = new Map<string, HTMLVideoElement>();
-
-	function levenshtein(a: string, b: string) {
-		const m = a.length;
-		const n = b.length;
-		const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-		for (let i = 0; i <= m; i++) dp[i][0] = i;
-		for (let j = 0; j <= n; j++) dp[0][j] = j;
-		for (let i = 1; i <= m; i++) {
-			for (let j = 1; j <= n; j++) {
-				dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : Math.min(dp[i - 1][j - 1] + 1, dp[i][j - 1] + 1, dp[i - 1][j] + 1);
-			}
-		}
-		return dp[m][n];
-	}
-
-	function fuzzyMatch(candidate: string, query: string) {
-		const lowerCandidate = (candidate || '').toLowerCase();
-		const lowerQuery = (query || '').toLowerCase();
-		if (!lowerQuery) return true;
-		if (lowerCandidate.includes(lowerQuery)) return true;
-		const candidateWords = lowerCandidate.split(/\s+/).filter(Boolean);
-		const queryWords = lowerQuery.split(/\s+/).filter(Boolean);
-		return queryWords.every((qw) =>
-			candidateWords.some((cw) => levenshtein(cw, qw) <= Math.max(1, Math.floor(qw.length / 3)))
-		);
-	}
 
 	const filtered = $derived.by(() => {
 		const term = search.trim();
@@ -175,47 +150,47 @@
 	{:else}
 		<div class="component-list-grid" style:--card-radius={`${CARD_RADIUS}px`}>
 			{#each filtered as item (item.key)}
-				<a
-					class="component-list-card"
-					href={item.to}
-					data-item-key={item.key}
-					onmouseenter={() => (hoveredKey = item.key)}
-					onmouseleave={() => {
-						if (hoveredKey === item.key) hoveredKey = null;
-					}}
-				>
-					<div class="component-list-media-wrap">
-						<video use:setVideo={item.key} loop muted playsinline preload="metadata" onloadedmetadata={handleLoadedMetadata} aria-label={`${item.title} preview`}>
-							<source src={`${item.videoBase}.webm`} type="video/webm" />
-							<source src={`${item.videoBase}.mp4`} type="video/mp4" />
-						</video>
+				<div class="component-list-card-wrap">
+					<a
+						class="component-list-card"
+						href={item.to}
+						data-item-key={item.key}
+						onmouseenter={() => (hoveredKey = item.key)}
+						onmouseleave={() => {
+							if (hoveredKey === item.key) hoveredKey = null;
+						}}
+					>
+						<div class="component-list-media-wrap">
+							<video use:setVideo={item.key} loop muted playsinline preload="metadata" onloadedmetadata={handleLoadedMetadata} aria-label={`${item.title} preview`}>
+								<source src={`${item.videoBase}.webm`} type="video/webm" />
+								<source src={`${item.videoBase}.mp4`} type="video/mp4" />
+							</video>
+						</div>
 
-						<button
-							type="button"
-							class="favorite-button"
-							class:visible={savedSet.has(item.key) || hoveredKey === item.key}
-							class:saved={savedSet.has(item.key)}
-							aria-label={hasDeleteButton ? 'Remove from favorites' : savedSet.has(item.key) ? 'Remove from favorites' : 'Add to favorites'}
-							onclick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								if (hasDeleteButton) removeFavorite(item.key);
-								else toggleFavorite(item.key);
-							}}
-						>
-							{#if hasDeleteButton}
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
-							{:else}
-								<svg width="14" height="14" viewBox="0 0 24 24" fill={savedSet.has(item.key) ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" /></svg>
-							{/if}
-						</button>
-					</div>
+						<div class="component-list-card-copy">
+							<h2>{item.title}</h2>
+							<p>{item.categoryLabel}</p>
+						</div>
+					</a>
 
-					<div class="component-list-card-copy">
-						<h2>{item.title}</h2>
-						<p>{item.categoryLabel}</p>
-					</div>
-				</a>
+					<button
+						type="button"
+						class="favorite-button"
+						class:visible={savedSet.has(item.key) || hoveredKey === item.key}
+						class:saved={savedSet.has(item.key)}
+						aria-label={hasDeleteButton ? 'Remove from favorites' : savedSet.has(item.key) ? 'Remove from favorites' : 'Add to favorites'}
+						onclick={() => {
+							if (hasDeleteButton) removeFavorite(item.key);
+							else toggleFavorite(item.key);
+						}}
+					>
+						{#if hasDeleteButton}
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+						{:else}
+							<svg width="14" height="14" viewBox="0 0 24 24" fill={savedSet.has(item.key) ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" /></svg>
+						{/if}
+					</button>
+				</div>
 			{/each}
 		</div>
 	{/if}
@@ -241,12 +216,13 @@
 	.clear-button { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0; color: rgba(255,255,255,0.5); cursor: pointer; opacity: 0; transform: scale(0.6); pointer-events: none; }
 	.clear-slot.show .clear-button { opacity: 1; transform: scale(1); pointer-events: auto; }
 	.component-list-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+	.component-list-card-wrap { position: relative; }
 	.component-list-card { display: block; background: var(--bg-elevated); border: 1px solid rgba(255,255,255,0.04); border-radius: var(--card-radius); padding: 6px; text-decoration: none; overflow: hidden; transition: border-color 0.2s ease; }
 	.component-list-card:hover { border-color: rgba(255,255,255,0.1); text-decoration: none; }
 	.component-list-media-wrap { position: relative; height: 190px; background: var(--bg-body); border-radius: 12px; overflow: hidden; }
 	.component-list-media-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; filter: grayscale(100%); mix-blend-mode: screen; }
 	.favorite-button { position: absolute; top: 8px; right: 8px; z-index: 2; width: 28px; height: 28px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; background: rgba(0,0,0,0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: rgba(255,255,255,0.85); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; opacity: 0; pointer-events: none; transition: all 0.2s ease; }
-	.favorite-button.visible { opacity: 1; pointer-events: auto; }
+	.component-list-card-wrap:hover .favorite-button, .favorite-button.visible { opacity: 1; pointer-events: auto; }
 	.favorite-button.saved { color: var(--color-primary); }
 	.favorite-button:hover { background: rgba(0,0,0,0.55); transform: scale(1.1); color: #ef4444; }
 	.component-list-card-copy { padding: 12px 8px 6px; }

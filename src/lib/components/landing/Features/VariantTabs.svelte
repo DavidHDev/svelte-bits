@@ -2,13 +2,13 @@
 	// Visual: the three technologies powering svelte-bits, shown as floating
 	// pills that drift gently and pulse their borders in sequence using each
 	// brand's own color (Svelte orange, TS blue, Tailwind cyan).
-	import iconLogo from '$lib/assets/logo/svelte-bits-icon-logo.svg?raw';
+	import iconLogo from '$lib/assets/logo/svelte-bits-icon-logo.svg';
 </script>
 
 <div class="ln-feat-stack">
 	<div class="ln-feat-stack-chip ln-feat-stack-chip--svelte">
 		<span class="ln-feat-stack-mark ln-feat-stack-mark--svelte" aria-hidden="true">
-			{@html iconLogo}
+			<img src={iconLogo} alt="" />
 		</span>
 		<span class="ln-feat-stack-name">Svelte&nbsp;5</span>
 	</div>
@@ -174,7 +174,7 @@
 		flex-shrink: 0;
 	}
 
-	.ln-feat-stack-mark--svelte :global(svg) {
+	.ln-feat-stack-mark--svelte img {
 		width: auto;
 		height: 20px;
 	}

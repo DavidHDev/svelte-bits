@@ -5,8 +5,7 @@
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
-	import CliInstall from '$lib/components/docs/preview/CliInstall.svelte';
+	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
 	import SplitText from '$lib/components/library/TextAnimations/SplitText/SplitText.svelte';
 	import source from '$lib/components/library/TextAnimations/SplitText/SplitText.svelte?raw';
@@ -117,11 +116,7 @@ ${scriptClose}
 		</div>
 	{/snippet}
 	{#snippet code()}
-		<CliInstall slug="split-text" />
-		<h3 class="demo-title-extra">Usage</h3>
-		<CodeBlock code={usage} language="svelte" />
-		<h3 class="demo-title-extra">Component source</h3>
-		<CodeBlock code={source} language="svelte" />
+		<DemoCodeTab slug="split-text" {usage} {source} />
 	{/snippet}
 	{#snippet customize()}
 		<Customize>

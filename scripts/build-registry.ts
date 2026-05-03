@@ -33,6 +33,8 @@ import { readFile, writeFile, mkdir, readdir, stat } from 'node:fs/promises';
 import { dirname, resolve, basename, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { IMPLEMENTED_DEMOS } from '../src/lib/constants/categories';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const LIBRARY_DIR = resolve(ROOT, 'src/lib/components/library');
@@ -146,7 +148,6 @@ async function* walkComponents(): AsyncGenerator<DiscoveredItem> {
 			if (!(await isDirectory(componentPath))) continue;
 
 			const expected = resolve(componentPath, `${componentDirName}.svelte`);
-			if (!(await isDirectory(componentPath))) continue;
 
 			let exists = false;
 			try {
@@ -225,6 +226,29 @@ async function main() {
 
 	const discovered: DiscoveredItem[] = [];
 	for await (const item of walkComponents()) discovered.push(item);
+	const discoveredSlugs = new Set(discovered.map((item) => item.slug));
+	const registryOnlySlugs = [...discoveredSlugs].filter((slug) => !IMPLEMENTED_DEMOS.has(slug));
+	const implementedWithoutRegistry = [...IMPLEMENTED_DEMOS].filter(
+		(slug) =>
+			!['introduction', 'installation', 'mcp-server', 'index'].includes(slug) &&
+			!discoveredSlugs.has(slug)
+	);
+
+	if (registryOnlySlugs.length || implementedWithoutRegistry.length) {
+		throw new Error(
+			[
+				'Registry metadata is out of sync.',
+				registryOnlySlugs.length
+					? `Components found in library but missing from IMPLEMENTED_DEMOS: ${registryOnlySlugs.join(', ')}`
+					: '',
+				implementedWithoutRegistry.length
+					? `IMPLEMENTED_DEMOS entries without registry components: ${implementedWithoutRegistry.join(', ')}`
+					: ''
+			]
+				.filter(Boolean)
+				.join('\n')
+		);
+	}
 
 	if (discovered.length === 0) {
 		console.warn(`No components found under ${relative(ROOT, LIBRARY_DIR)}`);

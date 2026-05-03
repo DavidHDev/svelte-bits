@@ -6,11 +6,7 @@
 	};
 	let { title = '', value = '#ffffff', onChange }: Props = $props();
 
-	let hex = $state(value);
-
-	$effect(() => {
-		hex = value;
-	});
+	let hex = $derived(value);
 
 	function commitHex(v: string) {
 		const trimmed = v.trim();

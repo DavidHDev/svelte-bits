@@ -135,6 +135,8 @@ void main() {
 		}
 
 		renderer.setClearColor(0x000000, 0);
+		// three.js owns the canvas; attach it imperatively to keep this component standalone.
+		// eslint-disable-next-line svelte/no-dom-manipulating
 		mount.appendChild(renderer.domElement);
 
 		const scene = new THREE.Scene();
@@ -264,6 +266,7 @@ void main() {
 			mount?.removeEventListener('mouseleave', onMouseLeave);
 			mount?.removeEventListener('click', onClick);
 			if (renderer.domElement.parentNode === mount) {
+				// eslint-disable-next-line svelte/no-dom-manipulating
 				mount?.removeChild(renderer.domElement);
 			}
 			renderer.dispose();

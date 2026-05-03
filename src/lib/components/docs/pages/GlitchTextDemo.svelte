@@ -4,8 +4,7 @@
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
-	import CliInstall from '$lib/components/docs/preview/CliInstall.svelte';
+	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import GlitchText from '$lib/components/library/TextAnimations/GlitchText/GlitchText.svelte';
 	import glitchTextSource from '$lib/components/library/TextAnimations/GlitchText/GlitchText.svelte?raw';
 
@@ -65,11 +64,7 @@ ${'</' + 'script>'}
 		</div>
 	{/snippet}
 	{#snippet code()}
-		<CliInstall slug="glitch-text" />
-		<h3 class="demo-title-extra">Usage</h3>
-		<CodeBlock code={usage} language="svelte" />
-		<h3 class="demo-title-extra">Component source</h3>
-		<CodeBlock code={glitchTextSource} language="svelte" />
+		<DemoCodeTab slug="glitch-text" {usage} source={glitchTextSource} />
 	{/snippet}
 	{#snippet customize()}
 		<Customize>

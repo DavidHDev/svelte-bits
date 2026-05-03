@@ -3,8 +3,7 @@
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
-	import CliInstall from '$lib/components/docs/preview/CliInstall.svelte';
+	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
 	import Hyperspeed, {
 		hyperspeedPresets,
@@ -77,11 +76,7 @@ ${scriptClose}
 		</div>
 	{/snippet}
 	{#snippet code()}
-		<CliInstall slug="hyperspeed" />
-		<h3 class="demo-title-extra">Usage</h3>
-		<CodeBlock code={usage} language="svelte" />
-		<h3 class="demo-title-extra">Component source</h3>
-		<CodeBlock code={hyperspeedSource} language="svelte" />
+		<DemoCodeTab slug="hyperspeed" {usage} source={hyperspeedSource} />
 	{/snippet}
 	{#snippet customize()}
 		<Customize>

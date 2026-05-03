@@ -25,11 +25,8 @@
 		speed = 1.0
 	}: Props = $props();
 
-	// Reactive ref the rAF loop reads from
-	let current = $state({ colorStops, amplitude, blend, time, speed });
-	$effect(() => {
-		current = { colorStops, amplitude, blend, time, speed };
-	});
+	// Reactive ref the rAF loop reads from.
+	let current = $derived({ colorStops, amplitude, blend, time, speed });
 
 	let ctn: HTMLDivElement;
 
@@ -174,6 +171,8 @@ void main() {
 		});
 
 		const mesh = new Mesh(gl, { geometry, program });
+		// OGL owns the canvas; attach it imperatively to keep the copy-paste component single-file.
+		// eslint-disable-next-line svelte/no-dom-manipulating
 		ctn.appendChild(gl.canvas);
 
 		function resize() {
@@ -205,6 +204,7 @@ void main() {
 		return () => {
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', resize);
+			// eslint-disable-next-line svelte/no-dom-manipulating
 			if (gl.canvas.parentNode === ctn) ctn.removeChild(gl.canvas);
 			gl.getExtension('WEBGL_lose_context')?.loseContext();
 		};

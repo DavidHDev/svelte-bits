@@ -53,11 +53,7 @@
 	let el: SplitElement;
 	let fontsLoaded = $state(false);
 	let animationCompleted = false;
-	let onCompleteRef = $state(onLetterAnimationComplete);
-
-	$effect(() => {
-		onCompleteRef = onLetterAnimationComplete;
-	});
+	let onCompleteRef = $derived(onLetterAnimationComplete);
 
 	$effect(() => {
 		if (document.fonts.status === 'loaded') {

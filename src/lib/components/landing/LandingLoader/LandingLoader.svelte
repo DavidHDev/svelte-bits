@@ -1,5 +1,5 @@
 <script lang="ts">
-	import logoSvg from '$lib/assets/logo/svelte-bits-logo.svg?raw';
+	import logo from '$lib/assets/logo/svelte-bits-logo.svg';
 	import './LandingLoader.css';
 
 	type Props = {
@@ -10,5 +10,5 @@
 </script>
 
 <div class="ln-loader {hiding ? 'ln-loader--hide' : ''}">
-	<span class="ln-loader-logo" aria-hidden="true">{@html logoSvg}</span>
+	<span class="ln-loader-logo" aria-hidden="true"><img src={logo} alt="" /></span>
 </div>

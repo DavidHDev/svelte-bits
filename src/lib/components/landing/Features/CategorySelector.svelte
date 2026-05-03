@@ -1,11 +1,11 @@
 <script lang="ts">
-	import logoSvg from '$lib/assets/logo/svelte-bits-icon-logo.svg?raw';
+	import logo from '$lib/assets/logo/svelte-bits-icon-logo.svg';
 	import FeatureIcon from './FeatureIcon.svelte';
 </script>
 
 <div class="ln-feat-orbit">
 	<div class="ln-feat-orbit-center">
-		{@html logoSvg}
+		<img src={logo} alt="" aria-hidden="true" />
 	</div>
 	<div class="ln-feat-orbit-ring ln-feat-orbit-ring--1">
 		<div class="ln-feat-orbit-node ln-feat-orbit-node--top"><FeatureIcon name="type" /></div>

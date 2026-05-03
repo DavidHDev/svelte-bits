@@ -92,7 +92,7 @@
 				>
 					<a href={card.href} class="ln-demo-card-link">
 						<div class="ln-demo-card-visual">
-							<DemoPlaceholder variant={card.variant} />
+							<DemoPlaceholder variant={card.variant} active={visible[i]} />
 						</div>
 						<div class="ln-demo-card-overlay">
 							<span class="ln-demo-card-category">{card.category}</span>

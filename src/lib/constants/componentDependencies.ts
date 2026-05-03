@@ -12,7 +12,7 @@ export const COMPONENT_DEPENDENCIES: Record<string, string[]> = {
 	'liquid-ether': ['three'],
 	'magic-rings': ['three'],
 	'split-text': ['gsap'],
-	'true-focus': ['motion'],
+	'true-focus': ['motion']
 };
 
 export function dependenciesForSlug(slug: string | undefined): string[] {

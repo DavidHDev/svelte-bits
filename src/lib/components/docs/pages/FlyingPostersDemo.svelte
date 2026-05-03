@@ -3,8 +3,7 @@
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
-	import CliInstall from '$lib/components/docs/preview/CliInstall.svelte';
+	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import FlyingPosters from '$lib/components/library/Components/FlyingPosters/FlyingPosters.svelte';
 	import source from '$lib/components/library/Components/FlyingPosters/FlyingPosters.svelte?raw';
 
@@ -99,11 +98,7 @@ ${scriptClose}
 		</div>
 	{/snippet}
 	{#snippet code()}
-		<CliInstall slug="flying-posters" />
-		<h3 class="demo-title-extra">Usage</h3>
-		<CodeBlock code={usage} language="svelte" />
-		<h3 class="demo-title-extra">Component source</h3>
-		<CodeBlock code={source} language="svelte" />
+		<DemoCodeTab slug="flying-posters" {usage} {source} />
 	{/snippet}
 	{#snippet customize()}
 		<Customize>

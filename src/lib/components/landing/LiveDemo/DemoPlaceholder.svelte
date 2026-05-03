@@ -1,20 +1,78 @@
 <script lang="ts">
-	import ShapeGrid from '$lib/components/library/Backgrounds/ShapeGrid/ShapeGrid.svelte';
-	import MagicRings from '$lib/components/library/Animations/MagicRings/MagicRings.svelte';
-	import ShinyText from '$lib/components/library/TextAnimations/ShinyText/ShinyText.svelte';
-	import Dock, {
-		type DockItemData
-	} from '$lib/components/library/Components/Dock/Dock.svelte';
+	import type { Component, Snippet } from 'svelte';
 
 	type Variant = 'shapegrid' | 'magicrings' | 'shinytext' | 'dock';
+	type ShapeGridProps = {
+		shape: string;
+		direction: string;
+		speed: number;
+		borderColor: string;
+		hoverFillColor: string;
+		squareSize: number;
+		hoverTrailAmount: number;
+	};
+	type MagicRingsProps = {
+		color: string;
+		colorTwo: string;
+		ringCount: number;
+		lineThickness: number;
+		baseRadius: number;
+		radiusStep: number;
+		noiseAmount: number;
+		followMouse: boolean;
+		hoverScale: number;
+		parallax: number;
+	};
+	type ShinyTextProps = {
+		text: string;
+		speed: number;
+		color: string;
+		shineColor: string;
+		class: string;
+	};
+	type DockProps = {
+		items: { icon: Snippet; label: string; onClick: () => void }[];
+		panelHeight: number;
+		baseItemSize: number;
+		magnification: number;
+		distance: number;
+	};
+	type PreviewComponent = Component<ShapeGridProps | MagicRingsProps | ShinyTextProps | DockProps>;
+	type ComponentModule = { default: PreviewComponent };
 
 	interface Props {
 		variant: Variant;
+		active?: boolean;
 	}
 
-	const { variant }: Props = $props();
+	const { variant, active = false }: Props = $props();
 
-	const dockItems: DockItemData[] = [
+	const loaders = {
+		shapegrid: () =>
+			import('$lib/components/library/Backgrounds/ShapeGrid/ShapeGrid.svelte') as Promise<ComponentModule>,
+		magicrings: () =>
+			import('$lib/components/library/Animations/MagicRings/MagicRings.svelte') as Promise<ComponentModule>,
+		shinytext: () =>
+			import('$lib/components/library/TextAnimations/ShinyText/ShinyText.svelte') as Promise<ComponentModule>,
+		dock: () =>
+			import('$lib/components/library/Components/Dock/Dock.svelte') as Promise<ComponentModule>
+	};
+
+	let loadedVariant = $state<Variant | null>(null);
+	let LoadedComponent = $state<PreviewComponent | null>(null);
+
+	$effect(() => {
+		if (!active || loadedVariant === variant) return;
+
+		const loadingVariant = variant;
+		loaders[loadingVariant]().then((module) => {
+			if (variant !== loadingVariant) return;
+			LoadedComponent = module.default;
+			loadedVariant = loadingVariant;
+		});
+	});
+
+	const dockItems: { icon: Snippet; label: string; onClick: () => void }[] = [
 		{ label: 'Home', icon: home, onClick: () => {} },
 		{ label: 'Archive', icon: archive, onClick: () => {} },
 		{ label: 'Search', icon: search, onClick: () => {} },
@@ -60,9 +118,11 @@
 	</svg>
 {/snippet}
 
-{#if variant === 'shapegrid'}
+{#if !LoadedComponent}
+	<div class="demo-fill" aria-hidden="true"></div>
+{:else if variant === 'shapegrid'}
 	<div class="demo-fill" aria-hidden="true">
-		<ShapeGrid
+		<LoadedComponent
 			shape="hexagon"
 			direction="diagonal"
 			speed={0.6}
@@ -74,7 +134,7 @@
 	</div>
 {:else if variant === 'magicrings'}
 	<div class="demo-fill" aria-hidden="true">
-		<MagicRings
+		<LoadedComponent
 			color="#FF3E00"
 			colorTwo="#FF8A4C"
 			ringCount={6}
@@ -89,7 +149,7 @@
 	</div>
 {:else if variant === 'shinytext'}
 	<div class="demo-fill demo-shiny-wrap">
-		<ShinyText
+		<LoadedComponent
 			text="Shiny Text"
 			speed={3}
 			color="#666"
@@ -100,7 +160,13 @@
 {:else if variant === 'dock'}
 	<div class="demo-fill demo-dock-wrap">
 		<div class="demo-dock-stage">
-			<Dock items={dockItems} panelHeight={64} baseItemSize={42} magnification={64} distance={140} />
+			<LoadedComponent
+				items={dockItems}
+				panelHeight={64}
+				baseItemSize={42}
+				magnification={64}
+				distance={140}
+			/>
 		</div>
 	</div>
 {/if}

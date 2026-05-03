@@ -5,8 +5,7 @@
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
-	import CliInstall from '$lib/components/docs/preview/CliInstall.svelte';
+	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import MagicRings from '$lib/components/library/Animations/MagicRings/MagicRings.svelte';
 	import source from '$lib/components/library/Animations/MagicRings/MagicRings.svelte?raw';
 
@@ -192,11 +191,7 @@ ${scriptClose}
 		</div>
 	{/snippet}
 	{#snippet code()}
-		<CliInstall slug="magic-rings" />
-		<h3 class="demo-title-extra">Usage</h3>
-		<CodeBlock code={usage} language="svelte" />
-		<h3 class="demo-title-extra">Component source</h3>
-		<CodeBlock code={source} language="svelte" />
+		<DemoCodeTab slug="magic-rings" {usage} {source} />
 	{/snippet}
 	{#snippet customize()}
 		<Customize>

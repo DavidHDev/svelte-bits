@@ -1,6 +1,5 @@
 <script lang="ts">
-  import CliInstall from "$lib/components/docs/preview/CliInstall.svelte";
-  import CodeBlock from "$lib/components/docs/preview/CodeBlock.svelte";
+  import DemoCodeTab from "$lib/components/docs/preview/DemoCodeTab.svelte";
   import Customize from "$lib/components/docs/preview/Customize.svelte";
   import PreviewColorPicker from "$lib/components/docs/preview/PreviewColorPicker.svelte";
   import PreviewSlider from "$lib/components/docs/preview/PreviewSlider.svelte";
@@ -143,11 +142,7 @@ ${"</" + "script>"}
     </div>
   {/snippet}
   {#snippet code()}
-    <CliInstall slug="true-focus" />
-    <h3 class="demo-title-extra">Usage</h3>
-    <CodeBlock code={usage} language="svelte" />
-    <h3 class="demo-title-extra">Component source</h3>
-    <CodeBlock code={trueFocusSource} language="svelte" />
+    <DemoCodeTab slug="true-focus" {usage} source={trueFocusSource} />
   {/snippet}
   {#snippet customize()}
     <Customize>

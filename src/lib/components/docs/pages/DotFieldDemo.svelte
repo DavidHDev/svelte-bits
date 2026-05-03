@@ -5,8 +5,7 @@
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
-	import CliInstall from '$lib/components/docs/preview/CliInstall.svelte';
+	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
 	import DotField from '$lib/components/library/Backgrounds/DotField/DotField.svelte';
 	import dotFieldSource from '$lib/components/library/Backgrounds/DotField/DotField.svelte?raw';
@@ -137,11 +136,7 @@ ${scriptClose}
 		</div>
 	{/snippet}
 	{#snippet code()}
-		<CliInstall slug="dot-field" />
-		<h3 class="demo-title-extra">Usage</h3>
-		<CodeBlock code={usage} language="svelte" />
-		<h3 class="demo-title-extra">Component source</h3>
-		<CodeBlock code={dotFieldSource} language="svelte" />
+		<DemoCodeTab slug="dot-field" {usage} source={dotFieldSource} />
 	{/snippet}
 	{#snippet customize()}
 		<Customize>

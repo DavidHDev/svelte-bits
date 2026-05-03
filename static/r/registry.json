@@ -326,8 +326,8 @@
     {
       "name": "true-focus",
       "type": "registry:component",
-      "title": "Blur Text",
-      "description": "Per-word/letter blur-in animation triggered when scrolled into view, with configurable direction, easing and stepped keyframes.",
+      "title": "True Focus",
+      "description": "Applies dynamic blur / clarity based over a series of words in order.",
       "categories": [
         "text-animations"
       ],

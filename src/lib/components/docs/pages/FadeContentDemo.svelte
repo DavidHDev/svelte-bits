@@ -4,8 +4,7 @@
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
-	import CliInstall from '$lib/components/docs/preview/CliInstall.svelte';
+	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
 	import FadeContent from '$lib/components/library/Animations/FadeContent/FadeContent.svelte';
 	import fadeContentSource from '$lib/components/library/Animations/FadeContent/FadeContent.svelte?raw';
@@ -101,11 +100,7 @@ ${'</' + 'script>'}
 		</div>
 	{/snippet}
 	{#snippet code()}
-		<CliInstall slug="fade-content" />
-		<h3 class="demo-title-extra">Usage</h3>
-		<CodeBlock code={usage} language="svelte" />
-		<h3 class="demo-title-extra">Component source</h3>
-		<CodeBlock code={fadeContentSource} language="svelte" />
+		<DemoCodeTab slug="fade-content" {usage} source={fadeContentSource} />
 	{/snippet}
 	{#snippet customize()}
 		<Customize>

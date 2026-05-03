@@ -1,10 +1,5 @@
 <script module lang="ts">
-	import {
-		createHighlighterCore,
-		type HighlighterCore,
-		type ThemeRegistration
-	} from 'shiki/core';
-	import { createOnigurumaEngine } from 'shiki/engine/oniguruma';
+	import type { HighlighterCore, LanguageRegistration, ThemeRegistration } from 'shiki/core';
 
 	// Custom dark theme keyed to the svelte-bits orange palette.
 	// Background matches our card surfaces; accents use orange (#FF8A4C / #FF3E00).
@@ -40,27 +35,40 @@
 	};
 
 	let highlighterPromise: Promise<HighlighterCore> | null = null;
+	const loadedLanguages = new Set<string>();
+	const languageLoaders: Record<string, () => Promise<LanguageRegistration[]>> = {
+		svelte: async () => (await import('@shikijs/langs/svelte')).default,
+		typescript: async () => (await import('@shikijs/langs/typescript')).default,
+		javascript: async () => (await import('@shikijs/langs/javascript')).default,
+		tsx: async () => (await import('@shikijs/langs/tsx')).default,
+		jsx: async () => (await import('@shikijs/langs/jsx')).default,
+		css: async () => (await import('@shikijs/langs/css')).default,
+		html: async () => (await import('@shikijs/langs/html')).default,
+		json: async () => (await import('@shikijs/langs/json')).default,
+		bash: async () => (await import('@shikijs/langs/bash')).default,
+		shell: async () => (await import('@shikijs/langs/shell')).default
+	};
 
 	async function getHighlighter(): Promise<HighlighterCore> {
 		if (!highlighterPromise) {
+			const [{ createHighlighterCore }, { createOnigurumaEngine }] = await Promise.all([
+				import('shiki/core'),
+				import('shiki/engine/oniguruma')
+			]);
 			highlighterPromise = createHighlighterCore({
 				themes: [svelteBitsTheme],
-				langs: [
-					import('@shikijs/langs/svelte'),
-					import('@shikijs/langs/typescript'),
-					import('@shikijs/langs/javascript'),
-					import('@shikijs/langs/tsx'),
-					import('@shikijs/langs/jsx'),
-					import('@shikijs/langs/css'),
-					import('@shikijs/langs/html'),
-					import('@shikijs/langs/json'),
-					import('@shikijs/langs/bash'),
-					import('@shikijs/langs/shell')
-				],
+				langs: [],
 				engine: createOnigurumaEngine(import('shiki/wasm'))
 			});
 		}
 		return highlighterPromise;
+	}
+
+	async function ensureLanguage(highlighter: HighlighterCore, language: string) {
+		if (loadedLanguages.has(language)) return;
+		const load = languageLoaders[language] ?? languageLoaders.svelte;
+		await highlighter.loadLanguage(...(await load()));
+		loadedLanguages.add(language);
 	}
 </script>
 
@@ -91,6 +99,7 @@
 		(async () => {
 			try {
 				const hl = await getHighlighter();
+				await ensureLanguage(hl, lang);
 				const out = hl.codeToHtml(c, { lang, theme: 'svelte-bits' });
 				if (!cancelled) html = out;
 			} catch (err) {

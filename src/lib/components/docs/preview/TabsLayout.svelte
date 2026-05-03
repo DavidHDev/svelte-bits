@@ -32,6 +32,10 @@
 
 	let active: 'preview' | 'code' = $state('preview');
 	let copiedPrompt = $state(false);
+	const previewTabId = $derived(`${page.params.subcategory ?? 'component'}-preview-tab`);
+	const codeTabId = $derived(`${page.params.subcategory ?? 'component'}-code-tab`);
+	const previewPanelId = $derived(`${page.params.subcategory ?? 'component'}-preview-panel`);
+	const codePanelId = $derived(`${page.params.subcategory ?? 'component'}-code-panel`);
 	const dependencyList = $derived(dependenciesForSlug(page.params.subcategory));
 	const promptComponentName = $derived(componentName ?? page.params.subcategory?.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(''));
 	const hasPrompt = $derived(Boolean(promptComponentName && source));
@@ -85,17 +89,49 @@ ${source}
 		copiedPrompt = true;
 		setTimeout(() => (copiedPrompt = false), 2000);
 	}
+
+	function selectTab(tab: 'preview' | 'code') {
+		active = tab;
+		requestAnimationFrame(() => {
+			document.getElementById(tab === 'preview' ? previewTabId : codeTabId)?.focus();
+		});
+	}
+
+	function handleTabKey(event: KeyboardEvent) {
+		if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+			event.preventDefault();
+			selectTab(active === 'preview' ? 'code' : 'preview');
+		} else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+			event.preventDefault();
+			selectTab(active === 'preview' ? 'code' : 'preview');
+		} else if (event.key === 'Home') {
+			event.preventDefault();
+			selectTab('preview');
+		} else if (event.key === 'End') {
+			event.preventDefault();
+			selectTab('code');
+		}
+	}
 </script>
 
 <div class="tabs-root">
-	<div class="tabs-list" role="tablist">
+	<div
+		class="tabs-list"
+		role="tablist"
+		aria-label="Component example sections"
+		tabindex="-1"
+		onkeydown={handleTabKey}
+	>
 		<button
+			id={previewTabId}
 			type="button"
 			role="tab"
 			aria-selected={active === 'preview'}
+			aria-controls={previewPanelId}
+			tabindex={active === 'preview' ? 0 : -1}
 			class="tab-trigger"
 			data-active={active === 'preview'}
-			onclick={() => (active = 'preview')}
+			onclick={() => selectTab('preview')}
 		>
 			<svg
 				width="14"
@@ -106,6 +142,7 @@ ${source}
 				stroke-width="2"
 				stroke-linecap="round"
 				stroke-linejoin="round"
+				aria-hidden="true"
 			>
 				<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
 				<circle cx="12" cy="12" r="3" />
@@ -113,12 +150,15 @@ ${source}
 			Preview
 		</button>
 		<button
+			id={codeTabId}
 			type="button"
 			role="tab"
 			aria-selected={active === 'code'}
+			aria-controls={codePanelId}
+			tabindex={active === 'code' ? 0 : -1}
 			class="tab-trigger"
 			data-active={active === 'code'}
-			onclick={() => (active = 'code')}
+			onclick={() => selectTab('code')}
 		>
 			<svg
 				width="14"
@@ -129,6 +169,7 @@ ${source}
 				stroke-width="2"
 				stroke-linecap="round"
 				stroke-linejoin="round"
+				aria-hidden="true"
 			>
 				<polyline points="16 18 22 12 16 6" />
 				<polyline points="8 6 2 12 8 18" />
@@ -174,7 +215,7 @@ ${source}
 	</div>
 
 	{#if active === 'preview'}
-		<div class="tab-panel" data-active="true" role="tabpanel">
+		<div id={previewPanelId} class="tab-panel" data-active="true" role="tabpanel" aria-labelledby={previewTabId}>
 			<div class="demo-container">
 				{@render preview()}
 			</div>
@@ -187,7 +228,7 @@ ${source}
 			<Dependencies {dependencyList} />
 		</div>
 	{:else}
-		<div class="tab-panel" data-active="true" role="tabpanel">
+		<div id={codePanelId} class="tab-panel" data-active="true" role="tabpanel" aria-labelledby={codeTabId}>
 			{@render code()}
 		</div>
 	{/if}

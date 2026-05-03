@@ -40,13 +40,14 @@
 <aside
 	class="sidebar"
 	bind:this={scrollEl}
+	aria-label="Docs navigation"
 >
 	<div class="sidebar-inner">
 		<div class="sidebar-cat-list">
 			{#each CATEGORIES as cat (cat.name)}
 				<div>
-					<p class="category-name">{cat.name}</p>
-					<div class="sidebar-stack">
+					<p id="sidebar-{slug(cat.name)}" class="category-name">{cat.name}</p>
+					<div class="sidebar-stack" role="list" aria-labelledby="sidebar-{slug(cat.name)}">
 						{#each cat.subcategories as sub (sub)}
 							{@const implemented = isImplemented(sub)}
 							{@const favoriteKey = `${cat.name}/${sub}`}
@@ -56,6 +57,7 @@
 									: 'unimplemented'}"
 								href="/{slug(cat.name)}/{slug(sub)}"
 								onclick={() => onnavigate?.()}
+								aria-current={isActive(cat.name, sub) ? 'page' : undefined}
 							>
 								<span>{sub}</span>
 								{#if savedSet.has(favoriteKey)}

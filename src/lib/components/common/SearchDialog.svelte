@@ -24,6 +24,9 @@
 	let keyboardNav = $state(false);
 	let resultsRef = $state<HTMLDivElement | null>(null);
 	let inputRef = $state<HTMLInputElement | null>(null);
+	let dialogRef = $state<HTMLDivElement | null>(null);
+	let previouslyFocused = $state<HTMLElement | null>(null);
+	const listboxId = 'component-search-results';
 
 	function searchComponents(query: string): Result[] {
 		if (!query || query.trim() === '') return [];
@@ -56,19 +59,28 @@
 			selectedIndex = -1;
 			topGradientOpacity = 0;
 			bottomGradientOpacity = 1;
+			previouslyFocused?.focus?.();
+			previouslyFocused = null;
 			return;
 		}
 
+		previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		const t = setTimeout(() => inputRef?.focus(), 50);
 		return () => clearTimeout(t);
 	});
 
 	$effect(() => {
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === '/') {
+			const target = e.target as HTMLElement | null;
+			const isEditable =
+				target instanceof HTMLInputElement ||
+				target instanceof HTMLTextAreaElement ||
+				target?.isContentEditable;
+
+			if (e.key === '/' && !isOpen && !isEditable) {
 				e.preventDefault();
 				onToggle?.();
-			} else if (e.key === 'Escape') {
+			} else if (e.key === 'Escape' && isOpen) {
 				onClose?.();
 			}
 		};
@@ -78,6 +90,22 @@
 
 	$effect(() => {
 		const onKey = (e: KeyboardEvent) => {
+			if (!isOpen) return;
+			if (e.key === 'Tab') {
+				if (!dialogRef) return;
+				const focusable = getFocusable(dialogRef);
+				if (focusable.length === 0) return;
+				const first = focusable[0];
+				const last = focusable[focusable.length - 1];
+				if (e.shiftKey && document.activeElement === first) {
+					e.preventDefault();
+					last.focus();
+				} else if (!e.shiftKey && document.activeElement === last) {
+					e.preventDefault();
+					first.focus();
+				}
+				return;
+			}
 			if (!searchValue) return;
 			if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
 				e.preventDefault();
@@ -137,6 +165,20 @@
 		selectedIndex = -1;
 	}
 
+	function handleInputKeydown(e: KeyboardEvent) {
+		if (e.key === 'ArrowDown' && results.length > 0) {
+			e.preventDefault();
+			keyboardNav = true;
+			selectedIndex = Math.max(selectedIndex, 0);
+		}
+	}
+
+	function handleResultKeydown(e: KeyboardEvent, result: Result) {
+		if (e.key !== 'Enter' && e.key !== ' ') return;
+		e.preventDefault();
+		selectResult(result);
+	}
+
 	function selectResult(result: Result | undefined) {
 		if (!result) return;
 		goto(`/${slug(result.categoryName)}/${slug(result.componentName)}`);
@@ -145,11 +187,19 @@
 		selectedIndex = -1;
 		close();
 	}
+
+	function getFocusable(container: HTMLElement) {
+		return Array.from(
+			container.querySelectorAll<HTMLElement>(
+				'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+			)
+		).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+	}
 </script>
 
 {#if isOpen}
 	<div class="search-backdrop" onclick={closeFromBackdrop} role="presentation">
-		<div class="search-dialog" role="dialog" aria-modal="true" aria-label="Search" tabindex="-1">
+			<div bind:this={dialogRef} class="search-dialog" role="dialog" aria-modal="true" aria-label="Search" tabindex="-1">
 			<div class="search-input-row">
 				<svg class="search-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 					<circle cx="11" cy="11" r="8" />
@@ -160,7 +210,13 @@
 					class="search-input"
 					value={inputValue}
 					oninput={handleInput}
+					onkeydown={handleInputKeydown}
 					placeholder="Search components, categories, or keywords..."
+					role="combobox"
+					aria-expanded={Boolean(searchValue)}
+					aria-controls={listboxId}
+					aria-autocomplete="list"
+					aria-activedescendant={selectedIndex >= 0 ? `search-result-${selectedIndex}` : undefined}
 				/>
 				<button type="button" class="search-kbd" onclick={close}>esc</button>
 			</div>
@@ -168,17 +224,26 @@
 			{#if searchValue}
 				<div class="search-results-motion">
 					<div class="search-results-wrapper">
-						<div bind:this={resultsRef} class="search-results" onscroll={handleScroll}>
+						<div
+							id={listboxId}
+							bind:this={resultsRef}
+							class="search-results"
+							onscroll={handleScroll}
+							role="listbox"
+							aria-label="Search results"
+						>
 							{#if results.length > 0}
 								{#each results as r, i (`${r.categoryName}-${r.componentName}-${i}`)}
 									<div
+										id="search-result-{i}"
 										class="search-result-anim"
 										data-index={i}
 										onmouseenter={() => (selectedIndex = i)}
 										onclick={() => selectResult(r)}
-										role="button"
-										tabindex="0"
-										onkeydown={(e) => e.key === 'Enter' && selectResult(r)}
+										onkeydown={(e) => handleResultKeydown(e, r)}
+										role="option"
+										aria-selected={selectedIndex === i}
+										tabindex="-1"
 									>
 										<div class="search-result-item{selectedIndex === i ? ' selected' : ''}">
 											<div class="search-result-icon">

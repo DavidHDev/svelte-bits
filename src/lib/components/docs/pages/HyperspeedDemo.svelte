@@ -5,10 +5,8 @@
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
-	import Hyperspeed, {
-		hyperspeedPresets,
-		type HyperspeedOptions
-	} from '$lib/components/library/Backgrounds/Hyperspeed/Hyperspeed.svelte';
+	import type { Component } from 'svelte';
+	import type { HyperspeedOptions } from '$lib/components/library/Backgrounds/Hyperspeed/Hyperspeed.svelte';
 	import hyperspeedSource from '$lib/components/library/Backgrounds/Hyperspeed/Hyperspeed.svelte?raw';
 
 	type Preset = 'one' | 'two' | 'three' | 'four' | 'five';
@@ -25,11 +23,25 @@
 	let activePreset = $state<Preset>(DEFAULTS.activePreset);
 	let renderKey = $state(0);
 	let showContent = $state(true);
+	let Hyperspeed = $state<Component<{ effectOptions: HyperspeedOptions }> | null>(null);
+	let hyperspeedPresets = $state<Record<string, HyperspeedOptions>>({});
 	const scriptOpen = '<' + 'script lang="ts">';
 	const scriptClose = '</' + 'script>';
 
 	const hasChanges = $derived(activePreset !== DEFAULTS.activePreset);
-	const effectOptions = $derived(hyperspeedPresets[activePreset] as HyperspeedOptions);
+	const effectOptions = $derived(hyperspeedPresets[activePreset] ?? null);
+
+	$effect(() => {
+		let cancelled = false;
+		import('$lib/components/library/Backgrounds/Hyperspeed/Hyperspeed.svelte').then((module) => {
+			if (cancelled) return;
+			Hyperspeed = module.default;
+			hyperspeedPresets = module.hyperspeedPresets;
+		});
+		return () => {
+			cancelled = true;
+		};
+	});
 
 	function reset() {
 		activePreset = DEFAULTS.activePreset;
@@ -66,7 +78,9 @@ ${scriptClose}
 	{#snippet preview()}
 		<div class="relative h-[500px] w-full cursor-pointer overflow-hidden bg-black">
 			{#key renderKey}
-				<Hyperspeed effectOptions={effectOptions} />
+				{#if Hyperspeed && effectOptions}
+					<Hyperspeed effectOptions={effectOptions} />
+				{/if}
 			{/key}
 			<BackgroundContentToggle
 				{showContent}

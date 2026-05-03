@@ -83,6 +83,17 @@
 		prefsCloseTimer = setTimeout(() => (prefsOpen = false), 150);
 	}
 
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		const onKey = (event: KeyboardEvent) => {
+			if (event.key !== 'Escape') return;
+			if (menuOpen) menuOpen = false;
+			if (prefsOpen) prefsOpen = false;
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	});
+
 	// Lock body scroll when mobile menu open
 	$effect(() => {
 		if (typeof document === 'undefined') return;

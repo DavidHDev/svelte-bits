@@ -5,8 +5,6 @@
 @import './lib/css/variables.css';
 @import './lib/css/misc.css';
 @import './lib/css/landing.css';
-@import './lib/css/docs.css';
-@import './lib/css/preview.css';
 
 *,
 *::before,

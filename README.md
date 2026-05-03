@@ -69,9 +69,23 @@ npm run check
 
 ## Cloudflare Deployment
 
-This repo uses `@sveltejs/adapter-cloudflare` in `svelte.config.js`, so `npm run build` emits a Cloudflare-compatible SvelteKit build.
+This repo uses `@sveltejs/adapter-cloudflare` in `svelte.config.js` and a Worker-style `wrangler.jsonc`.
 
-For Cloudflare Pages, use:
+Build locally with:
+
+```bash
+npm run build
+```
+
+Deploy with Wrangler:
+
+```bash
+npx wrangler deploy
+```
+
+The Cloudflare output is emitted to `.svelte-kit/cloudflare`, with the Worker entry at `.svelte-kit/cloudflare/_worker.js` and static assets served from the same directory via the `ASSETS` binding.
+
+If deploying through the Cloudflare dashboard, use:
 
 | Setting | Value |
 | ------- | ----- |

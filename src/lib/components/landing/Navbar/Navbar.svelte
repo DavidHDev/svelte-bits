@@ -25,6 +25,7 @@
 	let prefsOpen = $state(false);
 	let prefsCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
+	let navbarInnerEl = $state<HTMLElement | null>(null);
 	let linksEl = $state<HTMLElement | null>(null);
 	let highlightEl = $state<HTMLElement | null>(null);
 
@@ -91,6 +92,18 @@
 		};
 	});
 
+	// Close the landing mobile menu when tapping outside the navbar.
+	$effect(() => {
+		if (typeof document === 'undefined' || showDocs || !menuOpen) return;
+		const onPointerDown = (event: PointerEvent) => {
+			const target = event.target;
+			if (target instanceof Node && navbarInnerEl?.contains(target)) return;
+			menuOpen = false;
+		};
+		document.addEventListener('pointerdown', onPointerDown);
+		return () => document.removeEventListener('pointerdown', onPointerDown);
+	});
+
 	// Scroll listener
 	$effect(() => {
 		if (typeof window === 'undefined') return;
@@ -116,7 +129,7 @@
 <header
 	class="ln-navbar {scrolled ? 'ln-navbar-scrolled' : ''} {showDocs ? 'ln-navbar-docs' : ''}"
 >
-	<div class="ln-navbar-inner">
+	<div class="ln-navbar-inner" bind:this={navbarInnerEl}>
 		<div class="ln-navbar-left">
 			<a href="/" class="ln-navbar-logo" aria-label="svelte-bits home">
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->

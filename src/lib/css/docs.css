@@ -214,9 +214,9 @@
 
 .docs-drawer {
 	position: fixed;
-	top: 0;
+	top: 60px;
 	left: 0;
-	height: 100vh;
+	height: calc(100vh - 60px);
 	width: min(320px, 88vw);
 	background: var(--bg-body);
 	border-right: 1px solid var(--border-primary);
@@ -224,7 +224,7 @@
 	transform: translateX(-100%);
 	transition: transform 0.25s ease;
 	overflow-y: auto;
-	padding: 1.5em 1em 4em;
+	padding: 1.25em 1em 4em;
 }
 
 .docs-drawer[data-open='true'] {
@@ -288,7 +288,7 @@
 .tabs-list {
 	display: flex;
 	gap: 8px;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 	margin-bottom: 1em;
 }
 
@@ -320,6 +320,7 @@
 .tab-actions {
 	margin-left: auto;
 	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
 }
 
@@ -341,6 +342,23 @@
 
 .tab-action:hover {
 	background: var(--bg-hover);
+}
+
+@media (max-width: 600px) {
+	.tabs-list {
+		align-items: stretch;
+	}
+
+	.tab-trigger,
+	.tab-action {
+		font-size: 13px;
+		padding: 0 0.85rem;
+	}
+
+	.tab-actions {
+		margin-left: 0;
+		width: 100%;
+	}
 }
 
 .tab-panel {

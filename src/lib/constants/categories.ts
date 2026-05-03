@@ -1,5 +1,5 @@
 export const NEW: string[] = [
-
+	'True Focus'
 ];
 
 export const UPDATED: string[] = [
@@ -202,7 +202,8 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'liquid-ether',
 	'faulty-terminal',
 	'hyperspeed',
-	'flying-posters'
+	'flying-posters',
+	'true-focus',
 ]);
 
 // Helper: is this subcategory label fully ported?

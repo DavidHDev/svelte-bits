@@ -2,31 +2,32 @@
 	import { page } from '$app/state';
 	import { decodeLabel } from '$lib/constants/categories';
 
-	import Introduction from '$lib/components/docs/pages/Introduction.svelte';
-	import Installation from '$lib/components/docs/pages/Installation.svelte';
-	import McpServer from '$lib/components/docs/pages/McpServer.svelte';
-	import IndexPage from '$lib/components/docs/pages/IndexPage.svelte';
-	import SplitTextDemo from '$lib/components/docs/pages/SplitTextDemo.svelte';
-	import ShinyTextDemo from '$lib/components/docs/pages/ShinyTextDemo.svelte';
 	import AnimatedContentDemo from '$lib/components/docs/pages/AnimatedContentDemo.svelte';
-	import DockDemo from '$lib/components/docs/pages/DockDemo.svelte';
 	import AuroraDemo from '$lib/components/docs/pages/AuroraDemo.svelte';
-	import ShapeGridDemo from '$lib/components/docs/pages/ShapeGridDemo.svelte';
-	import MagicRingsDemo from '$lib/components/docs/pages/MagicRingsDemo.svelte';
-	import GradientTextDemo from '$lib/components/docs/pages/GradientTextDemo.svelte';
-	import GlitchTextDemo from '$lib/components/docs/pages/GlitchTextDemo.svelte';
-	import StarBorderDemo from '$lib/components/docs/pages/StarBorderDemo.svelte';
-	import SplashCursorDemo from '$lib/components/docs/pages/SplashCursorDemo.svelte';
-	import NoiseDemo from '$lib/components/docs/pages/NoiseDemo.svelte';
 	import BlurTextDemo from '$lib/components/docs/pages/BlurTextDemo.svelte';
-	import FadeContentDemo from '$lib/components/docs/pages/FadeContentDemo.svelte';
-	import DotFieldDemo from '$lib/components/docs/pages/DotFieldDemo.svelte';
 	import ColorBendsDemo from '$lib/components/docs/pages/ColorBendsDemo.svelte';
-	import LiquidEtherDemo from '$lib/components/docs/pages/LiquidEtherDemo.svelte';
-	import FaultyTerminalDemo from '$lib/components/docs/pages/FaultyTerminalDemo.svelte';
-	import HyperspeedDemo from '$lib/components/docs/pages/HyperspeedDemo.svelte';
-	import FlyingPostersDemo from '$lib/components/docs/pages/FlyingPostersDemo.svelte';
 	import ComingSoon from '$lib/components/docs/pages/ComingSoon.svelte';
+	import DockDemo from '$lib/components/docs/pages/DockDemo.svelte';
+	import DotFieldDemo from '$lib/components/docs/pages/DotFieldDemo.svelte';
+	import FadeContentDemo from '$lib/components/docs/pages/FadeContentDemo.svelte';
+	import FaultyTerminalDemo from '$lib/components/docs/pages/FaultyTerminalDemo.svelte';
+	import FlyingPostersDemo from '$lib/components/docs/pages/FlyingPostersDemo.svelte';
+	import GlitchTextDemo from '$lib/components/docs/pages/GlitchTextDemo.svelte';
+	import GradientTextDemo from '$lib/components/docs/pages/GradientTextDemo.svelte';
+	import HyperspeedDemo from '$lib/components/docs/pages/HyperspeedDemo.svelte';
+	import IndexPage from '$lib/components/docs/pages/IndexPage.svelte';
+	import Installation from '$lib/components/docs/pages/Installation.svelte';
+	import Introduction from '$lib/components/docs/pages/Introduction.svelte';
+	import LiquidEtherDemo from '$lib/components/docs/pages/LiquidEtherDemo.svelte';
+	import MagicRingsDemo from '$lib/components/docs/pages/MagicRingsDemo.svelte';
+	import McpServer from '$lib/components/docs/pages/McpServer.svelte';
+	import NoiseDemo from '$lib/components/docs/pages/NoiseDemo.svelte';
+	import ShapeGridDemo from '$lib/components/docs/pages/ShapeGridDemo.svelte';
+	import ShinyTextDemo from '$lib/components/docs/pages/ShinyTextDemo.svelte';
+	import SplashCursorDemo from '$lib/components/docs/pages/SplashCursorDemo.svelte';
+	import SplitTextDemo from '$lib/components/docs/pages/SplitTextDemo.svelte';
+	import StarBorderDemo from '$lib/components/docs/pages/StarBorderDemo.svelte';
+	import TrueFocusDemo from '$lib/components/docs/pages/TrueFocusDemo.svelte';
 
 	const sub = $derived(page.params.subcategory ?? '');
 	const niceName = $derived(decodeLabel(sub));
@@ -85,6 +86,8 @@
 		<HyperspeedDemo />
 	{:else if sub === 'flying-posters'}
 		<FlyingPostersDemo />
+	{:else if sub === 'true-focus'}
+		<TrueFocusDemo />
 	{:else}
 		<h1 class="sub-category">{niceName}</h1>
 		<ComingSoon name={niceName} />

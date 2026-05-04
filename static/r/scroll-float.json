@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "scroll-float",
+  "type": "registry:component",
+  "title": "Scroll Float",
+  "description": "Scroll-triggered floating text animation with per-character stagger.",
+  "categories": [
+    "text-animations"
+  ],
+  "files": [
+    {
+      "path": "ScrollFloat.svelte",
+      "content": "<script lang=\"ts\">\n    import { onMount } from 'svelte';\n    import { gsap } from 'gsap';\n    import { ScrollTrigger } from 'gsap/ScrollTrigger';\n\n    gsap.registerPlugin(ScrollTrigger);\n\n    type Props = {\n        children: string;\n        scrollContainer?: HTMLElement | null;\n        containerClass?: string;\n        textClass?: string;\n        animationDuration?: number;\n        ease?: string;\n        scrollStart?: string;\n        scrollEnd?: string;\n        stagger?: number;\n    };\n\n    let {\n        children = '',\n        scrollContainer = null,\n        containerClass = '',\n        textClass = '',\n        animationDuration = 1,\n        ease = 'back.inOut(2)',\n        scrollStart = 'center bottom+=50%',\n        scrollEnd = 'bottom bottom-=40%',\n        stagger = 0.03\n    }: Props = $props();\n\n    let containerRef: HTMLHeadingElement;\n\n    onMount(() => {\n        if (!containerRef) return;\n\n        const charElements = containerRef.querySelectorAll('.char');\n        const scroller = scrollContainer || window;\n\n        const anim = gsap.fromTo(\n            charElements,\n            {\n                willChange: 'opacity, transform',\n                opacity: 0,\n                yPercent: 120,\n                scaleY: 2.3,\n                scaleX: 0.7,\n                transformOrigin: '50% 0%'\n            },\n            {\n                duration: animationDuration,\n                ease: ease,\n                opacity: 1,\n                yPercent: 0,\n                scaleY: 1,\n                scaleX: 1,\n                stagger: stagger,\n                scrollTrigger: {\n                    trigger: containerRef,\n                    scroller,\n                    start: scrollStart,\n                    end: scrollEnd,\n                    scrub: true\n                }\n            }\n        );\n\n        return () => {\n            if (anim.scrollTrigger) anim.scrollTrigger.kill();\n            anim.kill();\n        };\n    });\n\n    const chars = $derived(children.split(''));\n</script>\n\n<h2 bind:this={containerRef} class=\"scroll-float {containerClass}\">\n    <span class=\"scroll-float-text {textClass}\">\n        {#each chars as char}\n            <span class=\"char\">\n                {char === ' ' ? '\\u00A0' : char}\n            </span>\n        {/each}\n    </span>\n</h2>\n\n<style>\n    .scroll-float { overflow: hidden; display: block; }\n    .scroll-float-text { display: inline-block; }\n    .char { display: inline-block; will-change: transform, opacity; }\n</style>",
+      "type": "registry:component",
+      "target": "$lib/components/svelte-bits/ScrollFloat.svelte"
+    }
+  ],
+  "dependencies": [
+    "gsap"
+  ]
+}

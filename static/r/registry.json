@@ -1764,6 +1764,22 @@
       ]
     },
     {
+      "name": "scroll-float",
+      "type": "registry:component",
+      "title": "Scroll Float",
+      "description": "Scroll-triggered floating text animation with per-character stagger.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "ScrollFloat.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ScrollFloat.svelte"
+        }
+      ]
+    },
+    {
       "name": "shiny-text",
       "type": "registry:component",
       "title": "Shiny Text",

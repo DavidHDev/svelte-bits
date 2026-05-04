@@ -48,6 +48,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'pixel-snow': () => import('./PixelSnowDemo.svelte'),
 	'gradient-blinds': () => import('./GradientBlindsDemo.svelte'),
 	'waves': () => import('./WavesDemo.svelte'),
+	'cell-wave-fluid': () => import('./CellWaveFluidDemo.svelte'),
 	'floating-lines': () => import('./FloatingLinesDemo.svelte'),
 	'prism': () => import('./PrismDemo.svelte'),
 	'prismatic-burst': () => import('./PrismaticBurstDemo.svelte'),

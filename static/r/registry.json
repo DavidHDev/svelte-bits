@@ -532,6 +532,22 @@
       ]
     },
     {
+      "name": "cell-wave-fluid",
+      "type": "registry:component",
+      "title": "CellWaveFluid",
+      "description": "Velocity-field fluid background with layered simplex+wave forcing.",
+      "categories": [
+        "backgrounds"
+      ],
+      "files": [
+        {
+          "path": "CellWaveFluid.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/CellWaveFluid.svelte"
+        }
+      ]
+    },
+    {
       "name": "color-bends",
       "type": "registry:component",
       "title": "Color Bends",

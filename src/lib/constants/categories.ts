@@ -202,7 +202,8 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'hyperspeed',
 	'flying-posters',
 	'true-focus',
-	'falling-text'
+	'falling-text',
+	'count-up'
 ]);
 
 // Helper: is this subcategory label fully ported?

@@ -16,7 +16,7 @@
 		timeScale: 0.5,
 		scanlineIntensity: 0.5,
 		curvature: 0.1,
-		tint: '#a7ef9e',
+		tint: '#FF8A4C',
 		mouseReact: true,
 		mouseStrength: 0.5,
 		pageLoadAnimation: true,
@@ -125,7 +125,7 @@ ${scriptClose}
 
 <TabsLayout onreset={reset} {hasChanges} componentName="FaultyTerminal" {usage} source={faultyTerminalSource} {props}>
 	{#snippet preview()}
-		<div class="relative h-[500px] w-full overflow-hidden rounded-2xl bg-black">
+		<div class="relative h-[500px] w-full overflow-hidden rounded-2xl">
 			{#key renderKey}
 				<FaultyTerminal
 					{scale}

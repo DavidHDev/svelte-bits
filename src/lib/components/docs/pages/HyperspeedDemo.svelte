@@ -76,7 +76,7 @@ ${scriptClose}
 
 <TabsLayout onreset={reset} {hasChanges} componentName="Hyperspeed" {usage} source={hyperspeedSource} {props}>
 	{#snippet preview()}
-		<div class="relative h-[500px] w-full cursor-pointer overflow-hidden bg-black">
+		<div class="relative h-[500px] w-full cursor-pointer overflow-hidden">
 			{#key renderKey}
 				{#if Hyperspeed && effectOptions}
 					<Hyperspeed effectOptions={effectOptions} />

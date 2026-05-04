@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import type { Component } from 'svelte';
 
 type DemoModule = { default: Component };
@@ -10,6 +12,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'index': () => import('./IndexPage.svelte'),
 	'animated-content': () => import('./AnimatedContentDemo.svelte'),
 	'aurora': () => import('./AuroraDemo.svelte'),
+	'balatro': () => import('./BalatroDemo.svelte'),
 	'blur-text': () => import('./BlurTextDemo.svelte'),
 	'color-bends': () => import('./ColorBendsDemo.svelte'),
 	'dock': () => import('./DockDemo.svelte'),
@@ -20,6 +23,37 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'glitch-text': () => import('./GlitchTextDemo.svelte'),
 	'gradient-text': () => import('./GradientTextDemo.svelte'),
 	'hyperspeed': () => import('./HyperspeedDemo.svelte'),
+	'iridescence': () => import('./IridescenceDemo.svelte'),
+	'silk': () => import('./SilkDemo.svelte'),
+	'threads': () => import('./ThreadsDemo.svelte'),
+	'plasma': () => import('./PlasmaDemo.svelte'),
+	'liquid-chrome': () => import('./LiquidChromeDemo.svelte'),
+	'lightning': () => import('./LightningDemo.svelte'),
+	'dark-veil': () => import('./DarkVeilDemo.svelte'),
+	'ripple-grid': () => import('./RippleGridDemo.svelte'),
+	'light-rays': () => import('./LightRaysDemo.svelte'),
+	'letter-glitch': () => import('./LetterGlitchDemo.svelte'),
+	'particles': () => import('./ParticlesDemo.svelte'),
+	'radar': () => import('./RadarDemo.svelte'),
+	'soft-aurora': () => import('./SoftAuroraDemo.svelte'),
+	'grid-motion': () => import('./GridMotionDemo.svelte'),
+	'plasma-wave': () => import('./PlasmaWaveDemo.svelte'),
+	'grainient': () => import('./GrainientDemo.svelte'),
+	'line-waves': () => import('./LineWavesDemo.svelte'),
+	'evil-eye': () => import('./EvilEyeDemo.svelte'),
+	'grid-distortion': () => import('./GridDistortionDemo.svelte'),
+	'dot-grid': () => import('./DotGridDemo.svelte'),
+	'orb': () => import('./OrbDemo.svelte'),
+	'galaxy': () => import('./GalaxyDemo.svelte'),
+	'pixel-snow': () => import('./PixelSnowDemo.svelte'),
+	'gradient-blinds': () => import('./GradientBlindsDemo.svelte'),
+	'waves': () => import('./WavesDemo.svelte'),
+	'floating-lines': () => import('./FloatingLinesDemo.svelte'),
+	'prism': () => import('./PrismDemo.svelte'),
+	'prismatic-burst': () => import('./PrismaticBurstDemo.svelte'),
+	'light-pillar': () => import('./LightPillarDemo.svelte'),
+	'dither': () => import('./DitherDemo.svelte'),
+	'pixel-blast': () => import('./PixelBlastDemo.svelte'),
 	'liquid-ether': () => import('./LiquidEtherDemo.svelte'),
 	'magic-rings': () => import('./MagicRingsDemo.svelte'),
 	'noise': () => import('./NoiseDemo.svelte'),
@@ -30,5 +64,8 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'star-border': () => import('./StarBorderDemo.svelte'),
 	'true-focus': () => import('./TrueFocusDemo.svelte'),
 	'falling-text': () => import('./FallingTextDemo.svelte'),
-	'count-up': () => import('./CountUpDemo.svelte')
+	'count-up': () => import('./CountUpDemo.svelte'),
+	'beams': () => import('./BeamsDemo.svelte'),
+	'ballpit': () => import('./BallpitDemo.svelte'),
+	'grid-scan': () => import('./GridScanDemo.svelte')
 };

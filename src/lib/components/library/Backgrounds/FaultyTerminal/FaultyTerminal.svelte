@@ -212,7 +212,7 @@ void main() {
       col += (rnd - 0.5) * (uDither * 0.003922);
     }
 
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(col, max(max(col.r, col.g), col.b));
 }
 `;
 
@@ -294,9 +294,9 @@ void main() {
 		const currentContainer = container;
 		if (!currentContainer) return;
 
-		const renderer = new Renderer({ dpr });
+		const renderer = new Renderer({ dpr, alpha: true, premultipliedAlpha: false });
 		const gl = renderer.gl;
-		gl.clearColor(0, 0, 0, 1);
+		gl.clearColor(0, 0, 0, 0);
 
 		const geometry = new Triangle(gl);
 		program = new Program(gl, {

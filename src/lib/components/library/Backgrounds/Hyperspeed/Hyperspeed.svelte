@@ -530,6 +530,7 @@ void main() {
   gl_FragColor = vec4(color, alpha);
   if (gl_FragColor.a < 0.0001) discard;
   ${THREE.ShaderChunk['fog_fragment']}
+  gl_FragColor.a *= max(max(gl_FragColor.r, gl_FragColor.g), gl_FragColor.b);
 }
 `;
 	const carLightsVertex = `
@@ -674,6 +675,7 @@ void main(){
   vec3 color = vec3(vColor);
   gl_FragColor = vec4(color,1.);
   ${THREE.ShaderChunk['fog_fragment']}
+  gl_FragColor.a = max(max(gl_FragColor.r, gl_FragColor.g), gl_FragColor.b);
 }
 `;
 
@@ -715,6 +717,7 @@ void main(){
 				fragmentShader: sideSticksFragment,
 				vertexShader: sideSticksVertex,
 				side: THREE.DoubleSide,
+				transparent: true,
 				uniforms: Object.assign({ uTravelLength: { value: options.length }, uTime: { value: 0 } }, this.webgl.fogUniforms, typeof options.distortion === 'object' ? options.distortion.uniforms : {})
 			});
 			material.onBeforeCompile = (shader) => {
@@ -768,6 +771,7 @@ void main() {
   #include <roadMarkings_fragment>
   gl_FragColor = vec4(color, 1.);
   ${THREE.ShaderChunk['fog_fragment']}
+  gl_FragColor.a = max(max(gl_FragColor.r, gl_FragColor.g), gl_FragColor.b);
 }
 `;
 	const islandFragment = roadBaseFragment.replace('#include <roadMarkings_fragment>', '').replace('#include <roadMarkings_vars>', '');
@@ -823,6 +827,7 @@ void main() {
 				fragmentShader: isRoad ? roadFragment : islandFragment,
 				vertexShader: roadVertex,
 				side: THREE.DoubleSide,
+				transparent: true,
 				uniforms: Object.assign(uniforms, this.webgl.fogUniforms, typeof options.distortion === 'object' ? options.distortion.uniforms : {})
 			});
 			material.onBeforeCompile = (shader) => {
@@ -888,6 +893,7 @@ void main() {
 			const initW = Math.max(1, container.offsetWidth);
 			const initH = Math.max(1, container.offsetHeight);
 			this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+			this.renderer.setClearColor(0x000000, 0);
 			this.renderer.setSize(initW, initH, false);
 			this.renderer.setPixelRatio(window.devicePixelRatio);
 			this.renderer.domElement.style.position = 'absolute';

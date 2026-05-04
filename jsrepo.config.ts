@@ -1,15 +1,17 @@
 import { defineConfig, Config } from 'jsrepo';
-import { distributed } from 'jsrepo/outputs';
 
 import { getRegistryItems } from './scripts/registry-items.js';
 import { stripSvelteBitsHeader } from './src/lib/utils/svelte-bits-source-header';
+// soon
+// import { output as shadcnSvelteOutput } from '@jsrepo/shadcn-svelte';
+import { output as shadcnOutput } from '@jsrepo/shadcn';
 
 export default defineConfig({
 	registry: async ({ cwd }) => ({
 		name: 'svelte-bits',
 		homepage: 'https://sveltebits.xyz',
 		excludeDeps: ['svelte', '@sveltejs/kit'],
-		outputs: [distributed({ dir: './static/r' })],
+		outputs: [shadcnOutput({ dir: './static/r' })],
 		items: await getRegistryItems(cwd)
 	}),
 	build: {

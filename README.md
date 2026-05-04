@@ -39,15 +39,22 @@ Svelte Bits helps you **ship stunning Svelte interfaces faster**. Instead of spe
 
 ## Installation
 
-Svelte Bits supports manual copy-paste and [jsrepo](https://www.jsrepo.dev/) installs.
+Svelte Bits supports manual copy-paste, [jsrepo](https://www.jsrepo.dev/), or the [shadcn CLI](https://ui.shadcn.com/docs/registry) with **direct HTTPS URLs** to each hosted registry item.
+
+**jsrepo** (configure once, then add components):
 
 ```bash
-# Configure the registry, then install Aurora with your runner (pnpm dlx shown)
 pnpm dlx jsrepo init https://sveltebits.xyz/r
 pnpm dlx jsrepo add aurora
 ```
 
-Each component page includes its dependencies, usage snippet, props, and full source. See the [installation guide](https://sveltebits.xyz/get-started/installation) for details.
+**shadcn** (`add` with the item’s `.json` URL):
+
+```bash
+pnpm dlx shadcn@latest add https://sveltebits.xyz/r/aurora.json
+```
+
+Each component page lists dependencies, props, usage, and copy-ready install snippets. See the [installation guide](https://sveltebits.xyz/get-started/installation) for runners (npm/pnpm/Yarn/Bun) and MCP setup if you browse registries with the [shadcn MCP server](https://ui.shadcn.com/docs/mcp).
 
 ## Local Development
 

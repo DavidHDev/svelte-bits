@@ -36,9 +36,30 @@ export const registryUrl = (slug: string): string => `${REGISTRY_BASE}/${slug}.j
  *
  * Uses the project's package runner (`npx`, `pnpm dlx`, ...) so installs work without a global jsrepo install.
  */
-export function jsrepoInitThenAddSnippet(slug: string, pkg: PackageManager): string {
+export function jsrepoAddSnippet(slug: string, pkg: PackageManager): string {
 	const runner = PKG_TO_RUNNER[pkg];
-	return `${runner} jsrepo init ${REGISTRY_BASE}\n${runner} jsrepo add ${slug}`;
+	return `${runner} jsrepo add ${registryUrl(slug)}`;
+}
+
+/**
+ * For MCP / multi-registry `components.json` setup (pick any namespace label you prefer).
+ *
+ * @see https://ui.shadcn.com/docs/registry/namespace
+ */
+export const SAMPLE_COMPONENTS_JSON_REGISTRIES_DOC = `{
+  "registries": {
+    "@sveltebits": "https://sveltebits.xyz/r/{name}.json"
+  }
+}`;
+
+/**
+ * Install via the shadcn CLI using the public HTTPS URL for each registry item (`<slug>.json`).
+ *
+ * @see https://ui.shadcn.com/docs/registry
+ */
+export function shadcnAddSnippet(slug: string, pkg: PackageManager): string {
+	const runner = PKG_TO_RUNNER[pkg];
+	return `${runner} shadcn@latest add ${registryUrl(slug)}`;
 }
 
 export const isInRegistry = (slug: string): boolean => IMPLEMENTED_DEMOS.has(slug);

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
+	import { SAMPLE_COMPONENTS_JSON_REGISTRIES_DOC } from '$lib/constants/cli';
 
 	type Client = 'claude' | 'cursor' | 'vscode';
 
@@ -13,12 +14,6 @@
 		'Add the Aurora background from Svelte Bits to the page, make it orange',
 		'Add a new section which fades in on scroll using AnimatedContent from Svelte Bits'
 	];
-
-	const componentsJson = `{
-  "registries": {
-    "@svelte-bits": "https://sveltebits.xyz/r/{name}.json"
-  }
-}`;
 
 	onMount(() => {
 		window.scrollTo(0, 0);
@@ -56,9 +51,10 @@
 
 	<p class="docs-paragraph">
 		Registries are configured in your project's <code class="prop-code">components.json</code>
-		file. Add the <span class="docs-highlight">@svelte-bits</span> registry:
+		file. Add the Svelte Bits registry (example namespace <span class="docs-highlight">@sveltebits</span>; you may
+		use any namespace key you prefer):
 	</p>
-	<CodeBlock language="json" code={componentsJson} />
+	<CodeBlock language="json" code={SAMPLE_COMPONENTS_JSON_REGISTRIES_DOC} />
 
 	<p class="docs-paragraph dim">
 		Then, from the options below, select your client and set up the shadcn MCP server.

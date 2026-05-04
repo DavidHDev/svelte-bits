@@ -4,7 +4,8 @@
 		PKG_TO_RUNNER,
 		RUNNER_TO_PKG,
 		RUNNERS,
-		jsrepoInitThenAddSnippet,
+		jsrepoAddSnippet,
+		shadcnAddSnippet,
 		type PackageManager,
 		type Runner
 	} from '$lib/constants/cli';
@@ -14,6 +15,9 @@
 	// We feature Aurora as the showcase install (matches react-bits' featured-install pattern).
 	const FEATURED_SLUG = 'aurora';
 
+	type Installer = 'jsrepo' | 'shadcn';
+
+	let installer: Installer = $state('jsrepo');
 	let pkg: PackageManager = $state('npm');
 	let dropOpen = $state(false);
 	let dropdownEl = $state<HTMLDivElement | null>(null);
@@ -24,7 +28,11 @@
 	let terminalVisible = $state(false);
 
 	const runner = $derived<Runner>(PKG_TO_RUNNER[pkg]);
-	const command = $derived(jsrepoInitThenAddSnippet(FEATURED_SLUG, pkg));
+	const command = $derived(
+		installer === 'jsrepo'
+			? jsrepoAddSnippet(FEATURED_SLUG, pkg)
+			: shadcnAddSnippet(FEATURED_SLUG, pkg)
+	);
 	const clipboard = new UseClipboard();
 
 	function pickRunner(r: Runner) {
@@ -79,7 +87,40 @@
 			<div class="ln-qs-terminal">
 				<div class="ln-qs-tab-bar">
 					<div class="ln-qs-tabs">
-						<button type="button" class="ln-qs-tab ln-qs-tab--active">jsrepo</button>
+						<button
+							type="button"
+							class="ln-qs-tab"
+							class:ln-qs-tab--active={installer === 'jsrepo'}
+							onclick={() => (installer = 'jsrepo')}
+						>
+							<img
+								class="ln-qs-tab-logo"
+								src="/vendor/install-brands/jsrepo-favicon.ico"
+								alt=""
+								width="16"
+								height="16"
+								loading="lazy"
+								decoding="async"
+							/>
+							<span>jsrepo</span>
+						</button>
+						<button
+							type="button"
+							class="ln-qs-tab"
+							class:ln-qs-tab--active={installer === 'shadcn'}
+							onclick={() => (installer = 'shadcn')}
+						>
+							<img
+								class="ln-qs-tab-logo"
+								src="/vendor/install-brands/shadcn-favicon.ico"
+								alt=""
+								width="16"
+								height="16"
+								loading="lazy"
+								decoding="async"
+							/>
+							<span>shadcn</span>
+						</button>
 					</div>
 
 					<div class="ln-qs-tab-bar-right">
@@ -169,8 +210,8 @@
 			</div>
 
 			<p class="ln-qs-hint">
-				Works in any Svelte or SvelteKit project. Components are copied into your codebase —
-				browse the <a href="/get-started/introduction">docs</a> for the full list.
+				Use <strong class="ln-qs-hint-strong">jsrepo</strong> or <strong class="ln-qs-hint-strong">shadcn</strong>
+				— components land in your codebase, ready to use, instantly.
 			</p>
 		</div>
 	</div>

@@ -12,7 +12,10 @@ export default defineConfig({
 		homepage: 'https://sveltebits.xyz',
 		excludeDeps: ['svelte', '@sveltejs/kit'],
 		outputs: [shadcnOutput({ dir: './static/r' })],
-		items: await getRegistryItems(cwd)
+		items: await getRegistryItems(cwd),
+		defaultPaths: {
+			component: '$lib/components'
+		}
 	}),
 	build: {
 		transforms: [stripSvelteBitsHeaderTransform()]

@@ -1,6 +1,6 @@
 <!-- @svelte-bits {"title":"CellWaveFluid","description":"Velocity-field fluid background with layered simplex+wave forcing.","dependencies":["ogl"]} -->
 <script lang="ts" module>
-	// GPU_STAGE: sim-complete
+	// GPU_STAGE: polish-done
 
 	export type NoiseLayer = {
 		scale: number;
@@ -161,6 +161,7 @@
 	type GpuRefs = {
 		renderer: Renderer;
 		colorLutTex: Texture;
+		hueLutTex: Texture;
 	};
 	let gpu: GpuRefs | null = $state(null);
 
@@ -168,9 +169,15 @@
 	$effect(() => {
 		if (!gpu) return;
 		for (const s of colorStops) { void s.offset; void s.color; }
-		const data = buildColorLUT(colorStops);
-		gpu.colorLutTex.image = data;
+		gpu.colorLutTex.image = buildColorLUT(colorStops);
 		gpu.colorLutTex.needsUpdate = true;
+	});
+
+	// Live hue LUT rebuild on tint S/L/offset/range change.
+	$effect(() => {
+		if (!gpu) return;
+		gpu.hueLutTex.image = buildHueLUT(tintSaturation, tintLightness, tintHueOffset, tintHueRange);
+		gpu.hueLutTex.needsUpdate = true;
 	});
 
 	onMount(() => {
@@ -214,6 +221,21 @@
 		// Color LUT as 256x1 RGB texture, linear-filtered for smooth gradient sampling.
 		const colorLutTex = new Texture(gl, {
 			image: buildColorLUT(colorStops),
+			width: 256,
+			height: 1,
+			format: gl.RGB,
+			internalFormat: gl.RGB,
+			type: gl.UNSIGNED_BYTE,
+			magFilter: gl.LINEAR,
+			minFilter: gl.LINEAR,
+			wrapS: gl.CLAMP_TO_EDGE,
+			wrapT: gl.CLAMP_TO_EDGE,
+			generateMipmaps: false
+		});
+
+		// Hue LUT — same shape, indexed by atan2(vy, vx) → angle/2π+0.5.
+		const hueLutTex = new Texture(gl, {
+			image: buildHueLUT(tintSaturation, tintLightness, tintHueOffset, tintHueRange),
 			width: 256,
 			height: 1,
 			format: gl.RGB,
@@ -358,15 +380,18 @@
 			}
 		`;
 
-		// Render: sample velocity, compute speed, look up gradient color.
-		// Stage 0: visScale only — gradientCurve / gradientContrast / tint
-		// hooked in stage 3.
+		// Render: sample velocity → speed → tanh → gamma → contrast S-curve →
+		// LUT → optional directional tint blend with hue LUT.
 		const RENDER_FRAG = `
 			precision highp float;
 			varying vec2 vUv;
 			uniform sampler2D uVel;
 			uniform sampler2D uLut;
+			uniform sampler2D uHueLut;
 			uniform float uVisScale;
+			uniform float uGradientCurve;
+			uniform float uGradientContrast;
+			uniform float uTintAmount;
 			float tanh_(float x) {
 				float e2 = exp(2.0 * x);
 				return (e2 - 1.0) / (e2 + 1.0);
@@ -375,8 +400,21 @@
 				vec2 v = texture2D(uVel, vUv).xy;
 				float speed = length(v);
 				float t = tanh_(speed / uVisScale);
-				vec3 c = texture2D(uLut, vec2(t, 0.5)).rgb;
-				gl_FragColor = vec4(c, 1.0);
+				if (uGradientCurve != 1.0) t = pow(t, uGradientCurve);
+				if (uGradientContrast > 0.0) {
+					float c = min(uGradientContrast, 0.99);
+					float cEdge = 0.5 * (1.0 - c);
+					t = smoothstep(cEdge, 1.0 - cEdge, t);
+				}
+				vec3 col = texture2D(uLut, vec2(t, 0.5)).rgb;
+				if (uTintAmount > 0.0) {
+					float ang = atan(v.y, v.x);
+					float hIdx = ang / 6.28318530718 + 0.5;
+					vec3 tintCol = texture2D(uHueLut, vec2(hIdx, 0.5)).rgb;
+					float amt = uTintAmount * t;
+					col = mix(col, tintCol, amt);
+				}
+				gl_FragColor = vec4(col, 1.0);
 			}
 		`;
 
@@ -410,7 +448,11 @@
 			uniforms: {
 				uVel: { value: velA.texture },
 				uLut: { value: colorLutTex },
-				uVisScale: { value: visScale }
+				uHueLut: { value: hueLutTex },
+				uVisScale: { value: visScale },
+				uGradientCurve: { value: gradientCurve },
+				uGradientContrast: { value: gradientContrast },
+				uTintAmount: { value: tintAmount }
 			}
 		});
 		const renderMesh = new Mesh(gl, { geometry, program: renderProgram });
@@ -483,6 +525,9 @@
 				velNext = tmp;
 				renderProgram.uniforms.uVel.value = velCurrent.texture;
 				renderProgram.uniforms.uVisScale.value = visScale;
+				renderProgram.uniforms.uGradientCurve.value = gradientCurve;
+				renderProgram.uniforms.uGradientContrast.value = gradientContrast;
+				renderProgram.uniforms.uTintAmount.value = tintAmount;
 				renderer.render({ scene: renderMesh });
 			}
 			raf = requestAnimationFrame(tick);
@@ -495,16 +540,7 @@
 		io.observe(containerRef);
 
 		raf = requestAnimationFrame(tick);
-		gpu = { renderer, colorLutTex };
-
-		// Suppress unused-prop warnings until later stages wire them in.
-		void tintAmount;
-		void tintSaturation;
-		void tintLightness;
-		void tintHueOffset;
-		void tintHueRange;
-		void gradientCurve;
-		void gradientContrast;
+		gpu = { renderer, colorLutTex, hueLutTex };
 
 		return () => {
 			cancelAnimationFrame(raf);

@@ -1,7 +1,4 @@
-export const NEW: string[] = [
-	'True Focus',
-	'Count Up'
-];
+export const NEW: string[] = ["True Focus", "Falling Text"];
 
 export const UPDATED: string[] = [
 
@@ -205,6 +202,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'hyperspeed',
 	'flying-posters',
 	'true-focus',
+	'falling-text',
 	'count-up'
 ]);
 

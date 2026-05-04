@@ -29,5 +29,6 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'split-text': () => import('./SplitTextDemo.svelte'),
 	'star-border': () => import('./StarBorderDemo.svelte'),
 	'true-focus': () => import('./TrueFocusDemo.svelte'),
+	'falling-text': () => import('./FallingTextDemo.svelte'),
 	'count-up': () => import('./CountUpDemo.svelte')
 };

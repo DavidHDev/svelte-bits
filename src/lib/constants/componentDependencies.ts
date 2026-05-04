@@ -13,6 +13,7 @@ export const COMPONENT_DEPENDENCIES: Record<string, string[]> = {
 	'magic-rings': ['three'],
 	'split-text': ['gsap'],
 	'true-focus': ['motion'],
+	'falling-text': ['matter-js'],
 	'count-up': ['motion']
 };
 

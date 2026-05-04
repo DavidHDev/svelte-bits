@@ -260,18 +260,18 @@
       ]
     },
     {
-      "name": "count-up",
+      "name": "falling-text",
       "type": "registry:component",
-      "title": "Count Up",
-      "description": "Spring-animated number counter that counts up (or down) when scrolled into view, with configurable spring physics, delay, and number formatting.",
+      "title": "Falling Text",
+      "description": "Characters fall with gravity + bounce creating a playful entrance.",
       "categories": [
         "text-animations"
       ],
       "files": [
         {
-          "path": "CountUp.svelte",
+          "path": "FallingText.svelte",
           "type": "registry:component",
-          "target": "$lib/components/svelte-bits/CountUp.svelte"
+          "target": "$lib/components/svelte-bits/FallingText.svelte"
         }
       ]
     },

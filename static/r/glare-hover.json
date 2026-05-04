@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "glare-hover",
+  "type": "registry:component",
+  "title": "Glare Hover",
+  "description": "Hover-triggered moving glare highlight across a card.",
+  "categories": [
+    "animations"
+  ],
+  "files": [
+    {
+      "path": "GlareHover.svelte",
+      "content": "<script lang=\"ts\">\n\timport type { Snippet } from 'svelte';\n\n\ttype Props = {\n\t\tchildren?: Snippet;\n\t\twidth?: string;\n\t\theight?: string;\n\t\tbackground?: string;\n\t\tborderRadius?: string;\n\t\tborderColor?: string;\n\t\tglareColor?: string;\n\t\tglareOpacity?: number;\n\t\tglareAngle?: number;\n\t\tglareSize?: number;\n\t\ttransitionDuration?: number;\n\t\tplayOnce?: boolean;\n\t\tclass?: string;\n\t\tstyle?: string;\n\t};\n\n\tlet {\n\t\tchildren,\n\t\twidth = '500px',\n\t\theight = '500px',\n\t\tbackground = '#000',\n\t\tborderRadius = '10px',\n\t\tborderColor = '#333',\n\t\tglareColor = '#ffffff',\n\t\tglareOpacity = 0.5,\n\t\tglareAngle = -45,\n\t\tglareSize = 250,\n\t\ttransitionDuration = 650,\n\t\tplayOnce = false,\n\t\tclass: className = '',\n\t\tstyle = ''\n\t}: Props = $props();\n\n\tconst rgba = $derived.by(() => {\n\t\tconst hex = glareColor.replace('#', '');\n\t\tif (/^[\\dA-Fa-f]{6}$/.test(hex)) {\n\t\t\tconst r = parseInt(hex.slice(0, 2), 16);\n\t\t\tconst g = parseInt(hex.slice(2, 4), 16);\n\t\t\tconst b = parseInt(hex.slice(4, 6), 16);\n\t\t\treturn `rgba(${r}, ${g}, ${b}, ${glareOpacity})`;\n\t\t}\n\t\tif (/^[\\dA-Fa-f]{3}$/.test(hex)) {\n\t\t\tconst r = parseInt(hex[0] + hex[0], 16);\n\t\t\tconst g = parseInt(hex[1] + hex[1], 16);\n\t\t\tconst b = parseInt(hex[2] + hex[2], 16);\n\t\t\treturn `rgba(${r}, ${g}, ${b}, ${glareOpacity})`;\n\t\t}\n\t\treturn glareColor;\n\t});\n\n\tlet overlay: HTMLDivElement;\n\n\tfunction animateIn() {\n\t\tif (!overlay) return;\n\t\toverlay.style.transition = 'none';\n\t\toverlay.style.backgroundPosition = '-100% -100%, 0 0';\n\t\t// force reflow\n\t\tvoid overlay.offsetWidth;\n\t\toverlay.style.transition = `${transitionDuration}ms ease`;\n\t\toverlay.style.backgroundPosition = '100% 100%, 0 0';\n\t}\n\n\tfunction animateOut() {\n\t\tif (!overlay) return;\n\t\tif (playOnce) {\n\t\t\toverlay.style.transition = 'none';\n\t\t\toverlay.style.backgroundPosition = '-100% -100%, 0 0';\n\t\t} else {\n\t\t\toverlay.style.transition = `${transitionDuration}ms ease`;\n\t\t\toverlay.style.backgroundPosition = '-100% -100%, 0 0';\n\t\t}\n\t}\n</script>\n\n<div\n\tclass=\"relative grid place-items-center overflow-hidden border cursor-pointer {className}\"\n\tstyle=\"width:{width};height:{height};background:{background};border-radius:{borderRadius};border-color:{borderColor};{style}\"\n\tonmouseenter={animateIn}\n\tonmouseleave={animateOut}\n\trole=\"presentation\"\n>\n\t<div\n\t\tbind:this={overlay}\n\t\tstyle=\"position:absolute;inset:0;background:linear-gradient({glareAngle}deg, hsla(0,0%,0%,0) 60%, {rgba} 70%, hsla(0,0%,0%,0) 100%);background-size:{glareSize}% {glareSize}%, 100% 100%;background-repeat:no-repeat;background-position:-100% -100%, 0 0;pointer-events:none;\"\n\t></div>\n\t{#if children}{@render children()}{/if}\n</div>\n",
+      "type": "registry:component",
+      "target": "$lib/components/svelte-bits/GlareHover.svelte"
+    }
+  ]
+}

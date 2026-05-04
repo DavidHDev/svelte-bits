@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "blob-cursor",
+  "type": "registry:component",
+  "title": "Blob Cursor",
+  "description": "Gooey blob cursor with a trail of lagging blobs, smoothed via GSAP.",
+  "categories": [
+    "animations"
+  ],
+  "files": [
+    {
+      "path": "BlobCursor.svelte",
+      "content": "<script lang=\"ts\">\n\timport { gsap } from 'gsap';\n\n\ttype Props = {\n\t\tblobType?: 'circle' | 'square';\n\t\tfillColor?: string;\n\t\ttrailCount?: number;\n\t\tsizes?: number[];\n\t\tinnerSizes?: number[];\n\t\tinnerColor?: string;\n\t\topacities?: number[];\n\t\tshadowColor?: string;\n\t\tshadowBlur?: number;\n\t\tshadowOffsetX?: number;\n\t\tshadowOffsetY?: number;\n\t\tfilterId?: string;\n\t\tfilterStdDeviation?: number;\n\t\tfilterColorMatrixValues?: string;\n\t\tuseFilter?: boolean;\n\t\tfastDuration?: number;\n\t\tslowDuration?: number;\n\t\tfastEase?: string;\n\t\tslowEase?: string;\n\t\tzIndex?: number;\n\t};\n\n\tlet {\n\t\tblobType = 'circle',\n\t\tfillColor = '#5227FF',\n\t\ttrailCount = 3,\n\t\tsizes = [60, 125, 75],\n\t\tinnerSizes = [20, 35, 25],\n\t\tinnerColor = 'rgba(255,255,255,0.8)',\n\t\topacities = [0.6, 0.6, 0.6],\n\t\tshadowColor = 'rgba(0,0,0,0.75)',\n\t\tshadowBlur = 5,\n\t\tshadowOffsetX = 10,\n\t\tshadowOffsetY = 10,\n\t\tfilterId = 'blob',\n\t\tfilterStdDeviation = 30,\n\t\tfilterColorMatrixValues = '1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 35 -10',\n\t\tuseFilter = true,\n\t\tfastDuration = 0.1,\n\t\tslowDuration = 0.5,\n\t\tfastEase = 'power3.out',\n\t\tslowEase = 'power1.out',\n\t\tzIndex = 100\n\t}: Props = $props();\n\n\tlet container: HTMLDivElement;\n\tconst blobs: (HTMLDivElement | null)[] = $state(Array(trailCount).fill(null));\n\n\tfunction move(e: MouseEvent | TouchEvent) {\n\t\tif (!container) return;\n\t\tconst rect = container.getBoundingClientRect();\n\t\tconst x = 'clientX' in e ? e.clientX : e.touches[0].clientX;\n\t\tconst y = 'clientY' in e ? e.clientY : e.touches[0].clientY;\n\t\tblobs.forEach((el, i) => {\n\t\t\tif (!el) return;\n\t\t\tconst isLead = i === 0;\n\t\t\tgsap.to(el, {\n\t\t\t\tx: x - rect.left,\n\t\t\t\ty: y - rect.top,\n\t\t\t\tduration: isLead ? fastDuration : slowDuration,\n\t\t\t\tease: isLead ? fastEase : slowEase\n\t\t\t});\n\t\t});\n\t}\n</script>\n\n<div\n\tbind:this={container}\n\tonmousemove={move}\n\tontouchmove={move}\n\trole=\"presentation\"\n\tclass=\"relative top-0 left-0 w-full h-full\"\n\tstyle=\"z-index:{zIndex};\"\n>\n\t{#if useFilter}\n\t\t<svg class=\"absolute w-0 h-0\" aria-hidden=\"true\">\n\t\t\t<filter id={filterId}>\n\t\t\t\t<feGaussianBlur in=\"SourceGraphic\" result=\"blur\" stdDeviation={filterStdDeviation} />\n\t\t\t\t<feColorMatrix in=\"blur\" values={filterColorMatrixValues} />\n\t\t\t</filter>\n\t\t</svg>\n\t{/if}\n\n\t<div\n\t\tclass=\"pointer-events-none absolute inset-0 overflow-hidden select-none cursor-default\"\n\t\tstyle={useFilter ? `filter:url(#${filterId});` : ''}\n\t>\n\t\t{#each Array(trailCount) as _, i (i)}\n\t\t\t<div\n\t\t\t\tbind:this={blobs[i]}\n\t\t\t\tclass=\"absolute will-change-transform transform -translate-x-1/2 -translate-y-1/2\"\n\t\t\t\tstyle=\"width:{sizes[i]}px;height:{sizes[i]}px;border-radius:{blobType ===\n\t\t\t\t'circle'\n\t\t\t\t\t? '50%'\n\t\t\t\t\t: '0'};background-color:{fillColor};opacity:{opacities[i]};box-shadow:{shadowOffsetX}px {shadowOffsetY}px {shadowBlur}px 0 {shadowColor};\"\n\t\t\t>\n\t\t\t\t<div\n\t\t\t\t\tclass=\"absolute\"\n\t\t\t\t\tstyle=\"width:{innerSizes[i]}px;height:{innerSizes[i]}px;top:{(sizes[i] -\n\t\t\t\t\t\tinnerSizes[i]) /\n\t\t\t\t\t\t2}px;left:{(sizes[i] - innerSizes[i]) / 2}px;background-color:{innerColor};border-radius:{blobType === 'circle' ? '50%' : '0'};\"\n\t\t\t\t></div>\n\t\t\t</div>\n\t\t{/each}\n\t</div>\n</div>\n",
+      "type": "registry:component",
+      "target": "$lib/components/svelte-bits/BlobCursor.svelte"
+    }
+  ],
+  "dependencies": [
+    "gsap"
+  ]
+}

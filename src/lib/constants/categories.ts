@@ -238,7 +238,30 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'count-up',
 	'beams',
 	'ballpit',
-	'grid-scan'
+	'grid-scan',
+	'click-spark',
+	'magnet',
+	'magnet-lines',
+	'glare-hover',
+	'gradual-blur',
+	'crosshair',
+	'blob-cursor',
+	'cubes',
+	'logo-loop',
+	'orbit-images',
+	'pixel-transition',
+	'target-cursor',
+	'ghost-cursor',
+	'sticker-peel',
+	'electric-border',
+	'antigravity',
+	'pixel-trail',
+	'ribbons',
+	'shape-blur',
+	'meta-balls',
+	'laser-flow',
+	'metallic-paint',
+	'image-trail'
 ]);
 
 // Helper: is this subcategory label fully ported?

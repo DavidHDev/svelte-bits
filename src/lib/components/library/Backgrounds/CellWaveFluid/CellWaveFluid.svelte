@@ -1,6 +1,6 @@
 <!-- @svelte-bits {"title":"CellWaveFluid","description":"Velocity-field fluid background with layered simplex+wave forcing.","dependencies":["ogl"]} -->
 <script lang="ts" module>
-	// GPU_STAGE: forcing-done
+	// GPU_STAGE: sim-complete
 
 	export type NoiseLayer = {
 		scale: number;
@@ -258,7 +258,10 @@
 		const UPDATE_FRAG = `
 			precision highp float;
 			varying vec2 vUv;
+			uniform sampler2D uVel;
 			uniform float uGridSize;
+			uniform float uAdvection;
+			uniform float uDiffusion;
 			uniform vec4 uLayerA[8]; // (enabled, isWave, scale, strength)
 			uniform vec4 uLayerB[8]; // (phase, dirX, dirY, twoPiOverLambda)
 
@@ -313,7 +316,22 @@
 			void main() {
 				float x = vUv.x * uGridSize;
 				float y = vUv.y * uGridSize;
-				vec2 outV = vec2(0.0);
+				vec2 texel = vec2(1.0 / uGridSize);
+				vec2 currentVel = texture2D(uVel, vUv).xy;
+
+				// Advection: semi-Lagrangian back-trace, velocity is in cell units.
+				vec2 backUv = clamp(vUv - currentVel * texel, vec2(0.0), vec2(1.0));
+				vec2 outV = texture2D(uVel, backUv).xy * uAdvection;
+
+				// Diffusion: 4-neighbor (von Neumann) Laplacian, edge-aware.
+				vec2 sumN = vec2(0.0);
+				float count = 0.0;
+				if (vUv.x + texel.x < 1.0) { sumN += texture2D(uVel, vUv + vec2(texel.x, 0.0)).xy; count += 1.0; }
+				if (vUv.x - texel.x > 0.0) { sumN += texture2D(uVel, vUv - vec2(texel.x, 0.0)).xy; count += 1.0; }
+				if (vUv.y + texel.y < 1.0) { sumN += texture2D(uVel, vUv + vec2(0.0, texel.y)).xy; count += 1.0; }
+				if (vUv.y - texel.y > 0.0) { sumN += texture2D(uVel, vUv - vec2(0.0, texel.y)).xy; count += 1.0; }
+				if (count > 0.0) outV += (sumN / count) * uDiffusion;
+
 				for (int i = 0; i < 8; i++) {
 					vec4 a = uLayerA[i];
 					if (a.x >= 0.5) {
@@ -376,7 +394,10 @@
 			vertex: VERT,
 			fragment: UPDATE_FRAG,
 			uniforms: {
+				uVel: { value: velA.texture },
 				uGridSize: { value: initialGrid },
+				uAdvection: { value: advection },
+				uDiffusion: { value: diffusion },
 				uLayerA: { value: layerA },
 				uLayerB: { value: layerB }
 			}
@@ -452,7 +473,10 @@
 			if (visible && !document.hidden) {
 				noiseTime += 0.005 * speed;
 				packLayers(noiseLayers, noiseTime);
+				updateProgram.uniforms.uVel.value = velCurrent.texture;
 				updateProgram.uniforms.uGridSize.value = velCurrent.width;
+				updateProgram.uniforms.uAdvection.value = advection;
+				updateProgram.uniforms.uDiffusion.value = diffusion;
 				renderer.render({ scene: updateMesh, target: velNext });
 				const tmp = velCurrent;
 				velCurrent = velNext;
@@ -474,8 +498,6 @@
 		gpu = { renderer, colorLutTex };
 
 		// Suppress unused-prop warnings until later stages wire them in.
-		void advection;
-		void diffusion;
 		void tintAmount;
 		void tintSaturation;
 		void tintLightness;

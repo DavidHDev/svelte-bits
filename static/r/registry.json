@@ -260,6 +260,22 @@
       ]
     },
     {
+      "name": "count-up",
+      "type": "registry:component",
+      "title": "Count Up",
+      "description": "Spring-animated number counter that counts up (or down) when scrolled into view, with configurable spring physics, delay, and number formatting.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "CountUp.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/CountUp.svelte"
+        }
+      ]
+    },
+    {
       "name": "glitch-text",
       "type": "registry:component",
       "title": "Glitch Text",

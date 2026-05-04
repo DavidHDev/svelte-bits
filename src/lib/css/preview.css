@@ -275,6 +275,33 @@
 	flex-shrink: 0;
 }
 
+/* Input */
+.scrubber-track--input {
+	cursor: default;
+}
+
+.scrubber-input {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: none;
+	border: none;
+	outline: none;
+	color: var(--text-primary);
+	font-family: 'Geist Mono', ui-monospace, monospace;
+	font-size: 13px;
+	padding: 0 12px 0 40%;
+	text-align: right;
+	text-overflow: ellipsis;
+	z-index: 4;
+}
+
+.scrubber-input::placeholder {
+	color: rgba(255, 255, 255, 0.25);
+}
+
 /* ─── Prop Table ───────────────────────────────────────────────────────────── */
 .prop-table-section {
 	margin-top: 3em;

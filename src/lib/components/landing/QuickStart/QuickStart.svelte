@@ -9,14 +9,13 @@
 		type Runner
 	} from '$lib/constants/cli';
 	import './QuickStart.css';
+	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 
 	// We feature Aurora as the showcase install (matches react-bits' featured-install pattern).
 	const FEATURED_SLUG = 'aurora';
 
 	let pkg: PackageManager = $state('npm');
 	let dropOpen = $state(false);
-	let copied = $state(false);
-	let copyTimer: ReturnType<typeof setTimeout> | null = null;
 	let dropdownEl = $state<HTMLDivElement | null>(null);
 
 	let headerEl = $state<HTMLDivElement | null>(null);
@@ -26,18 +25,11 @@
 
 	const runner = $derived<Runner>(PKG_TO_RUNNER[pkg]);
 	const command = $derived(jsrepoInitThenAddSnippet(FEATURED_SLUG, pkg));
+	const clipboard = new UseClipboard();
 
 	function pickRunner(r: Runner) {
 		pkg = RUNNER_TO_PKG[r];
 		dropOpen = false;
-	}
-
-	function copy() {
-		if (typeof navigator === 'undefined' || !navigator.clipboard) return;
-		navigator.clipboard.writeText(command);
-		copied = true;
-		if (copyTimer) clearTimeout(copyTimer);
-		copyTimer = setTimeout(() => (copied = false), 2000);
 	}
 
 	function onDocClick(e: MouseEvent) {
@@ -72,7 +64,6 @@
 		return () => {
 			obs.forEach((o) => o?.disconnect());
 			document.removeEventListener('click', onDocClick);
-			if (copyTimer) clearTimeout(copyTimer);
 		};
 	});
 </script>
@@ -141,11 +132,11 @@
 					<button
 						type="button"
 						class="ln-qs-copy"
-						class:ln-qs-copy--done={copied}
-						onclick={copy}
+						class:ln-qs-copy--done={clipboard.copied}
+						onclick={() => clipboard.copy(command)}
 						aria-label="Copy command"
 					>
-						{#if copied}
+						{#if clipboard.copied}
 							<svg
 								width="14"
 								height="14"

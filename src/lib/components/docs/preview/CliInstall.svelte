@@ -7,6 +7,7 @@
 		type PackageManager
 	} from '$lib/constants/cli';
 	import { dependenciesForSlug } from '$lib/constants/componentDependencies';
+	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 
 	type Props = {
 		slug: string;
@@ -15,7 +16,6 @@
 
 	let pkg: PackageManager = $state('npm');
 	let mode = $state<'cli' | 'manual'>('cli');
-	let copied = $state(false);
 
 	const inRegistry = $derived(isInRegistry(slug));
 	const dependencies = $derived(dependenciesForSlug(slug));
@@ -25,15 +25,7 @@
 		mode === 'manual' ? dependencyCommand : inRegistry ? jsrepoInitThenAddSnippet(slug, pkg) : ''
 	);
 
-	let copyTimer: ReturnType<typeof setTimeout> | null = null;
-
-	function copy() {
-		if (!command) return;
-		navigator.clipboard?.writeText(command);
-		copied = true;
-		if (copyTimer) clearTimeout(copyTimer);
-		copyTimer = setTimeout(() => (copied = false), 2000);
-	}
+	const clipboard = new UseClipboard();
 
 	$effect(() => {
 		if (mode === 'manual' && !hasManual) mode = 'cli';
@@ -89,11 +81,11 @@
 				<button
 					type="button"
 					class="cli-copy"
-					class:done={copied}
-					onclick={copy}
+					class:done={clipboard.copied}
+					onclick={() => clipboard.copy(command)}
 					aria-label="Copy installation command"
 				>
-					{#if copied}
+					{#if clipboard.copied}
 						<svg
 							width="16"
 							height="16"

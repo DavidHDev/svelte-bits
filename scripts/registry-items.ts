@@ -6,55 +6,23 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
 import type { RegistryItem } from 'jsrepo/config';
 
-import { IMPLEMENTED_DEMOS } from '../src/lib/constants/categories';
+import { parseSvelteBitsHeader, type SvelteBitsSourceHeader } from '../src/lib/utils/svelte-bits-source-header';
 
-type Header = {
-	title?: string;
-	description?: string;
-	dependencies?: string[];
-	devDependencies?: string[];
-	registryDependencies?: string[];
-};
+import { IMPLEMENTED_DEMOS } from '../src/lib/constants/categories';
 
 export type DiscoveredItem = {
 	slug: string;
 	pascalName: string;
 	categorySlug: string;
 	source: string;
-	header: Header;
+	header: SvelteBitsSourceHeader;
 };
-
-export const HEADER_RE = /^\s*<!--\s*@svelte-bits\s*([\s\S]*?)-->\s*\n?/;
 
 export function pascalToKebab(name: string): string {
 	return name
 		.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
 		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
 		.toLowerCase();
-}
-
-export function stripSvelteBitsHeader(content: string): string {
-	const match = content.match(HEADER_RE);
-	if (!match) return content;
-	return content.slice(match[0].length);
-}
-
-function parseHeader(content: string): { header: Header; stripped: string } {
-	const match = content.match(HEADER_RE);
-	if (!match) return { header: {}, stripped: content };
-
-	const raw = match[1].trim();
-	let header: Header = {};
-	try {
-		header = JSON.parse(raw) as Header;
-	} catch (err) {
-		throw new Error(
-			`Failed to parse @svelte-bits header JSON. Raw block:\n${raw}\n\n${(err as Error).message}`
-		);
-	}
-
-	const stripped = content.slice(match[0].length);
-	return { header, stripped };
 }
 
 async function isDirectory(path: string): Promise<boolean> {
@@ -98,7 +66,7 @@ export async function* walkComponents(libraryDir: string, rootForRelative: strin
 			}
 
 			const content = await readFile(expected, 'utf8');
-			const { header } = parseHeader(content);
+			const { header } = parseSvelteBitsHeader(content);
 
 			yield {
 				slug: pascalToKebab(componentDirName),
@@ -161,7 +129,7 @@ export async function getRegistryItems(cwd: string): Promise<RegistryItem[]> {
 	for (const item of discovered) {
 		const absolute = resolve(root, item.source);
 		const raw = await readFile(absolute, 'utf8');
-		const { header } = parseHeader(raw);
+		const { header } = parseSvelteBitsHeader(raw);
 
 		const title = header.title ?? pascalToTitle(item.pascalName);
 		const description = header.description ?? `${title} component from svelte-bits.`;

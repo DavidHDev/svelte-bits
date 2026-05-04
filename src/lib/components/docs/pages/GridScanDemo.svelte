@@ -90,7 +90,7 @@ ${sC}
 </div>`);
 
 	const props: PropRow[] = [
-		{ name: 'linesColor', type: 'string', default: '"#2F293A"', description: 'Grid line color.' },
+		{ name: 'linesColor', type: 'string', default: '"#222222"', description: 'Grid line color.' },
 		{ name: 'scanColor', type: 'string', default: '"#FF9FFC"', description: 'Scan beam color.' },
 		{ name: 'scanOpacity', type: 'number', default: '0.4', description: 'Scan opacity.' },
 		{ name: 'gridScale', type: 'number', default: '0.1', description: 'Grid scale.' },

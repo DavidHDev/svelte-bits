@@ -70,8 +70,8 @@ ${sC}
 	const props: PropRow[] = [
 		{ name: 'dotSize', type: 'number', default: '16', description: 'Dot diameter in px.' },
 		{ name: 'gap', type: 'number', default: '32', description: 'Gap between dots.' },
-		{ name: 'baseColor', type: 'string', default: '"#5227FF"', description: 'Base dot color.' },
-		{ name: 'activeColor', type: 'string', default: '"#5227FF"', description: 'Color near cursor.' },
+		{ name: 'baseColor', type: 'string', default: '"#FF8A4C"', description: 'Base dot color.' },
+		{ name: 'activeColor', type: 'string', default: '"#FF8A4C"', description: 'Color near cursor.' },
 		{ name: 'proximity', type: 'number', default: '150', description: 'Proximity highlight radius.' },
 		{ name: 'speedTrigger', type: 'number', default: '100', description: 'Velocity threshold to push dots.' },
 		{ name: 'shockRadius', type: 'number', default: '250', description: 'Click shockwave radius.' },

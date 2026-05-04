@@ -24,7 +24,7 @@
 	};
 
 	let {
-		colors = ['#ff9346', '#7cff67', '#ffee51', '#5227FF'],
+		colors = ['#ff9346', '#7cff67', '#ffee51', '#FF8A4C'],
 		baseSpring = 0.03,
 		baseFriction = 0.9,
 		baseThickness = 30,

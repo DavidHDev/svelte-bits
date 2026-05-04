@@ -23,7 +23,7 @@
 	let {
 		children,
 		class: className = '',
-		colors = ['#5227FF', '#FF9FFC', '#B497CF'],
+		colors = ['#FF8A4C', '#FFC18A', '#FF6B2C'],
 		animationSpeed = 8,
 		showBorder = false,
 		direction = 'horizontal',

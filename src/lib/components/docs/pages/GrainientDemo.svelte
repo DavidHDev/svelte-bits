@@ -101,7 +101,7 @@ ${sC}
 		{ name: 'centerY', type: 'number', default: '0', description: 'Y center offset.' },
 		{ name: 'zoom', type: 'number', default: '0.9', description: 'Zoom factor.' },
 		{ name: 'color1', type: 'string', default: '"#FF9FFC"', description: 'First color stop.' },
-		{ name: 'color2', type: 'string', default: '"#5227FF"', description: 'Second color stop.' },
+		{ name: 'color2', type: 'string', default: '"#FF8A4C"', description: 'Second color stop.' },
 		{ name: 'color3', type: 'string', default: '"#B497CF"', description: 'Third color stop.' }
 	];
 </script>

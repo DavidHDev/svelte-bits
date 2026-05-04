@@ -54,7 +54,7 @@ ${sC}
 </div>`);
 
 	const props: PropRow[] = [
-		{ name: 'topColor', type: 'string', default: "'#5227FF'", description: 'Top gradient color.' },
+		{ name: 'topColor', type: 'string', default: "'#FF8A4C'", description: 'Top gradient color.' },
 		{ name: 'bottomColor', type: 'string', default: "'#FF9FFC'", description: 'Bottom gradient color.' },
 		{ name: 'intensity', type: 'number', default: '1', description: 'Output multiplier.' },
 		{ name: 'rotationSpeed', type: 'number', default: '0.3', description: 'Time/rotation speed.' },

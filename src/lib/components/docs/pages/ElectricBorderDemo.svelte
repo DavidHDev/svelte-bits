@@ -23,7 +23,7 @@
 
 	const props: PropRow[] = [
 		{ name: 'children', type: 'Snippet', default: 'required', description: 'Content wrapped by the electric border.' },
-		{ name: 'color', type: 'string', default: '"#5227FF"', description: 'Border color.' },
+		{ name: 'color', type: 'string', default: '"#FF8A4C"', description: 'Border color.' },
 		{ name: 'speed', type: 'number', default: '1', description: 'Animation speed multiplier.' },
 		{ name: 'chaos', type: 'number', default: '0.12', description: 'Distortion noise scale.' },
 		{ name: 'borderRadius', type: 'number', default: '24', description: 'Corner radius (px).' },

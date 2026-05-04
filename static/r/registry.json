@@ -1140,6 +1140,182 @@
       ]
     },
     {
+      "name": "animated-list",
+      "type": "registry:component",
+      "title": "Animated List",
+      "description": "Scroll-aware list with item-by-item scale + fade transitions and keyboard navigation.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "AnimatedList.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/AnimatedList.svelte"
+        }
+      ]
+    },
+    {
+      "name": "border-glow",
+      "type": "registry:component",
+      "title": "Border Glow",
+      "description": "Card with directional, edge-sensitive mesh-gradient border glow that follows the pointer.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "BorderGlow.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/BorderGlow.svelte"
+        }
+      ]
+    },
+    {
+      "name": "bounce-cards",
+      "type": "registry:component",
+      "title": "Bounce Cards",
+      "description": "GSAP-powered card stack with elastic intro animation and optional hover-to-spread.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "BounceCards.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/BounceCards.svelte"
+        }
+      ]
+    },
+    {
+      "name": "bubble-menu",
+      "type": "registry:component",
+      "title": "Bubble Menu",
+      "description": "Pill-style overlay nav with staggered GSAP bubble entrance animation.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "BubbleMenu.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/BubbleMenu.svelte"
+        }
+      ]
+    },
+    {
+      "name": "card-nav",
+      "type": "registry:component",
+      "title": "Card Nav",
+      "description": "Expandable navbar with three reveal cards animated by GSAP.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "CardNav.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/CardNav.svelte"
+        }
+      ]
+    },
+    {
+      "name": "card-swap",
+      "type": "registry:component",
+      "title": "Card Swap",
+      "description": "Three-card stack that auto-cycles with skewed perspective transforms (GSAP).",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "CardSwap.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/CardSwap.svelte"
+        }
+      ]
+    },
+    {
+      "name": "carousel",
+      "type": "registry:component",
+      "title": "Carousel",
+      "description": "Draggable carousel with spring snap, autoplay, optional loop, and 3D rotateY parallax.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "Carousel.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Carousel.svelte"
+        }
+      ]
+    },
+    {
+      "name": "chroma-grid",
+      "type": "registry:component",
+      "title": "Chroma Grid",
+      "description": "Card grid with cursor-following spotlight reveal of color from a desaturated overlay (GSAP).",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "ChromaGrid.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ChromaGrid.svelte"
+        }
+      ]
+    },
+    {
+      "name": "circular-gallery",
+      "type": "registry:component",
+      "title": "Circular Gallery",
+      "description": "WebGL bent gallery with momentum scroll, picture-frame distortion, and titles.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "CircularGallery.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/CircularGallery.svelte"
+        }
+      ]
+    },
+    {
+      "name": "counter",
+      "type": "registry:component",
+      "title": "Counter",
+      "description": "Animated rolling-digit counter with spring physics (motion).",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "Counter.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Counter.svelte"
+        }
+      ]
+    },
+    {
+      "name": "decay-card",
+      "type": "registry:component",
+      "title": "Decay Card",
+      "description": "Image card that warps with SVG turbulence + displacement, lerped to cursor velocity (GSAP).",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "DecayCard.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/DecayCard.svelte"
+        }
+      ]
+    },
+    {
       "name": "dock",
       "type": "registry:component",
       "title": "Dock",
@@ -1156,6 +1332,54 @@
       ]
     },
     {
+      "name": "dome-gallery",
+      "type": "registry:component",
+      "title": "Dome Gallery",
+      "description": "Draggable 3D image dome with momentum, click-to-enlarge, and dome blur overlays.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "DomeGallery.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/DomeGallery.svelte"
+        }
+      ]
+    },
+    {
+      "name": "elastic-slider",
+      "type": "registry:component",
+      "title": "Elastic Slider",
+      "description": "Slider that stretches with overshoot decay and bounce-back spring (motion).",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "ElasticSlider.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ElasticSlider.svelte"
+        }
+      ]
+    },
+    {
+      "name": "flowing-menu",
+      "type": "registry:component",
+      "title": "Flowing Menu",
+      "description": "Vertical menu where rows reveal an animated marquee from the closest edge on hover (GSAP).",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "FlowingMenu.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/FlowingMenu.svelte"
+        }
+      ]
+    },
+    {
       "name": "flying-posters",
       "type": "registry:component",
       "title": "Flying Posters",
@@ -1168,6 +1392,294 @@
           "path": "FlyingPosters.svelte",
           "type": "registry:component",
           "target": "$lib/components/svelte-bits/FlyingPosters.svelte"
+        }
+      ]
+    },
+    {
+      "name": "folder",
+      "type": "registry:component",
+      "title": "Folder",
+      "description": "Click to open a folder, fanning out paper snippets that follow the cursor on hover.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "Folder.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Folder.svelte"
+        }
+      ]
+    },
+    {
+      "name": "glass-icons",
+      "type": "registry:component",
+      "title": "Glass Icons",
+      "description": "Floating glass-effect icon buttons with skewed gradient cards behind a frosted face.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "GlassIcons.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/GlassIcons.svelte"
+        }
+      ]
+    },
+    {
+      "name": "glass-surface",
+      "type": "registry:component",
+      "title": "Glass Surface",
+      "description": "Liquid-glass surface using SVG displacement filters and chromatic offset.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "GlassSurface.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/GlassSurface.svelte"
+        }
+      ]
+    },
+    {
+      "name": "gooey-nav",
+      "type": "registry:component",
+      "title": "Gooey Nav",
+      "description": "Pill-style nav with a gooey, particle-bursting active highlight powered by SVG-style filter blur+contrast.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "GooeyNav.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/GooeyNav.svelte"
+        }
+      ]
+    },
+    {
+      "name": "infinite-menu",
+      "type": "registry:component",
+      "title": "Infinite Menu",
+      "description": "Spherical icosahedron menu rendered with WebGL2 + instanced disc atlas, dragged via arcball physics.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "InfiniteMenu.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/InfiniteMenu.svelte"
+        }
+      ]
+    },
+    {
+      "name": "magic-bento",
+      "type": "registry:component",
+      "title": "Magic Bento",
+      "description": "Bento grid with spotlight, particle stars, border glow, tilt, and magnetism.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "MagicBento.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/MagicBento.svelte"
+        }
+      ]
+    },
+    {
+      "name": "masonry",
+      "type": "registry:component",
+      "title": "Masonry",
+      "description": "Animated responsive masonry grid with GSAP entrance and hover effects.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "Masonry.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Masonry.svelte"
+        }
+      ]
+    },
+    {
+      "name": "model-viewer",
+      "type": "registry:component",
+      "title": "Model Viewer",
+      "description": "Interactive GLTF/GLB/FBX/OBJ model viewer with orbit, parallax, and hover effects.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "ModelViewer.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ModelViewer.svelte"
+        }
+      ]
+    },
+    {
+      "name": "pill-nav",
+      "type": "registry:component",
+      "title": "Pill Nav",
+      "description": "Animated pill-shaped nav with circular GSAP hover and mobile menu.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "PillNav.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/PillNav.svelte"
+        }
+      ]
+    },
+    {
+      "name": "pixel-card",
+      "type": "registry:component",
+      "title": "Pixel Card",
+      "description": "Card with shimmering pixel canvas effect on hover/focus.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "PixelCard.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/PixelCard.svelte"
+        }
+      ]
+    },
+    {
+      "name": "profile-card",
+      "type": "registry:component",
+      "title": "Profile Card",
+      "description": "Holographic profile card with pointer/device-orientation tilt and animated shine.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "ProfileCard.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ProfileCard.svelte"
+        }
+      ]
+    },
+    {
+      "name": "reflective-card",
+      "type": "registry:component",
+      "title": "Reflective Card",
+      "description": "Webcam-fed metallic glass card using SVG turbulence and specular lighting filters.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "ReflectiveCard.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ReflectiveCard.svelte"
+        }
+      ]
+    },
+    {
+      "name": "scroll-stack",
+      "type": "registry:component",
+      "title": "Scroll Stack",
+      "description": "Scroll-driven card stack with pin/scale/blur/rotation, powered by Lenis smooth-scroll.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "ScrollStack.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ScrollStack.svelte"
+        }
+      ]
+    },
+    {
+      "name": "spotlight-card",
+      "type": "registry:component",
+      "title": "Spotlight Card",
+      "description": "Card with a soft radial spotlight that follows the cursor.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "SpotlightCard.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/SpotlightCard.svelte"
+        }
+      ]
+    },
+    {
+      "name": "stack",
+      "type": "registry:component",
+      "title": "Stack",
+      "description": "Draggable card stack with spring rotation and send-to-back interaction.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "Stack.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Stack.svelte"
+        }
+      ]
+    },
+    {
+      "name": "staggered-menu",
+      "type": "registry:component",
+      "title": "Staggered Menu",
+      "description": "Full-screen staggered slide-in menu with layered colors and GSAP timelines.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "StaggeredMenu.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/StaggeredMenu.svelte"
+        }
+      ]
+    },
+    {
+      "name": "stepper",
+      "type": "registry:component",
+      "title": "Stepper",
+      "description": "Animated multi-step form with sliding step content and round step indicators.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "Stepper.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/Stepper.svelte"
+        }
+      ]
+    },
+    {
+      "name": "tilted-card",
+      "type": "registry:component",
+      "title": "Tilted Card",
+      "description": "3D tilt-on-mouse card with spring physics and a cursor-following caption.",
+      "categories": [
+        "components"
+      ],
+      "files": [
+        {
+          "path": "TiltedCard.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/TiltedCard.svelte"
         }
       ]
     },

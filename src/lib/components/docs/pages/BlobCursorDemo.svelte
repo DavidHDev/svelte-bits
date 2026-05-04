@@ -55,7 +55,7 @@
 
 	const props: PropRow[] = [
 		{ name: 'blobType', type: '"circle" | "square"', default: '"circle"', description: 'Shape of the blobs.' },
-		{ name: 'fillColor', type: 'string', default: '"#5227FF"', description: 'Background color of each blob.' },
+		{ name: 'fillColor', type: 'string', default: '"#FF8A4C"', description: 'Background color of each blob.' },
 		{ name: 'trailCount', type: 'number', default: '3', description: 'How many trailing blobs.' },
 		{ name: 'sizes', type: 'number[]', default: '[60, 125, 75]', description: 'Sizes (px). Length must be ≥ trailCount.' },
 		{ name: 'innerSizes', type: 'number[]', default: '[20, 35, 25]', description: 'Inner-dot sizes (px).' },

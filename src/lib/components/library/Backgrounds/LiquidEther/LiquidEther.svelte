@@ -60,7 +60,7 @@
 		autoRampDuration?: number;
 	};
 
-	const defaultColors = ['#5227FF', '#FF9FFC', '#B497CF'];
+	const defaultColors = ['#FF8A4C', '#FFC18A', '#FF6B2C'];
 
 	let {
 		mouseForce = 20,

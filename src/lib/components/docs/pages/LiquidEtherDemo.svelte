@@ -103,7 +103,7 @@ ${scriptClose}
 </div>`);
 
 	const props: PropRow[] = [
-		{ name: 'colors', type: 'string[]', default: '["#5227FF", "#FF9FFC", "#B497CF"]', description: 'Array of hex color stops used to build the velocity-to-color palette.' },
+		{ name: 'colors', type: 'string[]', default: '["#FF8A4C", "#FFC18A", "#FF6B2C"]', description: 'Array of hex color stops used to build the velocity-to-color palette.' },
 		{ name: 'mouseForce', type: 'number', default: '20', description: 'Strength multiplier applied to mouse / touch movement when injecting velocity.' },
 		{ name: 'cursorSize', type: 'number', default: '100', description: 'Radius (in pixels at base resolution) of the force brush.' },
 		{ name: 'resolution', type: 'number', default: '0.5', description: 'Simulation texture scale relative to canvas size.' },

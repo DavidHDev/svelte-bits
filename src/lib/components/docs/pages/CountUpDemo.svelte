@@ -82,7 +82,7 @@ ${'</' + 'script>'}
 
 <TabsLayout onreset={reset} {hasChanges} componentName="CountUp" {usage} source={countUpSource} {props}>
 	{#snippet preview()}
-		<div style="position:relative;min-height:400px;display:flex;align-items:center;justify-content:center;width:100%;font-size:80px;font-weight:700;">
+		<div class="demo-container" style="position:relative;min-height:400px;font-size:80px;font-weight:700;">
 			<ReplayButton onClick={() => replay++} />
 			{#key replay}
 				<CountUp {from} {to} {duration} {delay} {direction} {separator} />

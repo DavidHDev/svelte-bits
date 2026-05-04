@@ -11,7 +11,7 @@ export default defineConfig({
 		name: 'svelte-bits',
 		homepage: 'https://sveltebits.xyz',
 		excludeDeps: ['svelte', '@sveltejs/kit'],
-		outputs: [shadcnOutput({ dir: './static/r' })],
+		outputs: [shadcnOutput({ dir: './static/r', format: true })],
 		items: await getRegistryItems(cwd),
 		defaultPaths: {
 			component: '$lib/components'

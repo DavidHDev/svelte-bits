@@ -4,7 +4,7 @@
 		PKG_TO_RUNNER,
 		RUNNER_TO_PKG,
 		RUNNERS,
-		shadcnCommand,
+		jsrepoInitThenAddSnippet,
 		type PackageManager,
 		type Runner
 	} from '$lib/constants/cli';
@@ -25,7 +25,7 @@
 	let terminalVisible = $state(false);
 
 	const runner = $derived<Runner>(PKG_TO_RUNNER[pkg]);
-	const command = $derived(shadcnCommand(FEATURED_SLUG, pkg));
+	const command = $derived(jsrepoInitThenAddSnippet(FEATURED_SLUG, pkg));
 
 	function pickRunner(r: Runner) {
 		pkg = RUNNER_TO_PKG[r];
@@ -88,7 +88,7 @@
 			<div class="ln-qs-terminal">
 				<div class="ln-qs-tab-bar">
 					<div class="ln-qs-tabs">
-						<button type="button" class="ln-qs-tab ln-qs-tab--active">shadcn</button>
+						<button type="button" class="ln-qs-tab ln-qs-tab--active">jsrepo</button>
 					</div>
 
 					<div class="ln-qs-tab-bar-right">

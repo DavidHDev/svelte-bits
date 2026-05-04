@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {
 		PKG_MANAGERS,
-		shadcnCommand,
+		jsrepoInitThenAddSnippet,
 		isInRegistry,
 		registryUrl,
 		type PackageManager
@@ -21,7 +21,9 @@
 	const dependencies = $derived(dependenciesForSlug(slug));
 	const hasManual = $derived(dependencies.length > 0);
 	const dependencyCommand = $derived(dependencies.length > 0 ? `${pkg} install ${dependencies.join(' ')}` : '');
-	const command = $derived(mode === 'manual' ? dependencyCommand : inRegistry ? shadcnCommand(slug, pkg) : '');
+	const command = $derived(
+		mode === 'manual' ? dependencyCommand : inRegistry ? jsrepoInitThenAddSnippet(slug, pkg) : ''
+	);
 
 	let copyTimer: ReturnType<typeof setTimeout> | null = null;
 

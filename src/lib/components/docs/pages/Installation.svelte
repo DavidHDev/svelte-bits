@@ -5,7 +5,8 @@
 		PKG_TO_RUNNER,
 		RUNNER_TO_PKG,
 		RUNNERS,
-		shadcnCommand,
+		jsrepoInitThenAddSnippet,
+		REGISTRY_BASE,
 		registryUrl,
 		type PackageManager,
 		type Runner
@@ -19,11 +20,11 @@
 	let dropdownEl = $state<HTMLDivElement | null>(null);
 
 	const runner = $derived<Runner>(PKG_TO_RUNNER[pkg]);
-	const featuredCommand = $derived(shadcnCommand('aurora', pkg));
-	const genericCommand = $derived(`${runner} shadcn@latest add ${registryUrl('<component>')}`);
+	const featuredCommand = $derived(jsrepoInitThenAddSnippet('aurora', pkg));
+	const genericCommand = $derived(jsrepoInitThenAddSnippet('<component>', pkg));
 
 	const usageSnippet = `<` + `script lang="ts">
-  import ShinyText from '$lib/components/ShinyText.svelte';
+  import ShinyText from '$lib/components/svelte-bits/ShinyText.svelte';
 <` + `/script>
 
 <ShinyText text="Hello, you!" speed={3} />`;
@@ -61,9 +62,9 @@
 	<h3 class="docs-category-title">Pick The Method</h3>
 
 	<p class="docs-paragraph">
-		You can keep it simple and copy code directly from the documentation, or you can use the
-		<a class="docs-link" href="https://ui.shadcn.com/" target="_blank" rel="noreferrer">shadcn</a>
-		CLI to install components into your project.
+		You can keep it simple and copy code directly from the documentation, or you can use
+		<a class="docs-link" href="https://www.jsrepo.dev/" target="_blank" rel="noreferrer">jsrepo</a>
+		to install components into your project.
 	</p>
 
 	<p class="docs-paragraph dim">Click the cards below to change your preferred method.</p>
@@ -151,22 +152,22 @@
 		<CodeBlock language="svelte" code={usageSnippet} />
 	{:else}
 		<p class="docs-paragraph dim">
-			Use a one-time command to pull any component directly into your project.
+			Use <span class="docs-highlight">jsrepo init</span> once per project with the registry URL, then
+			<span class="docs-highlight">jsrepo add</span> per component you want (see snippets below).
 		</p>
 
 		<p class="docs-paragraph">
-			Svelte Bits publishes every component as a
-			<a
-				class="docs-link"
-				href="https://ui.shadcn.com/docs/registry"
-				target="_blank"
-				rel="noreferrer">shadcn registry</a
+			Svelte Bits publishes a jsrepo-compatible <a class="docs-link" href={REGISTRY_BASE}
+				>registry manifest</a
 			>
-			item, served as static JSON from
-			<code class="prop-code">{registryUrl('<component>')}</code>. The
-			<a class="docs-link" href="https://ui.shadcn.com/" target="_blank" rel="noreferrer"
-				>shadcn</a
-			> CLI works in any Svelte or SvelteKit project — it just copies the source file into your codebase.
+			with one item per component. Each item loads from
+			<code class="prop-code">{registryUrl('<component>')}</code>. Initialize the registry URL once,
+			then run
+			<a class="docs-link" href="https://www.jsrepo.dev/docs/create-a-registry" target="_blank" rel="noreferrer"
+				>jsrepo</a
+			>
+			<code class="prop-code">add</code>
+			with the component slug in any project that supports jsrepo.
 		</p>
 
 		<h4 class="docs-category-subtitle">Installation</h4>
@@ -232,8 +233,8 @@
 			By default the file is copied to
 			<code class="prop-code">$lib/components/svelte-bits/&lt;Component&gt;.svelte</code>. You can
 			move it anywhere — it's just a Svelte file. Any required dependencies (
-			<code class="prop-code">gsap</code>, <code class="prop-code">ogl</code>, etc.) are installed
-			automatically by shadcn.
+			<code class="prop-code">gsap</code>, <code class="prop-code">ogl</code>, etc.) are detected
+			and installed with your package manager by jsrepo.
 		</p>
 
 		<p class="docs-paragraph dim install-tip">

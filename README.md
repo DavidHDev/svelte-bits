@@ -1,4 +1,5 @@
 <div align="center">
+  <video src="https://github.com/newjordan/svelte-bits/raw/main/assets/cwf-demo.mp4" autoplay loop muted playsinline width="800"></video>
 	<br>
 	<br>
   <picture>

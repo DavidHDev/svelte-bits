@@ -260,6 +260,22 @@
       ]
     },
     {
+      "name": "falling-text",
+      "type": "registry:component",
+      "title": "Falling Text",
+      "description": "Characters fall with gravity + bounce creating a playful entrance.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "FallingText.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/FallingText.svelte"
+        }
+      ]
+    },
+    {
       "name": "glitch-text",
       "type": "registry:component",
       "title": "Glitch Text",

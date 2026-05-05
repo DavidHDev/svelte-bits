@@ -1874,6 +1874,21 @@
 			]
 		},
 		{
+			"name": "curved-loop",
+			"title": "Curved Loop",
+			"description": "Marquee text rendered along a curved SVG path that scrolls infinitely and can be dragged for interactive control.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CurvedLoop.svelte",
+					"target": "$lib/components/svelte-bits/CurvedLoop.svelte"
+				}
+			]
+		},
+		{
 			"name": "falling-text",
 			"title": "Falling Text",
 			"description": "Characters fall with gravity + bounce creating a playful entrance.",

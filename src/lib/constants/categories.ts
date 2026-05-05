@@ -299,7 +299,8 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'scrambled-text',
 	'circular-text',
 	'text-type',
-	'shuffle'
+	'shuffle',
+	'curved-loop'
 ]);
 
 // Helper: is this subcategory label fully ported?

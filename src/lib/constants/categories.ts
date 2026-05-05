@@ -183,6 +183,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'index',
 	'shiny-text',
 	'split-text',
+	'scroll-float',
 	'animated-content',
 	'dock',
 	'aurora',

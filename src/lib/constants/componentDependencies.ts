@@ -15,6 +15,7 @@ export const COMPONENT_DEPENDENCIES: Record<string, string[]> = {
 	'true-focus': ['motion'],
 	'falling-text': ['matter-js'],
 	'count-up': ['motion'],
+	'scroll-float': ['gsap']
 	'scrambled-text': ['gsap'],
 	'circular-text': ['motion']
 };

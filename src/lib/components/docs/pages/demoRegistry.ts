@@ -128,5 +128,6 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'scrambled-text': () => import('./ScrambledTextDemo.svelte'),
 	'circular-text': () => import('./CircularTextDemo.svelte'),
 	'text-type': () => import('./TextTypeDemo.svelte'),
-	'shuffle': () => import('./ShuffleDemo.svelte')
+	'shuffle': () => import('./ShuffleDemo.svelte'),
+	'text-pressure': () => import('./TextPressureDemo.svelte')
 };

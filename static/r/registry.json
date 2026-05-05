@@ -1976,6 +1976,24 @@
 			]
 		},
 		{
+			"name": "shuffle",
+			"title": "Shuffle",
+			"description": "Per-character shuffle animation: each letter slides through interim glyphs before settling on its final character, with hover replay and ScrollTrigger entrance.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Shuffle.svelte",
+					"target": "$lib/components/svelte-bits/Shuffle.svelte"
+				}
+			]
+		},
+		{
 			"name": "split-text",
 			"title": "Split Text",
 			"description": "Splits text into characters / words for staggered entrance animation.",

@@ -1,5 +1,5 @@
 export const NEW: string[] = [
-
+	'Shuffle'
 ];
 
 export const UPDATED: string[] = [
@@ -297,7 +297,8 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'model-viewer',
 	'text-cursor',
 	'scrambled-text',
-	'circular-text'
+	'circular-text',
+	'shuffle'
 ]);
 
 // Helper: is this subcategory label fully ported?

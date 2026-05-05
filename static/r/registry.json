@@ -1925,6 +1925,24 @@
 			]
 		},
 		{
+			"name": "rotating-text",
+			"title": "Rotating Text",
+			"description": "Cycles through an array of phrases with per-character stagger animations on entry and exit, driven by motion springs.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "RotatingText.svelte",
+					"target": "$lib/components/svelte-bits/RotatingText.svelte"
+				}
+			]
+		},
+		{
 			"name": "scrambled-text",
 			"title": "Scrambled Text",
 			"description": "Detects cursor position and applies a distortion effect to text.",

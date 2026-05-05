@@ -2,6 +2,9 @@
 	import { onMount } from 'svelte';
 	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
 	import { SAMPLE_COMPONENTS_JSON_REGISTRIES_DOC } from '$lib/constants/cli';
+	import claudeIcon from '$lib/assets/icons/claude.svg';
+	import cursorIcon from '$lib/assets/icons/cursor.svg';
+	import vscodeIcon from '$lib/assets/icons/vscode.svg';
 
 	type Client = 'claude' | 'cursor' | 'vscode';
 
@@ -68,18 +71,7 @@
 			onclick={() => (client = 'claude')}
 			aria-label="Claude Code"
 		>
-			<svg
-				width="44"
-				height="44"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.6"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-			</svg>
+			<img src={claudeIcon} alt="Claude Code Logo" width="40" height="40" />
 			<span class="installation-method-label">Claude Code</span>
 		</button>
 
@@ -90,18 +82,7 @@
 			onclick={() => (client = 'cursor')}
 			aria-label="Cursor"
 		>
-			<svg
-				width="44"
-				height="44"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.6"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<polygon points="3 3 21 12 13 13 12 21 3 3" />
-			</svg>
+			<img src={cursorIcon} alt="Cursor Logo" width="40" height="40" />
 			<span class="installation-method-label">Cursor</span>
 		</button>
 
@@ -112,19 +93,7 @@
 			onclick={() => (client = 'vscode')}
 			aria-label="VS Code"
 		>
-			<svg
-				width="44"
-				height="44"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.6"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<polyline points="16 18 22 12 16 6" />
-				<polyline points="8 6 2 12 8 18" />
-			</svg>
+			<img src={vscodeIcon} alt="VS Code Logo" width="40" height="40" />
 			<span class="installation-method-label">VS Code</span>
 		</button>
 	</div>

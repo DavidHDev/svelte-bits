@@ -15,7 +15,8 @@ export const COMPONENT_DEPENDENCIES: Record<string, string[]> = {
 	'true-focus': ['motion'],
 	'falling-text': ['matter-js'],
 	'count-up': ['motion'],
-	'circular-text': ['motion'],
+	'scrambled-text': ['gsap'],
+	'circular-text': ['motion']
 };
 
 export function dependenciesForSlug(slug: string | undefined): string[] {

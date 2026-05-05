@@ -294,6 +294,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'dome-gallery',
 	'infinite-menu',
 	'model-viewer',
+	'scrambled-text',
 	'circular-text',
 ]);
 

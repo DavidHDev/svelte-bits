@@ -19,6 +19,7 @@ export const COMPONENT_DEPENDENCIES: Record<string, string[]> = {
 	'scroll-float': ['gsap'],
 	'scrambled-text': ['gsap'],
 	'circular-text': ['motion'],
+	'text-type': ['gsap'],
 	'shuffle': ['gsap']
 };
 

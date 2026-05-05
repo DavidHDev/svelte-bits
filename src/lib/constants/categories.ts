@@ -298,6 +298,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'text-cursor',
 	'scrambled-text',
 	'circular-text',
+	'text-type',
 	'shuffle'
 ]);
 

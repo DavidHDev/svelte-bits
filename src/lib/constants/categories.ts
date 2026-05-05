@@ -1,4 +1,6 @@
-export const NEW: string[] = ["True Focus", "Falling Text"];
+export const NEW: string[] = [
+
+];
 
 export const UPDATED: string[] = [
 
@@ -291,7 +293,8 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'circular-gallery',
 	'dome-gallery',
 	'infinite-menu',
-	'model-viewer'
+	'model-viewer',
+	'circular-text',
 ]);
 
 // Helper: is this subcategory label fully ported?

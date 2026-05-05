@@ -1700,6 +1700,22 @@
       ]
     },
     {
+      "name": "circular-text",
+      "type": "registry:component",
+      "title": "Circular Text",
+      "description": "Layouts characters around a circle with optional rotation animation.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "CircularText.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/CircularText.svelte"
+        }
+      ]
+    },
+    {
       "name": "count-up",
       "type": "registry:component",
       "title": "Count Up",

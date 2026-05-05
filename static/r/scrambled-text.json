@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "scrambled-text",
+  "type": "registry:component",
+  "title": "Scrambled Text",
+  "description": "Detects cursor position and applies a distortion effect to text.",
+  "categories": [
+    "text-animations"
+  ],
+  "files": [
+    {
+      "path": "ScrambledText.svelte",
+      "content": "<script lang=\"ts\">\n  import { gsap } from \"gsap\";\n  import { ScrambleTextPlugin } from \"gsap/ScrambleTextPlugin\";\n  import { SplitText } from \"gsap/SplitText\";\n  import type { Snippet } from \"svelte\";\n\n  gsap.registerPlugin(SplitText, ScrambleTextPlugin);\n\n  type Props = {\n    radius?: number;\n    duration?: number;\n    speed?: number;\n    scrambleChars?: string;\n    className?: string;\n    style?: string;\n    children: Snippet;\n  };\n\n  let {\n    radius = 100,\n    duration = 1.2,\n    speed = 0.5,\n    scrambleChars = \".:\",\n    className = \"\",\n    style = \"\",\n    children,\n  }: Props = $props();\n\n  let rootEl = $state<HTMLDivElement | undefined>();\n\n  $effect(() => {\n    void radius;\n    void duration;\n    void speed;\n    void scrambleChars;\n\n    if (!rootEl) return;\n\n    const pEl = rootEl.querySelector(\"p\");\n    if (!pEl) return;\n\n    const split = SplitText.create(pEl, {\n      type: \"chars\",\n      charsClass: \"inline-block will-change-transform\",\n    });\n\n    split.chars.forEach((el) => {\n      const c = el as HTMLElement;\n      gsap.set(c, { attr: { \"data-content\": c.innerHTML } });\n    });\n\n    const handleMove = (e: PointerEvent) => {\n      split.chars.forEach((el) => {\n        const c = el as HTMLElement;\n        const { left, top, width, height } = c.getBoundingClientRect();\n        const dx = e.clientX - (left + width / 2);\n        const dy = e.clientY - (top + height / 2);\n        const dist = Math.hypot(dx, dy);\n\n        if (dist < radius) {\n          gsap.to(c, {\n            overwrite: true,\n            duration: duration * (1 - dist / radius),\n            scrambleText: {\n              text: c.dataset.content || \"\",\n              chars: scrambleChars,\n              speed,\n            },\n            ease: \"none\",\n          });\n        }\n      });\n    };\n\n    rootEl.addEventListener(\"pointermove\", handleMove);\n\n    return () => {\n      rootEl?.removeEventListener(\"pointermove\", handleMove);\n      split.revert();\n    };\n  });\n</script>\n\n<div\n  bind:this={rootEl}\n  class=\"m-[7vw] max-w-200 font-mono text-[clamp(14px,4vw,32px)] text-white {className}\"\n  {style}\n>\n  <p>{@render children()}</p>\n</div>\n",
+      "type": "registry:component",
+      "target": "$lib/components/svelte-bits/ScrambledText.svelte"
+    }
+  ],
+  "dependencies": [
+    "gsap"
+  ]
+}

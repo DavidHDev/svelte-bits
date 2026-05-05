@@ -61,6 +61,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'shiny-text': () => import('./ShinyTextDemo.svelte'),
 	'splash-cursor': () => import('./SplashCursorDemo.svelte'),
 	'split-text': () => import('./SplitTextDemo.svelte'),
+	'scroll-float': () => import('./ScrollFloatDemo.svelte'),
 	'star-border': () => import('./StarBorderDemo.svelte'),
 	'true-focus': () => import('./TrueFocusDemo.svelte'),
 	'falling-text': () => import('./FallingTextDemo.svelte'),
@@ -123,5 +124,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'dome-gallery': () => import('./DomeGalleryDemo.svelte'),
 	'infinite-menu': () => import('./InfiniteMenuDemo.svelte'),
 	'model-viewer': () => import('./ModelViewerDemo.svelte'),
-	'text-cursor': () => import('./TextCursorDemo.svelte')
+	'text-cursor': () => import('./TextCursorDemo.svelte'),
+	'scrambled-text': () => import('./ScrambledTextDemo.svelte'),
+	'circular-text': () => import('./CircularTextDemo.svelte')
 };

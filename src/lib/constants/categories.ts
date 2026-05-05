@@ -1,4 +1,6 @@
-export const NEW: string[] = ["True Focus", "Falling Text", "Text Cursor"];
+export const NEW: string[] = [
+
+];
 
 export const UPDATED: string[] = [
 
@@ -181,6 +183,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'index',
 	'shiny-text',
 	'split-text',
+	'scroll-float',
 	'animated-content',
 	'dock',
 	'aurora',
@@ -292,7 +295,9 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'dome-gallery',
 	'infinite-menu',
 	'model-viewer',
-	'text-cursor'
+	'text-cursor',
+	'scrambled-text',
+	'circular-text'
 ]);
 
 // Helper: is this subcategory label fully ported?

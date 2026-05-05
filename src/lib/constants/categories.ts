@@ -295,8 +295,9 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'dome-gallery',
 	'infinite-menu',
 	'model-viewer',
+	'text-cursor',
 	'scrambled-text',
-	'circular-text',
+	'circular-text'
 ]);
 
 // Helper: is this subcategory label fully ported?

@@ -162,8 +162,15 @@
 		renderer: Renderer;
 		colorLutTex: Texture;
 		hueLutTex: Texture;
+		setGridSize: (n: number) => void;
 	};
 	let gpu: GpuRefs | null = $state(null);
+
+	// Live grid resize on gridSize prop change.
+	$effect(() => {
+		if (!gpu) return;
+		gpu.setGridSize(gridSize);
+	});
 
 	// Live LUT rebuild on colorStops change.
 	$effect(() => {
@@ -507,6 +514,18 @@
 		let velNext = velB;
 		let noiseTime = 0;
 
+		// Reallocate velocity FBOs when gridSize changes. Old RTs get GC'd.
+		const setGridSize = (n: number) => {
+			const next = Math.max(2, Math.floor(n));
+			if (next === velCurrent.width) return;
+			const newOpts = { ...rtOpts, width: next, height: next };
+			const a = new RenderTarget(gl, newOpts);
+			const b = new RenderTarget(gl, newOpts);
+			renderer.render({ scene: initMesh, target: a });
+			velCurrent = a;
+			velNext = b;
+		};
+
 		const resize = () => {
 			const { width, height } = containerRef.getBoundingClientRect();
 			renderer.setSize(width, height);
@@ -546,7 +565,7 @@
 		io.observe(containerRef);
 
 		raf = requestAnimationFrame(tick);
-		gpu = { renderer, colorLutTex, hueLutTex };
+		gpu = { renderer, colorLutTex, hueLutTex, setGridSize };
 
 		return () => {
 			cancelAnimationFrame(raf);

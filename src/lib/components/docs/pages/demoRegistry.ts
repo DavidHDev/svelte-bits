@@ -126,5 +126,6 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'model-viewer': () => import('./ModelViewerDemo.svelte'),
 	'text-cursor': () => import('./TextCursorDemo.svelte'),
 	'scrambled-text': () => import('./ScrambledTextDemo.svelte'),
-	'circular-text': () => import('./CircularTextDemo.svelte')
+	'circular-text': () => import('./CircularTextDemo.svelte'),
+	'text-type': () => import('./TextTypeDemo.svelte')
 };

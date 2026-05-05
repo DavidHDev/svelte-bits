@@ -1838,6 +1838,24 @@
 			]
 		},
 		{
+			"name": "circular-text",
+			"title": "Circular Text",
+			"description": "Layouts characters around a circle with optional rotation animation.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CircularText.svelte",
+					"target": "$lib/components/svelte-bits/CircularText.svelte"
+				}
+			]
+		},
+		{
 			"name": "count-up",
 			"title": "Count Up",
 			"description": "Spring-animated number counter that counts up (or down) when scrolled into view, with configurable spring physics, delay, and number formatting.",
@@ -1907,6 +1925,42 @@
 			]
 		},
 		{
+			"name": "scrambled-text",
+			"title": "Scrambled Text",
+			"description": "Detects cursor position and applies a distortion effect to text.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ScrambledText.svelte",
+					"target": "$lib/components/svelte-bits/ScrambledText.svelte"
+				}
+			]
+		},
+		{
+			"name": "scroll-float",
+			"title": "Scroll Float",
+			"description": "Scroll-triggered floating text animation with per-character stagger.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ScrollFloat.svelte",
+					"target": "$lib/components/svelte-bits/ScrollFloat.svelte"
+				}
+			]
+		},
+		{
 			"name": "shiny-text",
 			"title": "Shiny Text",
 			"description": "Animated shiny gradient sweep across text, with yoyo + direction controls.",
@@ -1954,6 +2008,24 @@
 					"type": "registry:component",
 					"path": "TextCursor.svelte",
 					"target": "$lib/components/svelte-bits/TextCursor.svelte"
+				}
+			]
+		},
+		{
+			"name": "text-type",
+			"title": "Text Type",
+			"description": "Typewriter effect that types and deletes through one or more sentences with a configurable cursor, blink rate, variable speed, and color rotation.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "TextType.svelte",
+					"target": "$lib/components/svelte-bits/TextType.svelte"
 				}
 			]
 		},

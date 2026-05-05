@@ -3,7 +3,9 @@
 	import type { Snippet } from 'svelte';
 	import Dependencies from './Dependencies.svelte';
 	import { dependenciesForSlug } from '$lib/constants/componentDependencies';
+	import { stripSvelteBitsHeader } from '$lib/utils/svelte-bits-source-header';
 	import type { PropRow } from './PropTable.svelte';
+	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 
 	type Props = {
 		preview: Snippet;
@@ -31,7 +33,6 @@
 	}: Props = $props();
 
 	let active: 'preview' | 'code' = $state('preview');
-	let copiedPrompt = $state(false);
 	const previewTabId = $derived(`${page.params.subcategory ?? 'component'}-preview-tab`);
 	const codeTabId = $derived(`${page.params.subcategory ?? 'component'}-code-tab`);
 	const previewPanelId = $derived(`${page.params.subcategory ?? 'component'}-preview-panel`);
@@ -39,8 +40,10 @@
 	const dependencyList = $derived(dependenciesForSlug(page.params.subcategory));
 	const promptComponentName = $derived(componentName ?? page.params.subcategory?.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(''));
 	const hasPrompt = $derived(Boolean(promptComponentName && source));
+	const clipboard = new UseClipboard();
 
 	function buildPrompt() {
+		const sourceShown = stripSvelteBitsHeader(source);
 		const deps = dependencyList.join(', ');
 		let prompt = `## Integrate the <${promptComponentName} /> component from Svelte Bits
 
@@ -70,7 +73,7 @@ ${props.map((p) => `| ${p.name} | ${p.type} | ${p.default || '—'} | ${p.descri
 		prompt += `
 ### Full Component Source
 \`\`\`svelte
-${source}
+${sourceShown}
 \`\`\`
 
 ### Integration Instructions
@@ -85,9 +88,7 @@ ${source}
 
 	async function copyPrompt() {
 		if (!hasPrompt) return;
-		await navigator.clipboard.writeText(buildPrompt());
-		copiedPrompt = true;
-		setTimeout(() => (copiedPrompt = false), 2000);
+		await clipboard.copy(buildPrompt());
 	}
 
 	function selectTab(tab: 'preview' | 'code') {
@@ -186,7 +187,7 @@ ${source}
 					aria-label="Copy AI prompt"
 					title="Copy AI prompt"
 				>
-					{#if copiedPrompt}
+					{#if clipboard.copied}
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 							<polyline points="20 6 9 17 4 12" />
 						</svg>

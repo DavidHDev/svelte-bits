@@ -1,1815 +1,1961 @@
 {
-  "$schema": "https://ui.shadcn.com/schema/registry.json",
-  "name": "svelte-bits",
-  "homepage": "https://sveltebits.xyz",
-  "items": [
-    {
-      "name": "animated-content",
-      "type": "registry:component",
-      "title": "Animated Content",
-      "description": "Scroll-triggered entrance animation with distance, direction, scale and opacity controls. Powered by GSAP + ScrollTrigger.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "AnimatedContent.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/AnimatedContent.svelte"
-        }
-      ]
-    },
-    {
-      "name": "antigravity",
-      "type": "registry:component",
-      "title": "Antigravity",
-      "description": "Instanced 3D particles that orbit and react to the mouse with wave physics, rendered with three.js.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "Antigravity.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Antigravity.svelte"
-        }
-      ]
-    },
-    {
-      "name": "blob-cursor",
-      "type": "registry:component",
-      "title": "Blob Cursor",
-      "description": "Gooey blob cursor with a trail of lagging blobs, smoothed via GSAP.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "BlobCursor.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/BlobCursor.svelte"
-        }
-      ]
-    },
-    {
-      "name": "click-spark",
-      "type": "registry:component",
-      "title": "Click Spark",
-      "description": "Clickable container that emits radial spark lines on click.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "ClickSpark.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ClickSpark.svelte"
-        }
-      ]
-    },
-    {
-      "name": "crosshair",
-      "type": "registry:component",
-      "title": "Crosshair",
-      "description": "Animated crosshair lines that follow the cursor with subtle SVG turbulence on hover.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "Crosshair.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Crosshair.svelte"
-        }
-      ]
-    },
-    {
-      "name": "cubes",
-      "type": "registry:component",
-      "title": "Cubes",
-      "description": "3D cube grid that tilts toward the cursor with optional ripple-on-click and idle drift.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "Cubes.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Cubes.svelte"
-        }
-      ]
-    },
-    {
-      "name": "electric-border",
-      "type": "registry:component",
-      "title": "Electric Border",
-      "description": "Animated electric arcs around rounded rectangle borders rendered to canvas with noise displacement.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "ElectricBorder.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ElectricBorder.svelte"
-        }
-      ]
-    },
-    {
-      "name": "fade-content",
-      "type": "registry:component",
-      "title": "Fade Content",
-      "description": "Scroll-triggered fade-in (with optional blur) entrance using GSAP + ScrollTrigger, with optional auto-disappearance.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "FadeContent.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/FadeContent.svelte"
-        }
-      ]
-    },
-    {
-      "name": "ghost-cursor",
-      "type": "registry:component",
-      "title": "Ghost Cursor",
-      "description": "WebGL ghostly cursor trail rendered with three.js + bloom + film grain post-processing.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "GhostCursor.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GhostCursor.svelte"
-        }
-      ]
-    },
-    {
-      "name": "glare-hover",
-      "type": "registry:component",
-      "title": "Glare Hover",
-      "description": "Hover-triggered moving glare highlight across a card.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "GlareHover.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GlareHover.svelte"
-        }
-      ]
-    },
-    {
-      "name": "gradual-blur",
-      "type": "registry:component",
-      "title": "Gradual Blur",
-      "description": "Multi-layer gradient-masked backdrop blur for soft fade-out edges (top/bottom/left/right).",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "GradualBlur.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GradualBlur.svelte"
-        }
-      ]
-    },
-    {
-      "name": "image-trail",
-      "type": "registry:component",
-      "title": "Image Trail",
-      "description": "Mouse trail of images with 8 visually distinct GSAP variants.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "ImageTrail.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ImageTrail.svelte"
-        }
-      ]
-    },
-    {
-      "name": "laser-flow",
-      "type": "registry:component",
-      "title": "Laser Flow",
-      "description": "Volumetric laser beam with wisps and tilting fog volume, rendered with three.js raw shader.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "LaserFlow.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/LaserFlow.svelte"
-        }
-      ]
-    },
-    {
-      "name": "logo-loop",
-      "type": "registry:component",
-      "title": "Logo Loop",
-      "description": "Smooth, infinite, pause-on-hover marquee for partner logos with optional fade-out edges.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "LogoLoop.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/LogoLoop.svelte"
-        }
-      ]
-    },
-    {
-      "name": "magic-rings",
-      "type": "registry:component",
-      "title": "Magic Rings",
-      "description": "WebGL2 concentric ring animation with mouse parallax, hover scale, and click burst. Real three.js shader.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "MagicRings.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/MagicRings.svelte"
-        }
-      ]
-    },
-    {
-      "name": "magnet",
-      "type": "registry:component",
-      "title": "Magnet",
-      "description": "Magnetic pull effect that attracts content toward the cursor when nearby.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "Magnet.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Magnet.svelte"
-        }
-      ]
-    },
-    {
-      "name": "magnet-lines",
-      "type": "registry:component",
-      "title": "Magnet Lines",
-      "description": "A grid of small line segments that rotate to face the cursor.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "MagnetLines.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/MagnetLines.svelte"
-        }
-      ]
-    },
-    {
-      "name": "meta-balls",
-      "type": "registry:component",
-      "title": "Meta Balls",
-      "description": "Animated metaballs (gooey blob field) with cursor interaction, rendered with OGL shader.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "MetaBalls.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/MetaBalls.svelte"
-        }
-      ]
-    },
-    {
-      "name": "metallic-paint",
-      "type": "registry:component",
-      "title": "Metallic Paint",
-      "description": "Image-driven liquid metallic paint shader (WebGL2) with depth field solved via SOR relaxation.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "MetallicPaint.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/MetallicPaint.svelte"
-        }
-      ]
-    },
-    {
-      "name": "noise",
-      "type": "registry:component",
-      "title": "Noise",
-      "description": "Full-viewport animated film-grain canvas overlay.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "Noise.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Noise.svelte"
-        }
-      ]
-    },
-    {
-      "name": "orbit-images",
-      "type": "registry:component",
-      "title": "Orbit Images",
-      "description": "Images orbiting along a configurable SVG path (ellipse, circle, star, heart, infinity, wave, custom).",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "OrbitImages.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/OrbitImages.svelte"
-        }
-      ]
-    },
-    {
-      "name": "pixel-trail",
-      "type": "registry:component",
-      "title": "Pixel Trail",
-      "description": "Pixelated mouse trail with optional gooey blend, rendered with three.js + a canvas-based trail texture.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "PixelTrail.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/PixelTrail.svelte"
-        }
-      ]
-    },
-    {
-      "name": "pixel-transition",
-      "type": "registry:component",
-      "title": "Pixel Transition",
-      "description": "Hover/click reveal that transitions between two contents through a randomized pixel grid effect.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "PixelTransition.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/PixelTransition.svelte"
-        }
-      ]
-    },
-    {
-      "name": "ribbons",
-      "type": "registry:component",
-      "title": "Ribbons",
-      "description": "Colorful spring-driven ribbon trails following the cursor, rendered with OGL polylines.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "Ribbons.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Ribbons.svelte"
-        }
-      ]
-    },
-    {
-      "name": "shape-blur",
-      "type": "registry:component",
-      "title": "Shape Blur",
-      "description": "Mouse-reactive blurred SDF shapes (rounded rect, circle, ring, triangle) rendered with three.js.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "ShapeBlur.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ShapeBlur.svelte"
-        }
-      ]
-    },
-    {
-      "name": "splash-cursor",
-      "type": "registry:component",
-      "title": "Splash Cursor",
-      "description": "Liquid splash burst at cursor with curling ripples and waves.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "SplashCursor.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/SplashCursor.svelte"
-        }
-      ]
-    },
-    {
-      "name": "star-border",
-      "type": "registry:component",
-      "title": "Star Border",
-      "description": "Button-like wrapper with two animated radial-gradient sweeps tracing the top and bottom border.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "StarBorder.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/StarBorder.svelte"
-        }
-      ]
-    },
-    {
-      "name": "sticker-peel",
-      "type": "registry:component",
-      "title": "Sticker Peel",
-      "description": "Draggable sticker that peels off on hover, with SVG specular lighting and drop shadow filters.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "StickerPeel.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/StickerPeel.svelte"
-        }
-      ]
-    },
-    {
-      "name": "target-cursor",
-      "type": "registry:component",
-      "title": "Target Cursor",
-      "description": "Custom spinning crosshair cursor that snaps to corners of elements matching a selector when hovered.",
-      "categories": [
-        "animations"
-      ],
-      "files": [
-        {
-          "path": "TargetCursor.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/TargetCursor.svelte"
-        }
-      ]
-    },
-    {
-      "name": "aurora",
-      "type": "registry:component",
-      "title": "Aurora",
-      "description": "WebGL aurora background with configurable color stops, amplitude, blend and speed. Real OGL shader, not a CSS gradient.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Aurora.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Aurora.svelte"
-        }
-      ]
-    },
-    {
-      "name": "balatro",
-      "type": "registry:component",
-      "title": "Balatro",
-      "description": "Swirling pixel-painted Balatro-style WebGL background with mouse interaction.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Balatro.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Balatro.svelte"
-        }
-      ]
-    },
-    {
-      "name": "ballpit",
-      "type": "registry:component",
-      "title": "Ballpit",
-      "description": "Interactive 3D ball pit using Three.js physics.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Ballpit.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Ballpit.svelte"
-        }
-      ]
-    },
-    {
-      "name": "beams",
-      "type": "registry:component",
-      "title": "Beams",
-      "description": "Light beams animated with noise displacement.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Beams.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Beams.svelte"
-        }
-      ]
-    },
-    {
-      "name": "color-bends",
-      "type": "registry:component",
-      "title": "Color Bends",
-      "description": "Three.js shader background with warped color bands, pointer parallax, noise, and rotation controls.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "ColorBends.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ColorBends.svelte"
-        }
-      ]
-    },
-    {
-      "name": "dark-veil",
-      "type": "registry:component",
-      "title": "Dark Veil",
-      "description": "Dark veil WebGL background with hue shift, scanlines, noise and warp controls.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "DarkVeil.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/DarkVeil.svelte"
-        }
-      ]
-    },
-    {
-      "name": "dither",
-      "type": "registry:component",
-      "title": "Dither",
-      "description": "Bayer-dithered animated wave field.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Dither.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Dither.svelte"
-        }
-      ]
-    },
-    {
-      "name": "dot-field",
-      "type": "registry:component",
-      "title": "Dot Field",
-      "description": "Interactive dotted canvas background with cursor bulge, glow, sparkle, and wave controls.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "DotField.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/DotField.svelte"
-        }
-      ]
-    },
-    {
-      "name": "dot-grid",
-      "type": "registry:component",
-      "title": "Dot Grid",
-      "description": "Interactive grid of dots with cursor proximity highlighting and shockwave click physics.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "DotGrid.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/DotGrid.svelte"
-        }
-      ]
-    },
-    {
-      "name": "evil-eye",
-      "type": "registry:component",
-      "title": "Evil Eye",
-      "description": "Reactive evil eye background with cursor-tracked pupil.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "EvilEye.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/EvilEye.svelte"
-        }
-      ]
-    },
-    {
-      "name": "faulty-terminal",
-      "type": "registry:component",
-      "title": "Faulty Terminal",
-      "description": "OGL terminal-style shader background with scanlines, glitches, curvature, mouse reaction, and load animation.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "FaultyTerminal.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/FaultyTerminal.svelte"
-        }
-      ]
-    },
-    {
-      "name": "floating-lines",
-      "type": "registry:component",
-      "title": "Floating Lines",
-      "description": "Layered animated wave lines with parallax & bend.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "FloatingLines.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/FloatingLines.svelte"
-        }
-      ]
-    },
-    {
-      "name": "galaxy",
-      "type": "registry:component",
-      "title": "Galaxy",
-      "description": "Animated galaxy of twinkling stars.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Galaxy.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Galaxy.svelte"
-        }
-      ]
-    },
-    {
-      "name": "gradient-blinds",
-      "type": "registry:component",
-      "title": "Gradient Blinds",
-      "description": "Animated gradient blinds with spotlight tracking.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "GradientBlinds.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GradientBlinds.svelte"
-        }
-      ]
-    },
-    {
-      "name": "grainient",
-      "type": "registry:component",
-      "title": "Grainient",
-      "description": "Animated WebGL2 grainy gradient.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Grainient.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Grainient.svelte"
-        }
-      ]
-    },
-    {
-      "name": "grid-distortion",
-      "type": "registry:component",
-      "title": "Grid Distortion",
-      "description": "Image grid distortion driven by mouse movement.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "GridDistortion.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GridDistortion.svelte"
-        }
-      ]
-    },
-    {
-      "name": "grid-motion",
-      "type": "registry:component",
-      "title": "Grid Motion",
-      "description": "Grid that pans with mouse position, powered by GSAP.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "GridMotion.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GridMotion.svelte"
-        }
-      ]
-    },
-    {
-      "name": "grid-scan",
-      "type": "registry:component",
-      "title": "Grid Scan",
-      "description": "Animated 3D grid scan with bloom and chromatic aberration. Optional face tracking via face-api.js.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "GridScan.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GridScan.svelte"
-        }
-      ]
-    },
-    {
-      "name": "hyperspeed",
-      "type": "registry:component",
-      "title": "Hyperspeed",
-      "description": "Three.js hyperspeed road background with bloom, SMAA, distortion presets, animated light trails, and hold-to-accelerate interaction.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Hyperspeed.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Hyperspeed.svelte"
-        }
-      ]
-    },
-    {
-      "name": "iridescence",
-      "type": "registry:component",
-      "title": "Iridescence",
-      "description": "Animated iridescent WebGL background with optional mouse parallax.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Iridescence.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Iridescence.svelte"
-        }
-      ]
-    },
-    {
-      "name": "letter-glitch",
-      "type": "registry:component",
-      "title": "Letter Glitch",
-      "description": "Cascading glitchy letter grid background.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "LetterGlitch.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/LetterGlitch.svelte"
-        }
-      ]
-    },
-    {
-      "name": "light-pillar",
-      "type": "registry:component",
-      "title": "LightPillar",
-      "description": "Volumetric raymarched light pillar.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "LightPillar.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/LightPillar.svelte"
-        }
-      ]
-    },
-    {
-      "name": "light-rays",
-      "type": "registry:component",
-      "title": "Light Rays",
-      "description": "Animated volumetric light rays rendered with OGL.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "LightRays.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/LightRays.svelte"
-        }
-      ]
-    },
-    {
-      "name": "lightning",
-      "type": "registry:component",
-      "title": "Lightning",
-      "description": "Procedural lightning bolt WebGL background.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Lightning.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Lightning.svelte"
-        }
-      ]
-    },
-    {
-      "name": "line-waves",
-      "type": "registry:component",
-      "title": "Line Waves",
-      "description": "Warped line waves background powered by OGL.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "LineWaves.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/LineWaves.svelte"
-        }
-      ]
-    },
-    {
-      "name": "liquid-chrome",
-      "type": "registry:component",
-      "title": "Liquid Chrome",
-      "description": "Liquid chrome animated WebGL background with mouse and touch interaction.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "LiquidChrome.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/LiquidChrome.svelte"
-        }
-      ]
-    },
-    {
-      "name": "liquid-ether",
-      "type": "registry:component",
-      "title": "Liquid Ether",
-      "description": "Interactive liquid shader with flowing distortion and customizable colors.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "LiquidEther.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/LiquidEther.svelte"
-        }
-      ]
-    },
-    {
-      "name": "orb",
-      "type": "registry:component",
-      "title": "Orb",
-      "description": "Dreamy hue-shifting orb with hover interaction.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Orb.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Orb.svelte"
-        }
-      ]
-    },
-    {
-      "name": "particles",
-      "type": "registry:component",
-      "title": "Particles",
-      "description": "OGL-based 3D point cloud particles with hover interaction.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Particles.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Particles.svelte"
-        }
-      ]
-    },
-    {
-      "name": "pixel-blast",
-      "type": "registry:component",
-      "title": "PixelBlast",
-      "description": "Pixelated dithered shape field with ripples and liquid distortion.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "PixelBlast.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/PixelBlast.svelte"
-        }
-      ]
-    },
-    {
-      "name": "pixel-snow",
-      "type": "registry:component",
-      "title": "Pixel Snow",
-      "description": "Volumetric pixel snowfall background.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "PixelSnow.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/PixelSnow.svelte"
-        }
-      ]
-    },
-    {
-      "name": "plasma",
-      "type": "registry:component",
-      "title": "Plasma",
-      "description": "Volumetric plasma WebGL2 background with optional mouse interaction and color tinting.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Plasma.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Plasma.svelte"
-        }
-      ]
-    },
-    {
-      "name": "plasma-wave",
-      "type": "registry:component",
-      "title": "Plasma Wave",
-      "description": "Raymarched plasma wave background.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "PlasmaWave.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/PlasmaWave.svelte"
-        }
-      ]
-    },
-    {
-      "name": "prism",
-      "type": "registry:component",
-      "title": "Prism",
-      "description": "Animated raymarched prism with hue and bloom.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Prism.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Prism.svelte"
-        }
-      ]
-    },
-    {
-      "name": "prismatic-burst",
-      "type": "registry:component",
-      "title": "PrismaticBurst",
-      "description": "Volumetric ray burst with bend and color gradient.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "PrismaticBurst.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/PrismaticBurst.svelte"
-        }
-      ]
-    },
-    {
-      "name": "radar",
-      "type": "registry:component",
-      "title": "Radar",
-      "description": "Radar sweep background rendered with OGL.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Radar.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Radar.svelte"
-        }
-      ]
-    },
-    {
-      "name": "ripple-grid",
-      "type": "registry:component",
-      "title": "Ripple Grid",
-      "description": "Animated rippling grid background powered by OGL with mouse interaction.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "RippleGrid.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/RippleGrid.svelte"
-        }
-      ]
-    },
-    {
-      "name": "shape-grid",
-      "type": "registry:component",
-      "title": "Shape Grid",
-      "description": "Animated grid of squares, hexagons, circles, or triangles with hover trail and configurable scroll direction.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "ShapeGrid.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ShapeGrid.svelte"
-        }
-      ]
-    },
-    {
-      "name": "silk",
-      "type": "registry:component",
-      "title": "Silk",
-      "description": "Silk-like animated WebGL background using a Three.js shader plane.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Silk.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Silk.svelte"
-        }
-      ]
-    },
-    {
-      "name": "soft-aurora",
-      "type": "registry:component",
-      "title": "Soft Aurora",
-      "description": "Soft aurora bands rendered with OGL using Perlin noise.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "SoftAurora.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/SoftAurora.svelte"
-        }
-      ]
-    },
-    {
-      "name": "threads",
-      "type": "registry:component",
-      "title": "Threads",
-      "description": "Animated WebGL line/threads background with mouse parallax.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Threads.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Threads.svelte"
-        }
-      ]
-    },
-    {
-      "name": "waves",
-      "type": "registry:component",
-      "title": "Waves",
-      "description": "Perlin-noise wavy line grid that reacts to the cursor.",
-      "categories": [
-        "backgrounds"
-      ],
-      "files": [
-        {
-          "path": "Waves.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Waves.svelte"
-        }
-      ]
-    },
-    {
-      "name": "animated-list",
-      "type": "registry:component",
-      "title": "Animated List",
-      "description": "Scroll-aware list with item-by-item scale + fade transitions and keyboard navigation.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "AnimatedList.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/AnimatedList.svelte"
-        }
-      ]
-    },
-    {
-      "name": "border-glow",
-      "type": "registry:component",
-      "title": "Border Glow",
-      "description": "Card with directional, edge-sensitive mesh-gradient border glow that follows the pointer.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "BorderGlow.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/BorderGlow.svelte"
-        }
-      ]
-    },
-    {
-      "name": "bounce-cards",
-      "type": "registry:component",
-      "title": "Bounce Cards",
-      "description": "GSAP-powered card stack with elastic intro animation and optional hover-to-spread.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "BounceCards.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/BounceCards.svelte"
-        }
-      ]
-    },
-    {
-      "name": "bubble-menu",
-      "type": "registry:component",
-      "title": "Bubble Menu",
-      "description": "Pill-style overlay nav with staggered GSAP bubble entrance animation.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "BubbleMenu.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/BubbleMenu.svelte"
-        }
-      ]
-    },
-    {
-      "name": "card-nav",
-      "type": "registry:component",
-      "title": "Card Nav",
-      "description": "Expandable navbar with three reveal cards animated by GSAP.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "CardNav.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/CardNav.svelte"
-        }
-      ]
-    },
-    {
-      "name": "card-swap",
-      "type": "registry:component",
-      "title": "Card Swap",
-      "description": "Three-card stack that auto-cycles with skewed perspective transforms (GSAP).",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "CardSwap.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/CardSwap.svelte"
-        }
-      ]
-    },
-    {
-      "name": "carousel",
-      "type": "registry:component",
-      "title": "Carousel",
-      "description": "Draggable carousel with spring snap, autoplay, optional loop, and 3D rotateY parallax.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "Carousel.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Carousel.svelte"
-        }
-      ]
-    },
-    {
-      "name": "chroma-grid",
-      "type": "registry:component",
-      "title": "Chroma Grid",
-      "description": "Card grid with cursor-following spotlight reveal of color from a desaturated overlay (GSAP).",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "ChromaGrid.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ChromaGrid.svelte"
-        }
-      ]
-    },
-    {
-      "name": "circular-gallery",
-      "type": "registry:component",
-      "title": "Circular Gallery",
-      "description": "WebGL bent gallery with momentum scroll, picture-frame distortion, and titles.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "CircularGallery.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/CircularGallery.svelte"
-        }
-      ]
-    },
-    {
-      "name": "counter",
-      "type": "registry:component",
-      "title": "Counter",
-      "description": "Animated rolling-digit counter with spring physics (motion).",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "Counter.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Counter.svelte"
-        }
-      ]
-    },
-    {
-      "name": "decay-card",
-      "type": "registry:component",
-      "title": "Decay Card",
-      "description": "Image card that warps with SVG turbulence + displacement, lerped to cursor velocity (GSAP).",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "DecayCard.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/DecayCard.svelte"
-        }
-      ]
-    },
-    {
-      "name": "dock",
-      "type": "registry:component",
-      "title": "Dock",
-      "description": "macOS-style magnification dock with spring physics. Each item scales smoothly based on cursor distance.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "Dock.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Dock.svelte"
-        }
-      ]
-    },
-    {
-      "name": "dome-gallery",
-      "type": "registry:component",
-      "title": "Dome Gallery",
-      "description": "Draggable 3D image dome with momentum, click-to-enlarge, and dome blur overlays.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "DomeGallery.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/DomeGallery.svelte"
-        }
-      ]
-    },
-    {
-      "name": "elastic-slider",
-      "type": "registry:component",
-      "title": "Elastic Slider",
-      "description": "Slider that stretches with overshoot decay and bounce-back spring (motion).",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "ElasticSlider.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ElasticSlider.svelte"
-        }
-      ]
-    },
-    {
-      "name": "flowing-menu",
-      "type": "registry:component",
-      "title": "Flowing Menu",
-      "description": "Vertical menu where rows reveal an animated marquee from the closest edge on hover (GSAP).",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "FlowingMenu.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/FlowingMenu.svelte"
-        }
-      ]
-    },
-    {
-      "name": "flying-posters",
-      "type": "registry:component",
-      "title": "Flying Posters",
-      "description": "3D posters rotate on scroll infinitely.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "FlyingPosters.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/FlyingPosters.svelte"
-        }
-      ]
-    },
-    {
-      "name": "folder",
-      "type": "registry:component",
-      "title": "Folder",
-      "description": "Click to open a folder, fanning out paper snippets that follow the cursor on hover.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "Folder.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Folder.svelte"
-        }
-      ]
-    },
-    {
-      "name": "glass-icons",
-      "type": "registry:component",
-      "title": "Glass Icons",
-      "description": "Floating glass-effect icon buttons with skewed gradient cards behind a frosted face.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "GlassIcons.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GlassIcons.svelte"
-        }
-      ]
-    },
-    {
-      "name": "glass-surface",
-      "type": "registry:component",
-      "title": "Glass Surface",
-      "description": "Liquid-glass surface using SVG displacement filters and chromatic offset.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "GlassSurface.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GlassSurface.svelte"
-        }
-      ]
-    },
-    {
-      "name": "gooey-nav",
-      "type": "registry:component",
-      "title": "Gooey Nav",
-      "description": "Pill-style nav with a gooey, particle-bursting active highlight powered by SVG-style filter blur+contrast.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "GooeyNav.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GooeyNav.svelte"
-        }
-      ]
-    },
-    {
-      "name": "infinite-menu",
-      "type": "registry:component",
-      "title": "Infinite Menu",
-      "description": "Spherical icosahedron menu rendered with WebGL2 + instanced disc atlas, dragged via arcball physics.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "InfiniteMenu.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/InfiniteMenu.svelte"
-        }
-      ]
-    },
-    {
-      "name": "magic-bento",
-      "type": "registry:component",
-      "title": "Magic Bento",
-      "description": "Bento grid with spotlight, particle stars, border glow, tilt, and magnetism.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "MagicBento.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/MagicBento.svelte"
-        }
-      ]
-    },
-    {
-      "name": "masonry",
-      "type": "registry:component",
-      "title": "Masonry",
-      "description": "Animated responsive masonry grid with GSAP entrance and hover effects.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "Masonry.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Masonry.svelte"
-        }
-      ]
-    },
-    {
-      "name": "model-viewer",
-      "type": "registry:component",
-      "title": "Model Viewer",
-      "description": "Interactive GLTF/GLB/FBX/OBJ model viewer with orbit, parallax, and hover effects.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "ModelViewer.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ModelViewer.svelte"
-        }
-      ]
-    },
-    {
-      "name": "pill-nav",
-      "type": "registry:component",
-      "title": "Pill Nav",
-      "description": "Animated pill-shaped nav with circular GSAP hover and mobile menu.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "PillNav.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/PillNav.svelte"
-        }
-      ]
-    },
-    {
-      "name": "pixel-card",
-      "type": "registry:component",
-      "title": "Pixel Card",
-      "description": "Card with shimmering pixel canvas effect on hover/focus.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "PixelCard.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/PixelCard.svelte"
-        }
-      ]
-    },
-    {
-      "name": "profile-card",
-      "type": "registry:component",
-      "title": "Profile Card",
-      "description": "Holographic profile card with pointer/device-orientation tilt and animated shine.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "ProfileCard.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ProfileCard.svelte"
-        }
-      ]
-    },
-    {
-      "name": "reflective-card",
-      "type": "registry:component",
-      "title": "Reflective Card",
-      "description": "Webcam-fed metallic glass card using SVG turbulence and specular lighting filters.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "ReflectiveCard.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ReflectiveCard.svelte"
-        }
-      ]
-    },
-    {
-      "name": "scroll-stack",
-      "type": "registry:component",
-      "title": "Scroll Stack",
-      "description": "Scroll-driven card stack with pin/scale/blur/rotation, powered by Lenis smooth-scroll.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "ScrollStack.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ScrollStack.svelte"
-        }
-      ]
-    },
-    {
-      "name": "spotlight-card",
-      "type": "registry:component",
-      "title": "Spotlight Card",
-      "description": "Card with a soft radial spotlight that follows the cursor.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "SpotlightCard.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/SpotlightCard.svelte"
-        }
-      ]
-    },
-    {
-      "name": "stack",
-      "type": "registry:component",
-      "title": "Stack",
-      "description": "Draggable card stack with spring rotation and send-to-back interaction.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "Stack.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Stack.svelte"
-        }
-      ]
-    },
-    {
-      "name": "staggered-menu",
-      "type": "registry:component",
-      "title": "Staggered Menu",
-      "description": "Full-screen staggered slide-in menu with layered colors and GSAP timelines.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "StaggeredMenu.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/StaggeredMenu.svelte"
-        }
-      ]
-    },
-    {
-      "name": "stepper",
-      "type": "registry:component",
-      "title": "Stepper",
-      "description": "Animated multi-step form with sliding step content and round step indicators.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "Stepper.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/Stepper.svelte"
-        }
-      ]
-    },
-    {
-      "name": "tilted-card",
-      "type": "registry:component",
-      "title": "Tilted Card",
-      "description": "3D tilt-on-mouse card with spring physics and a cursor-following caption.",
-      "categories": [
-        "components"
-      ],
-      "files": [
-        {
-          "path": "TiltedCard.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/TiltedCard.svelte"
-        }
-      ]
-    },
-    {
-      "name": "blur-text",
-      "type": "registry:component",
-      "title": "Blur Text",
-      "description": "Per-word/letter blur-in animation triggered when scrolled into view, with configurable direction, easing and stepped keyframes.",
-      "categories": [
-        "text-animations"
-      ],
-      "files": [
-        {
-          "path": "BlurText.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/BlurText.svelte"
-        }
-      ]
-    },
-    {
-      "name": "count-up",
-      "type": "registry:component",
-      "title": "Count Up",
-      "description": "Spring-animated number counter that counts up (or down) when scrolled into view, with configurable spring physics, delay, and number formatting.",
-      "categories": [
-        "text-animations"
-      ],
-      "files": [
-        {
-          "path": "CountUp.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/CountUp.svelte"
-        }
-      ]
-    },
-    {
-      "name": "falling-text",
-      "type": "registry:component",
-      "title": "Falling Text",
-      "description": "Characters fall with gravity + bounce creating a playful entrance.",
-      "categories": [
-        "text-animations"
-      ],
-      "files": [
-        {
-          "path": "FallingText.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/FallingText.svelte"
-        }
-      ]
-    },
-    {
-      "name": "glitch-text",
-      "type": "registry:component",
-      "title": "Glitch Text",
-      "description": "RGB-split glitch effect on text using clip-path keyframe animation, with optional hover-only mode.",
-      "categories": [
-        "text-animations"
-      ],
-      "files": [
-        {
-          "path": "GlitchText.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GlitchText.svelte"
-        }
-      ]
-    },
-    {
-      "name": "gradient-text",
-      "type": "registry:component",
-      "title": "Gradient Text",
-      "description": "Animated multi-color gradient text with optional border, direction, yoyo and pause-on-hover.",
-      "categories": [
-        "text-animations"
-      ],
-      "files": [
-        {
-          "path": "GradientText.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/GradientText.svelte"
-        }
-      ]
-    },
-    {
-      "name": "shiny-text",
-      "type": "registry:component",
-      "title": "Shiny Text",
-      "description": "Animated shiny gradient sweep across text, with yoyo + direction controls.",
-      "categories": [
-        "text-animations"
-      ],
-      "files": [
-        {
-          "path": "ShinyText.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/ShinyText.svelte"
-        }
-      ]
-    },
-    {
-      "name": "split-text",
-      "type": "registry:component",
-      "title": "Split Text",
-      "description": "Splits text into characters / words for staggered entrance animation.",
-      "categories": [
-        "text-animations"
-      ],
-      "files": [
-        {
-          "path": "SplitText.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/SplitText.svelte"
-        }
-      ]
-    },
-    {
-      "name": "true-focus",
-      "type": "registry:component",
-      "title": "True Focus",
-      "description": "Applies dynamic blur / clarity based over a series of words in order.",
-      "categories": [
-        "text-animations"
-      ],
-      "files": [
-        {
-          "path": "TrueFocus.svelte",
-          "type": "registry:component",
-          "target": "$lib/components/svelte-bits/TrueFocus.svelte"
-        }
-      ]
-    }
-  ]
+	"$schema": "https://ui.shadcn.com/schema/registry.json",
+	"name": "svelte-bits",
+	"homepage": "https://sveltebits.xyz",
+	"items": [
+		{
+			"name": "animated-content",
+			"title": "Animated Content",
+			"description": "Scroll-triggered entrance animation with distance, direction, scale and opacity controls. Powered by GSAP + ScrollTrigger.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "AnimatedContent.svelte",
+					"target": "$lib/components/svelte-bits/AnimatedContent.svelte"
+				}
+			]
+		},
+		{
+			"name": "antigravity",
+			"title": "Antigravity",
+			"description": "Instanced 3D particles that orbit and react to the mouse with wave physics, rendered with three.js.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Antigravity.svelte",
+					"target": "$lib/components/svelte-bits/Antigravity.svelte"
+				}
+			]
+		},
+		{
+			"name": "blob-cursor",
+			"title": "Blob Cursor",
+			"description": "Gooey blob cursor with a trail of lagging blobs, smoothed via GSAP.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "BlobCursor.svelte",
+					"target": "$lib/components/svelte-bits/BlobCursor.svelte"
+				}
+			]
+		},
+		{
+			"name": "click-spark",
+			"title": "Click Spark",
+			"description": "Clickable container that emits radial spark lines on click.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ClickSpark.svelte",
+					"target": "$lib/components/svelte-bits/ClickSpark.svelte"
+				}
+			]
+		},
+		{
+			"name": "crosshair",
+			"title": "Crosshair",
+			"description": "Animated crosshair lines that follow the cursor with subtle SVG turbulence on hover.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Crosshair.svelte",
+					"target": "$lib/components/svelte-bits/Crosshair.svelte"
+				}
+			]
+		},
+		{
+			"name": "cubes",
+			"title": "Cubes",
+			"description": "3D cube grid that tilts toward the cursor with optional ripple-on-click and idle drift.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Cubes.svelte",
+					"target": "$lib/components/svelte-bits/Cubes.svelte"
+				}
+			]
+		},
+		{
+			"name": "electric-border",
+			"title": "Electric Border",
+			"description": "Animated electric arcs around rounded rectangle borders rendered to canvas with noise displacement.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ElectricBorder.svelte",
+					"target": "$lib/components/svelte-bits/ElectricBorder.svelte"
+				}
+			]
+		},
+		{
+			"name": "fade-content",
+			"title": "Fade Content",
+			"description": "Scroll-triggered fade-in (with optional blur) entrance using GSAP + ScrollTrigger, with optional auto-disappearance.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FadeContent.svelte",
+					"target": "$lib/components/svelte-bits/FadeContent.svelte"
+				}
+			]
+		},
+		{
+			"name": "ghost-cursor",
+			"title": "Ghost Cursor",
+			"description": "WebGL ghostly cursor trail rendered with three.js + bloom + film grain post-processing.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GhostCursor.svelte",
+					"target": "$lib/components/svelte-bits/GhostCursor.svelte"
+				}
+			]
+		},
+		{
+			"name": "glare-hover",
+			"title": "Glare Hover",
+			"description": "Hover-triggered moving glare highlight across a card.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GlareHover.svelte",
+					"target": "$lib/components/svelte-bits/GlareHover.svelte"
+				}
+			]
+		},
+		{
+			"name": "gradual-blur",
+			"title": "Gradual Blur",
+			"description": "Multi-layer gradient-masked backdrop blur for soft fade-out edges (top/bottom/left/right).",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GradualBlur.svelte",
+					"target": "$lib/components/svelte-bits/GradualBlur.svelte"
+				}
+			]
+		},
+		{
+			"name": "image-trail",
+			"title": "Image Trail",
+			"description": "Mouse trail of images with 8 visually distinct GSAP variants.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ImageTrail.svelte",
+					"target": "$lib/components/svelte-bits/ImageTrail.svelte"
+				}
+			]
+		},
+		{
+			"name": "laser-flow",
+			"title": "Laser Flow",
+			"description": "Volumetric laser beam with wisps and tilting fog volume, rendered with three.js raw shader.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LaserFlow.svelte",
+					"target": "$lib/components/svelte-bits/LaserFlow.svelte"
+				}
+			]
+		},
+		{
+			"name": "logo-loop",
+			"title": "Logo Loop",
+			"description": "Smooth, infinite, pause-on-hover marquee for partner logos with optional fade-out edges.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LogoLoop.svelte",
+					"target": "$lib/components/svelte-bits/LogoLoop.svelte"
+				}
+			]
+		},
+		{
+			"name": "magic-rings",
+			"title": "Magic Rings",
+			"description": "WebGL2 concentric ring animation with mouse parallax, hover scale, and click burst. Real three.js shader.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MagicRings.svelte",
+					"target": "$lib/components/svelte-bits/MagicRings.svelte"
+				}
+			]
+		},
+		{
+			"name": "magnet",
+			"title": "Magnet",
+			"description": "Magnetic pull effect that attracts content toward the cursor when nearby.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Magnet.svelte",
+					"target": "$lib/components/svelte-bits/Magnet.svelte"
+				}
+			]
+		},
+		{
+			"name": "magnet-lines",
+			"title": "Magnet Lines",
+			"description": "A grid of small line segments that rotate to face the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MagnetLines.svelte",
+					"target": "$lib/components/svelte-bits/MagnetLines.svelte"
+				}
+			]
+		},
+		{
+			"name": "meta-balls",
+			"title": "Meta Balls",
+			"description": "Animated metaballs (gooey blob field) with cursor interaction, rendered with OGL shader.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MetaBalls.svelte",
+					"target": "$lib/components/svelte-bits/MetaBalls.svelte"
+				}
+			]
+		},
+		{
+			"name": "metallic-paint",
+			"title": "Metallic Paint",
+			"description": "Image-driven liquid metallic paint shader (WebGL2) with depth field solved via SOR relaxation.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MetallicPaint.svelte",
+					"target": "$lib/components/svelte-bits/MetallicPaint.svelte"
+				}
+			]
+		},
+		{
+			"name": "noise",
+			"title": "Noise",
+			"description": "Full-viewport animated film-grain canvas overlay.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Noise.svelte",
+					"target": "$lib/components/svelte-bits/Noise.svelte"
+				}
+			]
+		},
+		{
+			"name": "orbit-images",
+			"title": "Orbit Images",
+			"description": "Images orbiting along a configurable SVG path (ellipse, circle, star, heart, infinity, wave, custom).",
+			"type": "registry:component",
+			"dependencies": [
+				"motion"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "OrbitImages.svelte",
+					"target": "$lib/components/svelte-bits/OrbitImages.svelte"
+				}
+			]
+		},
+		{
+			"name": "pixel-trail",
+			"title": "Pixel Trail",
+			"description": "Pixelated mouse trail with optional gooey blend, rendered with three.js + a canvas-based trail texture.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PixelTrail.svelte",
+					"target": "$lib/components/svelte-bits/PixelTrail.svelte"
+				}
+			]
+		},
+		{
+			"name": "pixel-transition",
+			"title": "Pixel Transition",
+			"description": "Hover/click reveal that transitions between two contents through a randomized pixel grid effect.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PixelTransition.svelte",
+					"target": "$lib/components/svelte-bits/PixelTransition.svelte"
+				}
+			]
+		},
+		{
+			"name": "ribbons",
+			"title": "Ribbons",
+			"description": "Colorful spring-driven ribbon trails following the cursor, rendered with OGL polylines.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Ribbons.svelte",
+					"target": "$lib/components/svelte-bits/Ribbons.svelte"
+				}
+			]
+		},
+		{
+			"name": "shape-blur",
+			"title": "Shape Blur",
+			"description": "Mouse-reactive blurred SDF shapes (rounded rect, circle, ring, triangle) rendered with three.js.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ShapeBlur.svelte",
+					"target": "$lib/components/svelte-bits/ShapeBlur.svelte"
+				}
+			]
+		},
+		{
+			"name": "splash-cursor",
+			"title": "Splash Cursor",
+			"description": "Liquid splash burst at cursor with curling ripples and waves.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SplashCursor.svelte",
+					"target": "$lib/components/svelte-bits/SplashCursor.svelte"
+				}
+			]
+		},
+		{
+			"name": "star-border",
+			"title": "Star Border",
+			"description": "Button-like wrapper with two animated radial-gradient sweeps tracing the top and bottom border.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "StarBorder.svelte",
+					"target": "$lib/components/svelte-bits/StarBorder.svelte"
+				}
+			]
+		},
+		{
+			"name": "sticker-peel",
+			"title": "Sticker Peel",
+			"description": "Draggable sticker that peels off on hover, with SVG specular lighting and drop shadow filters.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "StickerPeel.svelte",
+					"target": "$lib/components/svelte-bits/StickerPeel.svelte"
+				}
+			]
+		},
+		{
+			"name": "target-cursor",
+			"title": "Target Cursor",
+			"description": "Custom spinning crosshair cursor that snaps to corners of elements matching a selector when hovered.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "TargetCursor.svelte",
+					"target": "$lib/components/svelte-bits/TargetCursor.svelte"
+				}
+			]
+		},
+		{
+			"name": "aurora",
+			"title": "Aurora",
+			"description": "WebGL aurora background with configurable color stops, amplitude, blend and speed. Real OGL shader, not a CSS gradient.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Aurora.svelte",
+					"target": "$lib/components/svelte-bits/Aurora.svelte"
+				}
+			]
+		},
+		{
+			"name": "balatro",
+			"title": "Balatro",
+			"description": "Swirling pixel-painted Balatro-style WebGL background with mouse interaction.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Balatro.svelte",
+					"target": "$lib/components/svelte-bits/Balatro.svelte"
+				}
+			]
+		},
+		{
+			"name": "ballpit",
+			"title": "Ballpit",
+			"description": "Interactive 3D ball pit using Three.js physics.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"gsap",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Ballpit.svelte",
+					"target": "$lib/components/svelte-bits/Ballpit.svelte"
+				}
+			]
+		},
+		{
+			"name": "beams",
+			"title": "Beams",
+			"description": "Light beams animated with noise displacement.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Beams.svelte",
+					"target": "$lib/components/svelte-bits/Beams.svelte"
+				}
+			]
+		},
+		{
+			"name": "color-bends",
+			"title": "Color Bends",
+			"description": "Three.js shader background with warped color bands, pointer parallax, noise, and rotation controls.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ColorBends.svelte",
+					"target": "$lib/components/svelte-bits/ColorBends.svelte"
+				}
+			]
+		},
+		{
+			"name": "dark-veil",
+			"title": "Dark Veil",
+			"description": "Dark veil WebGL background with hue shift, scanlines, noise and warp controls.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DarkVeil.svelte",
+					"target": "$lib/components/svelte-bits/DarkVeil.svelte"
+				}
+			]
+		},
+		{
+			"name": "dither",
+			"title": "Dither",
+			"description": "Bayer-dithered animated wave field.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Dither.svelte",
+					"target": "$lib/components/svelte-bits/Dither.svelte"
+				}
+			]
+		},
+		{
+			"name": "dot-field",
+			"title": "Dot Field",
+			"description": "Interactive dotted canvas background with cursor bulge, glow, sparkle, and wave controls.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DotField.svelte",
+					"target": "$lib/components/svelte-bits/DotField.svelte"
+				}
+			]
+		},
+		{
+			"name": "dot-grid",
+			"title": "Dot Grid",
+			"description": "Interactive grid of dots with cursor proximity highlighting and shockwave click physics.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DotGrid.svelte",
+					"target": "$lib/components/svelte-bits/DotGrid.svelte"
+				}
+			]
+		},
+		{
+			"name": "evil-eye",
+			"title": "Evil Eye",
+			"description": "Reactive evil eye background with cursor-tracked pupil.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "EvilEye.svelte",
+					"target": "$lib/components/svelte-bits/EvilEye.svelte"
+				}
+			]
+		},
+		{
+			"name": "faulty-terminal",
+			"title": "Faulty Terminal",
+			"description": "OGL terminal-style shader background with scanlines, glitches, curvature, mouse reaction, and load animation.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FaultyTerminal.svelte",
+					"target": "$lib/components/svelte-bits/FaultyTerminal.svelte"
+				}
+			]
+		},
+		{
+			"name": "floating-lines",
+			"title": "Floating Lines",
+			"description": "Layered animated wave lines with parallax & bend.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FloatingLines.svelte",
+					"target": "$lib/components/svelte-bits/FloatingLines.svelte"
+				}
+			]
+		},
+		{
+			"name": "galaxy",
+			"title": "Galaxy",
+			"description": "Animated galaxy of twinkling stars.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Galaxy.svelte",
+					"target": "$lib/components/svelte-bits/Galaxy.svelte"
+				}
+			]
+		},
+		{
+			"name": "gradient-blinds",
+			"title": "Gradient Blinds",
+			"description": "Animated gradient blinds with spotlight tracking.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GradientBlinds.svelte",
+					"target": "$lib/components/svelte-bits/GradientBlinds.svelte"
+				}
+			]
+		},
+		{
+			"name": "grainient",
+			"title": "Grainient",
+			"description": "Animated WebGL2 grainy gradient.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Grainient.svelte",
+					"target": "$lib/components/svelte-bits/Grainient.svelte"
+				}
+			]
+		},
+		{
+			"name": "grid-distortion",
+			"title": "Grid Distortion",
+			"description": "Image grid distortion driven by mouse movement.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GridDistortion.svelte",
+					"target": "$lib/components/svelte-bits/GridDistortion.svelte"
+				}
+			]
+		},
+		{
+			"name": "grid-motion",
+			"title": "Grid Motion",
+			"description": "Grid that pans with mouse position, powered by GSAP.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GridMotion.svelte",
+					"target": "$lib/components/svelte-bits/GridMotion.svelte"
+				}
+			]
+		},
+		{
+			"name": "grid-scan",
+			"title": "Grid Scan",
+			"description": "Animated 3D grid scan with bloom and chromatic aberration. Optional face tracking via face-api.js.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"postprocessing",
+				"face-api.js",
+				"three@^0.184.0",
+				"postprocessing@^6.39.1",
+				"face-api.js@^0.22.2"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GridScan.svelte",
+					"target": "$lib/components/svelte-bits/GridScan.svelte"
+				}
+			]
+		},
+		{
+			"name": "hyperspeed",
+			"title": "Hyperspeed",
+			"description": "Three.js hyperspeed road background with bloom, SMAA, distortion presets, animated light trails, and hold-to-accelerate interaction.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"postprocessing",
+				"postprocessing@^6.39.1",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Hyperspeed.svelte",
+					"target": "$lib/components/svelte-bits/Hyperspeed.svelte"
+				}
+			]
+		},
+		{
+			"name": "iridescence",
+			"title": "Iridescence",
+			"description": "Animated iridescent WebGL background with optional mouse parallax.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Iridescence.svelte",
+					"target": "$lib/components/svelte-bits/Iridescence.svelte"
+				}
+			]
+		},
+		{
+			"name": "letter-glitch",
+			"title": "Letter Glitch",
+			"description": "Cascading glitchy letter grid background.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LetterGlitch.svelte",
+					"target": "$lib/components/svelte-bits/LetterGlitch.svelte"
+				}
+			]
+		},
+		{
+			"name": "light-pillar",
+			"title": "LightPillar",
+			"description": "Volumetric raymarched light pillar.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LightPillar.svelte",
+					"target": "$lib/components/svelte-bits/LightPillar.svelte"
+				}
+			]
+		},
+		{
+			"name": "light-rays",
+			"title": "Light Rays",
+			"description": "Animated volumetric light rays rendered with OGL.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LightRays.svelte",
+					"target": "$lib/components/svelte-bits/LightRays.svelte"
+				}
+			]
+		},
+		{
+			"name": "lightning",
+			"title": "Lightning",
+			"description": "Procedural lightning bolt WebGL background.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Lightning.svelte",
+					"target": "$lib/components/svelte-bits/Lightning.svelte"
+				}
+			]
+		},
+		{
+			"name": "line-waves",
+			"title": "Line Waves",
+			"description": "Warped line waves background powered by OGL.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LineWaves.svelte",
+					"target": "$lib/components/svelte-bits/LineWaves.svelte"
+				}
+			]
+		},
+		{
+			"name": "liquid-chrome",
+			"title": "Liquid Chrome",
+			"description": "Liquid chrome animated WebGL background with mouse and touch interaction.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LiquidChrome.svelte",
+					"target": "$lib/components/svelte-bits/LiquidChrome.svelte"
+				}
+			]
+		},
+		{
+			"name": "liquid-ether",
+			"title": "Liquid Ether",
+			"description": "Interactive liquid shader with flowing distortion and customizable colors.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LiquidEther.svelte",
+					"target": "$lib/components/svelte-bits/LiquidEther.svelte"
+				}
+			]
+		},
+		{
+			"name": "orb",
+			"title": "Orb",
+			"description": "Dreamy hue-shifting orb with hover interaction.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Orb.svelte",
+					"target": "$lib/components/svelte-bits/Orb.svelte"
+				}
+			]
+		},
+		{
+			"name": "particles",
+			"title": "Particles",
+			"description": "OGL-based 3D point cloud particles with hover interaction.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Particles.svelte",
+					"target": "$lib/components/svelte-bits/Particles.svelte"
+				}
+			]
+		},
+		{
+			"name": "pixel-blast",
+			"title": "PixelBlast",
+			"description": "Pixelated dithered shape field with ripples and liquid distortion.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"postprocessing",
+				"three@^0.184.0",
+				"postprocessing@^6.39.1"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PixelBlast.svelte",
+					"target": "$lib/components/svelte-bits/PixelBlast.svelte"
+				}
+			]
+		},
+		{
+			"name": "pixel-snow",
+			"title": "Pixel Snow",
+			"description": "Volumetric pixel snowfall background.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PixelSnow.svelte",
+					"target": "$lib/components/svelte-bits/PixelSnow.svelte"
+				}
+			]
+		},
+		{
+			"name": "plasma",
+			"title": "Plasma",
+			"description": "Volumetric plasma WebGL2 background with optional mouse interaction and color tinting.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Plasma.svelte",
+					"target": "$lib/components/svelte-bits/Plasma.svelte"
+				}
+			]
+		},
+		{
+			"name": "plasma-wave",
+			"title": "Plasma Wave",
+			"description": "Raymarched plasma wave background.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PlasmaWave.svelte",
+					"target": "$lib/components/svelte-bits/PlasmaWave.svelte"
+				}
+			]
+		},
+		{
+			"name": "prism",
+			"title": "Prism",
+			"description": "Animated raymarched prism with hue and bloom.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Prism.svelte",
+					"target": "$lib/components/svelte-bits/Prism.svelte"
+				}
+			]
+		},
+		{
+			"name": "prismatic-burst",
+			"title": "PrismaticBurst",
+			"description": "Volumetric ray burst with bend and color gradient.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PrismaticBurst.svelte",
+					"target": "$lib/components/svelte-bits/PrismaticBurst.svelte"
+				}
+			]
+		},
+		{
+			"name": "radar",
+			"title": "Radar",
+			"description": "Radar sweep background rendered with OGL.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Radar.svelte",
+					"target": "$lib/components/svelte-bits/Radar.svelte"
+				}
+			]
+		},
+		{
+			"name": "ripple-grid",
+			"title": "Ripple Grid",
+			"description": "Animated rippling grid background powered by OGL with mouse interaction.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "RippleGrid.svelte",
+					"target": "$lib/components/svelte-bits/RippleGrid.svelte"
+				}
+			]
+		},
+		{
+			"name": "shape-grid",
+			"title": "Shape Grid",
+			"description": "Animated grid of squares, hexagons, circles, or triangles with hover trail and configurable scroll direction.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ShapeGrid.svelte",
+					"target": "$lib/components/svelte-bits/ShapeGrid.svelte"
+				}
+			]
+		},
+		{
+			"name": "silk",
+			"title": "Silk",
+			"description": "Silk-like animated WebGL background using a Three.js shader plane.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Silk.svelte",
+					"target": "$lib/components/svelte-bits/Silk.svelte"
+				}
+			]
+		},
+		{
+			"name": "soft-aurora",
+			"title": "Soft Aurora",
+			"description": "Soft aurora bands rendered with OGL using Perlin noise.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SoftAurora.svelte",
+					"target": "$lib/components/svelte-bits/SoftAurora.svelte"
+				}
+			]
+		},
+		{
+			"name": "threads",
+			"title": "Threads",
+			"description": "Animated WebGL line/threads background with mouse parallax.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Threads.svelte",
+					"target": "$lib/components/svelte-bits/Threads.svelte"
+				}
+			]
+		},
+		{
+			"name": "waves",
+			"title": "Waves",
+			"description": "Perlin-noise wavy line grid that reacts to the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Waves.svelte",
+					"target": "$lib/components/svelte-bits/Waves.svelte"
+				}
+			]
+		},
+		{
+			"name": "animated-list",
+			"title": "Animated List",
+			"description": "Scroll-aware list with item-by-item scale + fade transitions and keyboard navigation.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "AnimatedList.svelte",
+					"target": "$lib/components/svelte-bits/AnimatedList.svelte"
+				}
+			]
+		},
+		{
+			"name": "border-glow",
+			"title": "Border Glow",
+			"description": "Card with directional, edge-sensitive mesh-gradient border glow that follows the pointer.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "BorderGlow.svelte",
+					"target": "$lib/components/svelte-bits/BorderGlow.svelte"
+				}
+			]
+		},
+		{
+			"name": "bounce-cards",
+			"title": "Bounce Cards",
+			"description": "GSAP-powered card stack with elastic intro animation and optional hover-to-spread.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "BounceCards.svelte",
+					"target": "$lib/components/svelte-bits/BounceCards.svelte"
+				}
+			]
+		},
+		{
+			"name": "bubble-menu",
+			"title": "Bubble Menu",
+			"description": "Pill-style overlay nav with staggered GSAP bubble entrance animation.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "BubbleMenu.svelte",
+					"target": "$lib/components/svelte-bits/BubbleMenu.svelte"
+				}
+			]
+		},
+		{
+			"name": "card-nav",
+			"title": "Card Nav",
+			"description": "Expandable navbar with three reveal cards animated by GSAP.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CardNav.svelte",
+					"target": "$lib/components/svelte-bits/CardNav.svelte"
+				}
+			]
+		},
+		{
+			"name": "card-swap",
+			"title": "Card Swap",
+			"description": "Three-card stack that auto-cycles with skewed perspective transforms (GSAP).",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CardSwap.svelte",
+					"target": "$lib/components/svelte-bits/CardSwap.svelte"
+				}
+			]
+		},
+		{
+			"name": "carousel",
+			"title": "Carousel",
+			"description": "Draggable carousel with spring snap, autoplay, optional loop, and 3D rotateY parallax.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Carousel.svelte",
+					"target": "$lib/components/svelte-bits/Carousel.svelte"
+				}
+			]
+		},
+		{
+			"name": "chroma-grid",
+			"title": "Chroma Grid",
+			"description": "Card grid with cursor-following spotlight reveal of color from a desaturated overlay (GSAP).",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ChromaGrid.svelte",
+					"target": "$lib/components/svelte-bits/ChromaGrid.svelte"
+				}
+			]
+		},
+		{
+			"name": "circular-gallery",
+			"title": "Circular Gallery",
+			"description": "WebGL bent gallery with momentum scroll, picture-frame distortion, and titles.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CircularGallery.svelte",
+					"target": "$lib/components/svelte-bits/CircularGallery.svelte"
+				}
+			]
+		},
+		{
+			"name": "counter",
+			"title": "Counter",
+			"description": "Animated rolling-digit counter with spring physics (motion).",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Counter.svelte",
+					"target": "$lib/components/svelte-bits/Counter.svelte"
+				}
+			]
+		},
+		{
+			"name": "decay-card",
+			"title": "Decay Card",
+			"description": "Image card that warps with SVG turbulence + displacement, lerped to cursor velocity (GSAP).",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DecayCard.svelte",
+					"target": "$lib/components/svelte-bits/DecayCard.svelte"
+				}
+			]
+		},
+		{
+			"name": "dock",
+			"title": "Dock",
+			"description": "macOS-style magnification dock with spring physics. Each item scales smoothly based on cursor distance.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Dock.svelte",
+					"target": "$lib/components/svelte-bits/Dock.svelte"
+				}
+			]
+		},
+		{
+			"name": "dome-gallery",
+			"title": "Dome Gallery",
+			"description": "Draggable 3D image dome with momentum, click-to-enlarge, and dome blur overlays.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DomeGallery.svelte",
+					"target": "$lib/components/svelte-bits/DomeGallery.svelte"
+				}
+			]
+		},
+		{
+			"name": "elastic-slider",
+			"title": "Elastic Slider",
+			"description": "Slider that stretches with overshoot decay and bounce-back spring (motion).",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ElasticSlider.svelte",
+					"target": "$lib/components/svelte-bits/ElasticSlider.svelte"
+				}
+			]
+		},
+		{
+			"name": "flowing-menu",
+			"title": "Flowing Menu",
+			"description": "Vertical menu where rows reveal an animated marquee from the closest edge on hover (GSAP).",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FlowingMenu.svelte",
+					"target": "$lib/components/svelte-bits/FlowingMenu.svelte"
+				}
+			]
+		},
+		{
+			"name": "flying-posters",
+			"title": "Flying Posters",
+			"description": "3D posters rotate on scroll infinitely.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FlyingPosters.svelte",
+					"target": "$lib/components/svelte-bits/FlyingPosters.svelte"
+				}
+			]
+		},
+		{
+			"name": "folder",
+			"title": "Folder",
+			"description": "Click to open a folder, fanning out paper snippets that follow the cursor on hover.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Folder.svelte",
+					"target": "$lib/components/svelte-bits/Folder.svelte"
+				}
+			]
+		},
+		{
+			"name": "glass-icons",
+			"title": "Glass Icons",
+			"description": "Floating glass-effect icon buttons with skewed gradient cards behind a frosted face.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GlassIcons.svelte",
+					"target": "$lib/components/svelte-bits/GlassIcons.svelte"
+				}
+			]
+		},
+		{
+			"name": "glass-surface",
+			"title": "Glass Surface",
+			"description": "Liquid-glass surface using SVG displacement filters and chromatic offset.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GlassSurface.svelte",
+					"target": "$lib/components/svelte-bits/GlassSurface.svelte"
+				}
+			]
+		},
+		{
+			"name": "gooey-nav",
+			"title": "Gooey Nav",
+			"description": "Pill-style nav with a gooey, particle-bursting active highlight powered by SVG-style filter blur+contrast.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GooeyNav.svelte",
+					"target": "$lib/components/svelte-bits/GooeyNav.svelte"
+				}
+			]
+		},
+		{
+			"name": "infinite-menu",
+			"title": "Infinite Menu",
+			"description": "Spherical icosahedron menu rendered with WebGL2 + instanced disc atlas, dragged via arcball physics.",
+			"type": "registry:component",
+			"dependencies": [
+				"gl-matrix",
+				"gl-matrix@^3.4.4"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "InfiniteMenu.svelte",
+					"target": "$lib/components/svelte-bits/InfiniteMenu.svelte"
+				}
+			]
+		},
+		{
+			"name": "magic-bento",
+			"title": "Magic Bento",
+			"description": "Bento grid with spotlight, particle stars, border glow, tilt, and magnetism.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MagicBento.svelte",
+					"target": "$lib/components/svelte-bits/MagicBento.svelte"
+				}
+			]
+		},
+		{
+			"name": "masonry",
+			"title": "Masonry",
+			"description": "Animated responsive masonry grid with GSAP entrance and hover effects.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Masonry.svelte",
+					"target": "$lib/components/svelte-bits/Masonry.svelte"
+				}
+			]
+		},
+		{
+			"name": "model-viewer",
+			"title": "Model Viewer",
+			"description": "Interactive GLTF/GLB/FBX/OBJ model viewer with orbit, parallax, and hover effects.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ModelViewer.svelte",
+					"target": "$lib/components/svelte-bits/ModelViewer.svelte"
+				}
+			]
+		},
+		{
+			"name": "pill-nav",
+			"title": "Pill Nav",
+			"description": "Animated pill-shaped nav with circular GSAP hover and mobile menu.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PillNav.svelte",
+					"target": "$lib/components/svelte-bits/PillNav.svelte"
+				}
+			]
+		},
+		{
+			"name": "pixel-card",
+			"title": "Pixel Card",
+			"description": "Card with shimmering pixel canvas effect on hover/focus.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PixelCard.svelte",
+					"target": "$lib/components/svelte-bits/PixelCard.svelte"
+				}
+			]
+		},
+		{
+			"name": "profile-card",
+			"title": "Profile Card",
+			"description": "Holographic profile card with pointer/device-orientation tilt and animated shine.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ProfileCard.svelte",
+					"target": "$lib/components/svelte-bits/ProfileCard.svelte"
+				}
+			]
+		},
+		{
+			"name": "reflective-card",
+			"title": "Reflective Card",
+			"description": "Webcam-fed metallic glass card using SVG turbulence and specular lighting filters.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ReflectiveCard.svelte",
+					"target": "$lib/components/svelte-bits/ReflectiveCard.svelte"
+				}
+			]
+		},
+		{
+			"name": "scroll-stack",
+			"title": "Scroll Stack",
+			"description": "Scroll-driven card stack with pin/scale/blur/rotation, powered by Lenis smooth-scroll.",
+			"type": "registry:component",
+			"dependencies": [
+				"lenis",
+				"lenis@^1.3.23"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ScrollStack.svelte",
+					"target": "$lib/components/svelte-bits/ScrollStack.svelte"
+				}
+			]
+		},
+		{
+			"name": "spotlight-card",
+			"title": "Spotlight Card",
+			"description": "Card with a soft radial spotlight that follows the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SpotlightCard.svelte",
+					"target": "$lib/components/svelte-bits/SpotlightCard.svelte"
+				}
+			]
+		},
+		{
+			"name": "stack",
+			"title": "Stack",
+			"description": "Draggable card stack with spring rotation and send-to-back interaction.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Stack.svelte",
+					"target": "$lib/components/svelte-bits/Stack.svelte"
+				}
+			]
+		},
+		{
+			"name": "staggered-menu",
+			"title": "Staggered Menu",
+			"description": "Full-screen staggered slide-in menu with layered colors and GSAP timelines.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "StaggeredMenu.svelte",
+					"target": "$lib/components/svelte-bits/StaggeredMenu.svelte"
+				}
+			]
+		},
+		{
+			"name": "stepper",
+			"title": "Stepper",
+			"description": "Animated multi-step form with sliding step content and round step indicators.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Stepper.svelte",
+					"target": "$lib/components/svelte-bits/Stepper.svelte"
+				}
+			]
+		},
+		{
+			"name": "tilted-card",
+			"title": "Tilted Card",
+			"description": "3D tilt-on-mouse card with spring physics and a cursor-following caption.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "TiltedCard.svelte",
+					"target": "$lib/components/svelte-bits/TiltedCard.svelte"
+				}
+			]
+		},
+		{
+			"name": "blur-text",
+			"title": "Blur Text",
+			"description": "Per-word/letter blur-in animation triggered when scrolled into view, with configurable direction, easing and stepped keyframes.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "BlurText.svelte",
+					"target": "$lib/components/svelte-bits/BlurText.svelte"
+				}
+			]
+		},
+		{
+			"name": "count-up",
+			"title": "Count Up",
+			"description": "Spring-animated number counter that counts up (or down) when scrolled into view, with configurable spring physics, delay, and number formatting.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CountUp.svelte",
+					"target": "$lib/components/svelte-bits/CountUp.svelte"
+				}
+			]
+		},
+		{
+			"name": "falling-text",
+			"title": "Falling Text",
+			"description": "Characters fall with gravity + bounce creating a playful entrance.",
+			"type": "registry:component",
+			"dependencies": [
+				"matter-js",
+				"matter-js@^0.20.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FallingText.svelte",
+					"target": "$lib/components/svelte-bits/FallingText.svelte"
+				}
+			]
+		},
+		{
+			"name": "glitch-text",
+			"title": "Glitch Text",
+			"description": "RGB-split glitch effect on text using clip-path keyframe animation, with optional hover-only mode.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GlitchText.svelte",
+					"target": "$lib/components/svelte-bits/GlitchText.svelte"
+				}
+			]
+		},
+		{
+			"name": "gradient-text",
+			"title": "Gradient Text",
+			"description": "Animated multi-color gradient text with optional border, direction, yoyo and pause-on-hover.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GradientText.svelte",
+					"target": "$lib/components/svelte-bits/GradientText.svelte"
+				}
+			]
+		},
+		{
+			"name": "shiny-text",
+			"title": "Shiny Text",
+			"description": "Animated shiny gradient sweep across text, with yoyo + direction controls.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ShinyText.svelte",
+					"target": "$lib/components/svelte-bits/ShinyText.svelte"
+				}
+			]
+		},
+		{
+			"name": "split-text",
+			"title": "Split Text",
+			"description": "Splits text into characters / words for staggered entrance animation.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SplitText.svelte",
+					"target": "$lib/components/svelte-bits/SplitText.svelte"
+				}
+			]
+		},
+		{
+			"name": "true-focus",
+			"title": "True Focus",
+			"description": "Applies dynamic blur / clarity based over a series of words in order.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "TrueFocus.svelte",
+					"target": "$lib/components/svelte-bits/TrueFocus.svelte"
+				}
+			]
+		}
+	]
 }

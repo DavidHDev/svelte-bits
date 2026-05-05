@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { Component } from 'svelte';
+	import { stripSvelteBitsHeader } from '$lib/utils/svelte-bits-source-header';
 	import CliInstall from './CliInstall.svelte';
+	import CodeBlock from './CodeBlock.svelte';
 
 	type Props = {
 		slug: string;
@@ -9,29 +10,13 @@
 	};
 
 	let { slug, usage, source }: Props = $props();
-	let CodeBlock = $state<Component<{ code: string; language?: string }> | null>(null);
-
-	$effect(() => {
-		let cancelled = false;
-		import('./CodeBlock.svelte').then((module) => {
-			if (!cancelled) CodeBlock = module.default;
-		});
-		return () => {
-			cancelled = true;
-		};
-	});
+	
+	/** Mirrors registry installs: omit internal `<!-- @svelte-bits -->` metadata. */
+	const sourceForDocs = $derived(stripSvelteBitsHeader(source));
 </script>
 
 <CliInstall {slug} />
 <h3 class="demo-title-extra">Usage</h3>
-{#if CodeBlock}
-	<CodeBlock code={usage} language="svelte" />
-{:else}
-	<pre class="code-highlighter code-fallback">{usage}</pre>
-{/if}
+<CodeBlock code={usage} language="svelte" />
 <h3 class="demo-title-extra">Component source</h3>
-{#if CodeBlock}
-	<CodeBlock code={source} language="svelte" />
-{:else}
-	<pre class="code-highlighter code-fallback">{source}</pre>
-{/if}
+<CodeBlock code={sourceForDocs} language="svelte" />

@@ -43,8 +43,8 @@
 			exposed props
 		</li>
 		<li class="docs-list-item">
-			<span class="docs-highlight">Fully Modular:</span> Install strictly what you need, Svelte Bits is
-			not a dependency
+			<span class="docs-highlight">Fully Modular:</span> Install only what you need with copy-paste, jsrepo,
+			or shadcn — Svelte Bits is not a single package on npm
 		</li>
 		<li class="docs-list-item">
 			<span class="docs-highlight">TypeScript + Tailwind:</span> Modern, typed, utility-first by default
@@ -68,8 +68,8 @@
 	<h4 class="docs-category-subtitle">Fully Modular</h4>
 
 	<p class="docs-paragraph">
-		Svelte Bits is not your classic NPM library — you install only the components you need by
-		copying the code, without pulling in a whole library.
+		Svelte Bits is not your classic NPM library — bring in components with manual copy-paste,
+		<a class="docs-link" href="/get-started/installation">jsrepo or the shadcn CLI</a>, without installing a monolithic dependency.
 	</p>
 
 	<h4 class="docs-category-subtitle">TypeScript + Tailwind</h4>

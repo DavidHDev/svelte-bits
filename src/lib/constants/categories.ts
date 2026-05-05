@@ -1,5 +1,5 @@
 export const NEW: string[] = [
-	'Shuffle'
+	
 ];
 
 export const UPDATED: string[] = [

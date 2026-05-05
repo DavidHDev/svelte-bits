@@ -190,10 +190,16 @@
 			dpr: Math.min(window.devicePixelRatio || 1, 2),
 			powerPreference: 'high-performance'
 		});
-		const gl = renderer.gl as WebGL2RenderingContext;
+		const gl = renderer.gl;
 		gl.clearColor(0, 0, 0, 0);
+		// OGL's Renderer canvas is always an HTMLCanvasElement; the union
+		// in the WebGL2RenderingContext.canvas type forces this assertion.
 		// eslint-disable-next-line svelte/no-dom-manipulating
-		containerRef.appendChild(gl.canvas);
+		containerRef.appendChild(gl.canvas as HTMLCanvasElement);
+
+		// WebGL2-only enum values not in the WebGL1 union OGL types its gl as.
+		const GL_HALF_FLOAT = 0x140b;
+		const GL_RGBA16F = 0x881a;
 
 		// Fullscreen-triangle geometry (more efficient than a quad).
 		const geometry = new Geometry(gl, {
@@ -205,9 +211,9 @@
 		const rtOpts = {
 			width: initialGrid,
 			height: initialGrid,
-			type: gl.HALF_FLOAT,
+			type: GL_HALF_FLOAT,
 			format: gl.RGBA,
-			internalFormat: gl.RGBA16F,
+			internalFormat: GL_RGBA16F,
 			magFilter: gl.LINEAR,
 			minFilter: gl.LINEAR,
 			wrapS: gl.CLAMP_TO_EDGE,

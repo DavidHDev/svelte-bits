@@ -124,4 +124,5 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'infinite-menu': () => import('./InfiniteMenuDemo.svelte'),
 	'model-viewer': () => import('./ModelViewerDemo.svelte'),
 	'scrambled-text': () => import('./ScrambledTextDemo.svelte'),
+	'circular-text': () => import('./CircularTextDemo.svelte')
 };

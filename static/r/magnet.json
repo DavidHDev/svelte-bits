@@ -1,18 +1,17 @@
 {
-  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
-  "name": "magnet",
-  "type": "registry:component",
-  "title": "Magnet",
-  "description": "Magnetic pull effect that attracts content toward the cursor when nearby.",
-  "categories": [
-    "animations"
-  ],
-  "files": [
-    {
-      "path": "Magnet.svelte",
-      "content": "<script lang=\"ts\">\n\timport type { Snippet } from 'svelte';\n\n\ttype Props = {\n\t\tchildren: Snippet;\n\t\tpadding?: number;\n\t\tdisabled?: boolean;\n\t\tmagnetStrength?: number;\n\t\tactiveTransition?: string;\n\t\tinactiveTransition?: string;\n\t\twrapperClass?: string;\n\t\tinnerClass?: string;\n\t};\n\n\tlet {\n\t\tchildren,\n\t\tpadding = 100,\n\t\tdisabled = false,\n\t\tmagnetStrength = 2,\n\t\tactiveTransition = 'transform 0.3s ease-out',\n\t\tinactiveTransition = 'transform 0.5s ease-in-out',\n\t\twrapperClass = '',\n\t\tinnerClass = ''\n\t}: Props = $props();\n\n\tlet magnetEl: HTMLDivElement;\n\tlet active = $state(false);\n\tlet pos = $state({ x: 0, y: 0 });\n\n\t$effect(() => {\n\t\tif (disabled) {\n\t\t\tpos = { x: 0, y: 0 };\n\t\t\tactive = false;\n\t\t\treturn;\n\t\t}\n\t\tconst handle = (e: MouseEvent) => {\n\t\t\tif (!magnetEl) return;\n\t\t\tconst { left, top, width, height } = magnetEl.getBoundingClientRect();\n\t\t\tconst cx = left + width / 2;\n\t\t\tconst cy = top + height / 2;\n\t\t\tconst dx = Math.abs(cx - e.clientX);\n\t\t\tconst dy = Math.abs(cy - e.clientY);\n\t\t\tif (dx < width / 2 + padding && dy < height / 2 + padding) {\n\t\t\t\tactive = true;\n\t\t\t\tpos = { x: (e.clientX - cx) / magnetStrength, y: (e.clientY - cy) / magnetStrength };\n\t\t\t} else {\n\t\t\t\tactive = false;\n\t\t\t\tpos = { x: 0, y: 0 };\n\t\t\t}\n\t\t};\n\t\twindow.addEventListener('mousemove', handle);\n\t\treturn () => window.removeEventListener('mousemove', handle);\n\t});\n</script>\n\n<div\n\tbind:this={magnetEl}\n\tclass={wrapperClass}\n\tstyle=\"position:relative;display:inline-block;\"\n>\n\t<div\n\t\tclass={innerClass}\n\t\tstyle=\"transform:translate3d({pos.x}px,{pos.y}px,0);transition:{active ? activeTransition : inactiveTransition};will-change:transform;\"\n\t>\n\t\t{@render children()}\n\t</div>\n</div>\n",
-      "type": "registry:component",
-      "target": "$lib/components/svelte-bits/Magnet.svelte"
-    }
-  ]
+	"$schema": "https://ui.shadcn.com/schema/registry-item.json",
+	"name": "magnet",
+	"title": "Magnet",
+	"description": "Magnetic pull effect that attracts content toward the cursor when nearby.",
+	"type": "registry:component",
+	"files": [
+		{
+			"type": "registry:component",
+			"path": "Magnet.svelte",
+			"target": "$lib/components/svelte-bits/Magnet.svelte",
+			"content": "<script lang=\"ts\">\n\timport type { Snippet } from 'svelte';\n\n\ttype Props = {\n\t\tchildren: Snippet;\n\t\tpadding?: number;\n\t\tdisabled?: boolean;\n\t\tmagnetStrength?: number;\n\t\tactiveTransition?: string;\n\t\tinactiveTransition?: string;\n\t\twrapperClass?: string;\n\t\tinnerClass?: string;\n\t};\n\n\tlet {\n\t\tchildren,\n\t\tpadding = 100,\n\t\tdisabled = false,\n\t\tmagnetStrength = 2,\n\t\tactiveTransition = 'transform 0.3s ease-out',\n\t\tinactiveTransition = 'transform 0.5s ease-in-out',\n\t\twrapperClass = '',\n\t\tinnerClass = ''\n\t}: Props = $props();\n\n\tlet magnetEl: HTMLDivElement;\n\tlet active = $state(false);\n\tlet pos = $state({ x: 0, y: 0 });\n\n\t$effect(() => {\n\t\tif (disabled) {\n\t\t\tpos = { x: 0, y: 0 };\n\t\t\tactive = false;\n\t\t\treturn;\n\t\t}\n\t\tconst handle = (e: MouseEvent) => {\n\t\t\tif (!magnetEl) return;\n\t\t\tconst { left, top, width, height } = magnetEl.getBoundingClientRect();\n\t\t\tconst cx = left + width / 2;\n\t\t\tconst cy = top + height / 2;\n\t\t\tconst dx = Math.abs(cx - e.clientX);\n\t\t\tconst dy = Math.abs(cy - e.clientY);\n\t\t\tif (dx < width / 2 + padding && dy < height / 2 + padding) {\n\t\t\t\tactive = true;\n\t\t\t\tpos = { x: (e.clientX - cx) / magnetStrength, y: (e.clientY - cy) / magnetStrength };\n\t\t\t} else {\n\t\t\t\tactive = false;\n\t\t\t\tpos = { x: 0, y: 0 };\n\t\t\t}\n\t\t};\n\t\twindow.addEventListener('mousemove', handle);\n\t\treturn () => window.removeEventListener('mousemove', handle);\n\t});\n</script>\n\n<div\n\tbind:this={magnetEl}\n\tclass={wrapperClass}\n\tstyle=\"position:relative;display:inline-block;\"\n>\n\t<div\n\t\tclass={innerClass}\n\t\tstyle=\"transform:translate3d({pos.x}px,{pos.y}px,0);transition:{active ? activeTransition : inactiveTransition};will-change:transform;\"\n\t>\n\t\t{@render children()}\n\t</div>\n</div>\n"
+		}
+	],
+	"registryDependencies": [],
+	"dependencies": []
 }

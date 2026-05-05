@@ -1,128 +1,38 @@
-<script module lang="ts">
-	import type { HighlighterCore, LanguageRegistration, ThemeRegistration } from 'shiki/core';
-
-	// Custom dark theme keyed to the svelte-bits orange palette.
-	// Background matches our card surfaces; accents use orange (#FF8A4C / #FF3E00).
-	const svelteBitsTheme: ThemeRegistration = {
-		name: 'svelte-bits',
-		type: 'dark',
-		colors: {
-			'editor.background': '#0a0a0a',
-			'editor.foreground': '#e6e6e6'
-		},
-		tokenColors: [
-			{ scope: ['comment', 'punctuation.definition.comment'], settings: { foreground: '#5c5c5c', fontStyle: 'italic' } },
-			{ scope: ['string', 'string.quoted', 'string.template'], settings: { foreground: '#FFB089' } },
-			{ scope: ['constant.numeric', 'constant.language'], settings: { foreground: '#FF8A4C' } },
-			{ scope: ['constant.character', 'constant.other'], settings: { foreground: '#FF8A4C' } },
-			{ scope: ['variable', 'variable.other.readwrite', 'variable.parameter'], settings: { foreground: '#e6e6e6' } },
-			{ scope: ['variable.other.constant', 'variable.other.enummember'], settings: { foreground: '#FFB089' } },
-			{ scope: ['keyword', 'storage.type', 'storage.modifier'], settings: { foreground: '#FF3E00' } },
-			{ scope: ['keyword.control', 'keyword.operator.new'], settings: { foreground: '#FF3E00' } },
-			{ scope: ['keyword.operator'], settings: { foreground: '#a8a8a8' } },
-			{ scope: ['entity.name.function', 'support.function', 'meta.function-call'], settings: { foreground: '#FFC9A8' } },
-			{ scope: ['entity.name.type', 'entity.name.class', 'support.class', 'support.type'], settings: { foreground: '#FFD8BD' } },
-			{ scope: ['entity.name.tag', 'meta.tag'], settings: { foreground: '#FF3E00' } },
-			{ scope: ['entity.other.attribute-name'], settings: { foreground: '#FF8A4C' } },
-			{ scope: ['punctuation', 'meta.brace', 'meta.delimiter'], settings: { foreground: '#888' } },
-			{ scope: ['punctuation.definition.tag', 'punctuation.section.embedded'], settings: { foreground: '#666' } },
-			{ scope: ['meta.embedded', 'source.svelte'], settings: { foreground: '#e6e6e6' } },
-			{ scope: ['markup.bold'], settings: { fontStyle: 'bold' } },
-			{ scope: ['markup.italic'], settings: { fontStyle: 'italic' } },
-			{ scope: ['markup.heading'], settings: { foreground: '#FF8A4C', fontStyle: 'bold' } },
-			{ scope: ['invalid'], settings: { foreground: '#ff6b6b' } }
-		]
-	};
-
-	let highlighterPromise: Promise<HighlighterCore> | null = null;
-	const loadedLanguages = new Set<string>();
-	const languageLoaders: Record<string, () => Promise<LanguageRegistration[]>> = {
-		svelte: async () => (await import('@shikijs/langs/svelte')).default,
-		typescript: async () => (await import('@shikijs/langs/typescript')).default,
-		javascript: async () => (await import('@shikijs/langs/javascript')).default,
-		tsx: async () => (await import('@shikijs/langs/tsx')).default,
-		jsx: async () => (await import('@shikijs/langs/jsx')).default,
-		css: async () => (await import('@shikijs/langs/css')).default,
-		html: async () => (await import('@shikijs/langs/html')).default,
-		json: async () => (await import('@shikijs/langs/json')).default,
-		bash: async () => (await import('@shikijs/langs/bash')).default,
-		shell: async () => (await import('@shikijs/langs/shell')).default
-	};
-
-	async function getHighlighter(): Promise<HighlighterCore> {
-		if (!highlighterPromise) {
-			const [{ createHighlighterCore }, { createOnigurumaEngine }] = await Promise.all([
-				import('shiki/core'),
-				import('shiki/engine/oniguruma')
-			]);
-			highlighterPromise = createHighlighterCore({
-				themes: [svelteBitsTheme],
-				langs: [],
-				engine: createOnigurumaEngine(import('shiki/wasm'))
-			});
-		}
-		return highlighterPromise;
-	}
-
-	async function ensureLanguage(highlighter: HighlighterCore, language: string) {
-		if (loadedLanguages.has(language)) return;
-		const load = languageLoaders[language] ?? languageLoaders.svelte;
-		await highlighter.loadLanguage(...(await load()));
-		loadedLanguages.add(language);
-	}
-</script>
-
 <script lang="ts">
+	import type { HighlighterCore } from 'shiki/core';
+	import { highlighter, resolveDocsCodeLang } from './code-block-shiki';
+	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
+
 	type Props = {
 		code: string;
 		language?: string;
 	};
 	let { code, language = 'svelte' }: Props = $props();
 
-	let copied = $state(false);
-	let html = $state<string>('');
-
-	async function copy() {
-		try {
-			await navigator.clipboard.writeText(code);
-			copied = true;
-			setTimeout(() => (copied = false), 1500);
-		} catch {
-			/* ignore */
-		}
-	}
-
-	$effect(() => {
-		const c = code;
-		const lang = language;
-		let cancelled = false;
-		(async () => {
-			try {
-				const hl = await getHighlighter();
-				await ensureLanguage(hl, lang);
-				const out = hl.codeToHtml(c, { lang, theme: 'svelte-bits' });
-				if (!cancelled) html = out;
-			} catch (err) {
-				console.error('shiki highlight failed', err);
-				if (!cancelled) {
-					// Fallback: escape and wrap in <pre>
-					const escaped = c
-						.replace(/&/g, '&amp;')
-						.replace(/</g, '&lt;')
-						.replace(/>/g, '&gt;');
-					html = `<pre class="shiki" style="background:#0a0a0a;color:#e6e6e6;"><code>${escaped}</code></pre>`;
-				}
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
+	let hlCore = $state<HighlighterCore | null>(null);
+	highlighter.then((h) => {
+		hlCore = h;
 	});
+
+	const trimmedCode = $derived(code.trimEnd());
+	const resolvedLang = $derived(resolveDocsCodeLang(language));
+
+	const html = $derived.by(() => {
+		const hl = hlCore;
+		const c = trimmedCode;
+		const lang = resolvedLang;
+
+		if (!hl) return '';
+
+		return hl.codeToHtml(c, { lang, theme: 'svelte-bits' }) ?? '';
+	});
+
+	const clipboard = new UseClipboard();
 </script>
 
 <div class="code-highlighter" data-language={language}>
-	<button class="code-copy-button" type="button" onclick={copy} aria-label="Copy code">
-		{#if copied}
+	<button class="code-copy-button" type="button" onclick={() => clipboard.copy(code)} aria-label="Copy code">
+		{#if clipboard.copied}
 			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
 				stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<polyline points="20 6 9 17 4 12" />

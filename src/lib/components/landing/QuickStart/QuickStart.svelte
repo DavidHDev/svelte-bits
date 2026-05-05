@@ -4,19 +4,22 @@
 		PKG_TO_RUNNER,
 		RUNNER_TO_PKG,
 		RUNNERS,
-		shadcnCommand,
+		jsrepoAddSnippet,
+		shadcnAddSnippet,
 		type PackageManager,
 		type Runner
 	} from '$lib/constants/cli';
 	import './QuickStart.css';
+	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 
 	// We feature Aurora as the showcase install (matches react-bits' featured-install pattern).
 	const FEATURED_SLUG = 'aurora';
 
+	type Installer = 'jsrepo' | 'shadcn';
+
+	let installer: Installer = $state('jsrepo');
 	let pkg: PackageManager = $state('npm');
 	let dropOpen = $state(false);
-	let copied = $state(false);
-	let copyTimer: ReturnType<typeof setTimeout> | null = null;
 	let dropdownEl = $state<HTMLDivElement | null>(null);
 
 	let headerEl = $state<HTMLDivElement | null>(null);
@@ -25,19 +28,16 @@
 	let terminalVisible = $state(false);
 
 	const runner = $derived<Runner>(PKG_TO_RUNNER[pkg]);
-	const command = $derived(shadcnCommand(FEATURED_SLUG, pkg));
+	const command = $derived(
+		installer === 'jsrepo'
+			? jsrepoAddSnippet(FEATURED_SLUG, pkg)
+			: shadcnAddSnippet(FEATURED_SLUG, pkg)
+	);
+	const clipboard = new UseClipboard();
 
 	function pickRunner(r: Runner) {
 		pkg = RUNNER_TO_PKG[r];
 		dropOpen = false;
-	}
-
-	function copy() {
-		if (typeof navigator === 'undefined' || !navigator.clipboard) return;
-		navigator.clipboard.writeText(command);
-		copied = true;
-		if (copyTimer) clearTimeout(copyTimer);
-		copyTimer = setTimeout(() => (copied = false), 2000);
 	}
 
 	function onDocClick(e: MouseEvent) {
@@ -72,7 +72,6 @@
 		return () => {
 			obs.forEach((o) => o?.disconnect());
 			document.removeEventListener('click', onDocClick);
-			if (copyTimer) clearTimeout(copyTimer);
 		};
 	});
 </script>
@@ -88,7 +87,40 @@
 			<div class="ln-qs-terminal">
 				<div class="ln-qs-tab-bar">
 					<div class="ln-qs-tabs">
-						<button type="button" class="ln-qs-tab ln-qs-tab--active">shadcn</button>
+						<button
+							type="button"
+							class="ln-qs-tab"
+							class:ln-qs-tab--active={installer === 'jsrepo'}
+							onclick={() => (installer = 'jsrepo')}
+						>
+							<img
+								class="ln-qs-tab-logo"
+								src="/vendor/install-brands/jsrepo-favicon.ico"
+								alt=""
+								width="16"
+								height="16"
+								loading="lazy"
+								decoding="async"
+							/>
+							<span>jsrepo</span>
+						</button>
+						<button
+							type="button"
+							class="ln-qs-tab"
+							class:ln-qs-tab--active={installer === 'shadcn'}
+							onclick={() => (installer = 'shadcn')}
+						>
+							<img
+								class="ln-qs-tab-logo"
+								src="/vendor/install-brands/shadcn-favicon.ico"
+								alt=""
+								width="16"
+								height="16"
+								loading="lazy"
+								decoding="async"
+							/>
+							<span>shadcn</span>
+						</button>
 					</div>
 
 					<div class="ln-qs-tab-bar-right">
@@ -141,11 +173,11 @@
 					<button
 						type="button"
 						class="ln-qs-copy"
-						class:ln-qs-copy--done={copied}
-						onclick={copy}
+						class:ln-qs-copy--done={clipboard.copied}
+						onclick={() => clipboard.copy(command)}
 						aria-label="Copy command"
 					>
-						{#if copied}
+						{#if clipboard.copied}
 							<svg
 								width="14"
 								height="14"
@@ -178,8 +210,8 @@
 			</div>
 
 			<p class="ln-qs-hint">
-				Works in any Svelte or SvelteKit project. Components are copied into your codebase —
-				browse the <a href="/get-started/introduction">docs</a> for the full list.
+				Use <strong class="ln-qs-hint-strong">jsrepo</strong> or <strong class="ln-qs-hint-strong">shadcn</strong>
+				— components land in your codebase, ready to use, instantly.
 			</p>
 		</div>
 	</div>

@@ -1,21 +1,20 @@
 {
-  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
-  "name": "animated-content",
-  "type": "registry:component",
-  "title": "Animated Content",
-  "description": "Scroll-triggered entrance animation with distance, direction, scale and opacity controls. Powered by GSAP + ScrollTrigger.",
-  "categories": [
-    "animations"
-  ],
-  "files": [
-    {
-      "path": "AnimatedContent.svelte",
-      "content": "<script lang=\"ts\">\n\timport { onMount } from 'svelte';\n\timport type { Snippet } from 'svelte';\n\timport { gsap } from 'gsap';\n\timport { ScrollTrigger } from 'gsap/ScrollTrigger';\n\n\tgsap.registerPlugin(ScrollTrigger);\n\n\ttype Props = {\n\t\tchildren: Snippet;\n\t\tcontainer?: Element | string | null;\n\t\tdistance?: number;\n\t\tdirection?: 'vertical' | 'horizontal';\n\t\treverse?: boolean;\n\t\tduration?: number;\n\t\tease?: string;\n\t\tinitialOpacity?: number;\n\t\tanimateOpacity?: boolean;\n\t\tscale?: number;\n\t\tthreshold?: number;\n\t\tdelay?: number;\n\t\tdisappearAfter?: number;\n\t\tdisappearDuration?: number;\n\t\tdisappearEase?: string;\n\t\tonComplete?: () => void;\n\t\tonDisappearanceComplete?: () => void;\n\t\tclass?: string;\n\t};\n\n\tlet {\n\t\tchildren,\n\t\tcontainer = null,\n\t\tdistance = 100,\n\t\tdirection = 'vertical',\n\t\treverse = false,\n\t\tduration = 0.8,\n\t\tease = 'power3.out',\n\t\tinitialOpacity = 0,\n\t\tanimateOpacity = true,\n\t\tscale = 1,\n\t\tthreshold = 0.1,\n\t\tdelay = 0,\n\t\tdisappearAfter = 0,\n\t\tdisappearDuration = 0.5,\n\t\tdisappearEase = 'power3.in',\n\t\tonComplete,\n\t\tonDisappearanceComplete,\n\t\tclass: className = ''\n\t}: Props = $props();\n\n\tlet el: HTMLDivElement;\n\n\tonMount(() => {\n\t\tlet scrollerTarget: Element | string | null =\n\t\t\tcontainer || document.getElementById('snap-main-container') || null;\n\t\tif (typeof scrollerTarget === 'string') {\n\t\t\tscrollerTarget = document.querySelector(scrollerTarget);\n\t\t}\n\n\t\tconst axis = direction === 'horizontal' ? 'x' : 'y';\n\t\tconst offset = reverse ? -distance : distance;\n\t\tconst startPct = (1 - threshold) * 100;\n\n\t\tgsap.set(el, {\n\t\t\t[axis]: offset,\n\t\t\tscale,\n\t\t\topacity: animateOpacity ? initialOpacity : 1,\n\t\t\tvisibility: 'visible'\n\t\t});\n\n\t\tconst tl = gsap.timeline({\n\t\t\tpaused: true,\n\t\t\tdelay,\n\t\t\tonComplete: () => {\n\t\t\t\tonComplete?.();\n\t\t\t\tif (disappearAfter > 0) {\n\t\t\t\t\tgsap.to(el, {\n\t\t\t\t\t\t[axis]: reverse ? distance : -distance,\n\t\t\t\t\t\tscale: 0.8,\n\t\t\t\t\t\topacity: animateOpacity ? initialOpacity : 0,\n\t\t\t\t\t\tdelay: disappearAfter,\n\t\t\t\t\t\tduration: disappearDuration,\n\t\t\t\t\t\tease: disappearEase,\n\t\t\t\t\t\tonComplete: () => onDisappearanceComplete?.()\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\n\t\ttl.to(el, {\n\t\t\t[axis]: 0,\n\t\t\tscale: 1,\n\t\t\topacity: 1,\n\t\t\tduration,\n\t\t\tease\n\t\t});\n\n\t\tconst st = ScrollTrigger.create({\n\t\t\ttrigger: el,\n\t\t\tscroller: (scrollerTarget as Element) || window,\n\t\t\tstart: `top ${startPct}%`,\n\t\t\tonce: true,\n\t\t\tonEnter: () => tl.play()\n\t\t});\n\n\t\treturn () => {\n\t\t\tst.kill();\n\t\t\ttl.kill();\n\t\t};\n\t});\n</script>\n\n<div bind:this={el} class=\"invisible {className}\">\n\t{@render children()}\n</div>\n",
-      "type": "registry:component",
-      "target": "$lib/components/svelte-bits/AnimatedContent.svelte"
-    }
-  ],
-  "dependencies": [
-    "gsap"
-  ]
+	"$schema": "https://ui.shadcn.com/schema/registry-item.json",
+	"name": "animated-content",
+	"title": "Animated Content",
+	"description": "Scroll-triggered entrance animation with distance, direction, scale and opacity controls. Powered by GSAP + ScrollTrigger.",
+	"type": "registry:component",
+	"files": [
+		{
+			"type": "registry:component",
+			"path": "AnimatedContent.svelte",
+			"target": "$lib/components/svelte-bits/AnimatedContent.svelte",
+			"content": "<script lang=\"ts\">\n\timport { onMount } from 'svelte';\n\timport type { Snippet } from 'svelte';\n\timport { gsap } from 'gsap';\n\timport { ScrollTrigger } from 'gsap/ScrollTrigger';\n\n\tgsap.registerPlugin(ScrollTrigger);\n\n\ttype Props = {\n\t\tchildren: Snippet;\n\t\tcontainer?: Element | string | null;\n\t\tdistance?: number;\n\t\tdirection?: 'vertical' | 'horizontal';\n\t\treverse?: boolean;\n\t\tduration?: number;\n\t\tease?: string;\n\t\tinitialOpacity?: number;\n\t\tanimateOpacity?: boolean;\n\t\tscale?: number;\n\t\tthreshold?: number;\n\t\tdelay?: number;\n\t\tdisappearAfter?: number;\n\t\tdisappearDuration?: number;\n\t\tdisappearEase?: string;\n\t\tonComplete?: () => void;\n\t\tonDisappearanceComplete?: () => void;\n\t\tclass?: string;\n\t};\n\n\tlet {\n\t\tchildren,\n\t\tcontainer = null,\n\t\tdistance = 100,\n\t\tdirection = 'vertical',\n\t\treverse = false,\n\t\tduration = 0.8,\n\t\tease = 'power3.out',\n\t\tinitialOpacity = 0,\n\t\tanimateOpacity = true,\n\t\tscale = 1,\n\t\tthreshold = 0.1,\n\t\tdelay = 0,\n\t\tdisappearAfter = 0,\n\t\tdisappearDuration = 0.5,\n\t\tdisappearEase = 'power3.in',\n\t\tonComplete,\n\t\tonDisappearanceComplete,\n\t\tclass: className = ''\n\t}: Props = $props();\n\n\tlet el: HTMLDivElement;\n\n\tonMount(() => {\n\t\tlet scrollerTarget: Element | string | null =\n\t\t\tcontainer || document.getElementById('snap-main-container') || null;\n\t\tif (typeof scrollerTarget === 'string') {\n\t\t\tscrollerTarget = document.querySelector(scrollerTarget);\n\t\t}\n\n\t\tconst axis = direction === 'horizontal' ? 'x' : 'y';\n\t\tconst offset = reverse ? -distance : distance;\n\t\tconst startPct = (1 - threshold) * 100;\n\n\t\tgsap.set(el, {\n\t\t\t[axis]: offset,\n\t\t\tscale,\n\t\t\topacity: animateOpacity ? initialOpacity : 1,\n\t\t\tvisibility: 'visible'\n\t\t});\n\n\t\tconst tl = gsap.timeline({\n\t\t\tpaused: true,\n\t\t\tdelay,\n\t\t\tonComplete: () => {\n\t\t\t\tonComplete?.();\n\t\t\t\tif (disappearAfter > 0) {\n\t\t\t\t\tgsap.to(el, {\n\t\t\t\t\t\t[axis]: reverse ? distance : -distance,\n\t\t\t\t\t\tscale: 0.8,\n\t\t\t\t\t\topacity: animateOpacity ? initialOpacity : 0,\n\t\t\t\t\t\tdelay: disappearAfter,\n\t\t\t\t\t\tduration: disappearDuration,\n\t\t\t\t\t\tease: disappearEase,\n\t\t\t\t\t\tonComplete: () => onDisappearanceComplete?.()\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\n\t\ttl.to(el, {\n\t\t\t[axis]: 0,\n\t\t\tscale: 1,\n\t\t\topacity: 1,\n\t\t\tduration,\n\t\t\tease\n\t\t});\n\n\t\tconst st = ScrollTrigger.create({\n\t\t\ttrigger: el,\n\t\t\tscroller: (scrollerTarget as Element) || window,\n\t\t\tstart: `top ${startPct}%`,\n\t\t\tonce: true,\n\t\t\tonEnter: () => tl.play()\n\t\t});\n\n\t\treturn () => {\n\t\t\tst.kill();\n\t\t\ttl.kill();\n\t\t};\n\t});\n</script>\n\n<div bind:this={el} class=\"invisible {className}\">\n\t{@render children()}\n</div>\n"
+		}
+	],
+	"registryDependencies": [],
+	"dependencies": [
+		"gsap",
+		"gsap@^3.15.0"
+	]
 }

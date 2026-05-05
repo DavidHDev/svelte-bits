@@ -1,12 +1,14 @@
 <script lang="ts">
 	import {
 		PKG_MANAGERS,
-		shadcnCommand,
 		isInRegistry,
 		registryUrl,
-		type PackageManager
+		shadcnAddSnippet,
+		type PackageManager,
+		jsrepoAddSnippet
 	} from '$lib/constants/cli';
 	import { dependenciesForSlug } from '$lib/constants/componentDependencies';
+	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 
 	type Props = {
 		slug: string;
@@ -14,27 +16,25 @@
 	let { slug }: Props = $props();
 
 	let pkg: PackageManager = $state('npm');
-	let mode = $state<'cli' | 'manual'>('cli');
-	let copied = $state(false);
+	type InstallTab = 'jsrepo' | 'shadcn' | 'manual';
+	let tab = $state<InstallTab>('shadcn');
 
 	const inRegistry = $derived(isInRegistry(slug));
 	const dependencies = $derived(dependenciesForSlug(slug));
 	const hasManual = $derived(dependencies.length > 0);
 	const dependencyCommand = $derived(dependencies.length > 0 ? `${pkg} install ${dependencies.join(' ')}` : '');
-	const command = $derived(mode === 'manual' ? dependencyCommand : inRegistry ? shadcnCommand(slug, pkg) : '');
+	const command = $derived(
+		tab === 'manual'
+			? dependencyCommand
+			: tab === 'jsrepo'
+				? jsrepoAddSnippet(slug, pkg)
+				: shadcnAddSnippet(slug, pkg)
+	);
 
-	let copyTimer: ReturnType<typeof setTimeout> | null = null;
-
-	function copy() {
-		if (!command) return;
-		navigator.clipboard?.writeText(command);
-		copied = true;
-		if (copyTimer) clearTimeout(copyTimer);
-		copyTimer = setTimeout(() => (copied = false), 2000);
-	}
+	const clipboard = new UseClipboard();
 
 	$effect(() => {
-		if (mode === 'manual' && !hasManual) mode = 'cli';
+		if (tab === 'manual' && !hasManual) tab = 'shadcn';
 	});
 </script>
 
@@ -48,19 +48,22 @@
 	{:else}
 		<div class="cli-install-section">
 			<div class="mode-switch">
-				<button type="button" class="cli-toggle-button" data-active={mode === 'cli'} onclick={() => (mode = 'cli')}>
-					CLI
+				<button type="button" class="cli-toggle-button" data-active={tab === 'shadcn'} onclick={() => (tab = 'shadcn')}>
+					shadcn
+				</button>
+				<button type="button" class="cli-toggle-button" data-active={tab === 'jsrepo'} onclick={() => (tab = 'jsrepo')}>
+					jsrepo
 				</button>
 				<button
 					type="button"
 					class="cli-toggle-button"
 					class:disabled={!hasManual}
-					data-active={mode === 'manual'}
+					data-active={tab === 'manual'}
 					disabled={!hasManual}
 					aria-disabled={!hasManual}
 					title={hasManual ? 'Install dependencies manually' : 'No external dependencies'}
 					onclick={() => {
-						if (hasManual) mode = 'manual';
+						if (hasManual) tab = 'manual';
 					}}
 				>
 					Manual
@@ -87,11 +90,11 @@
 				<button
 					type="button"
 					class="cli-copy"
-					class:done={copied}
-					onclick={copy}
+					class:done={clipboard.copied}
+					onclick={() => clipboard.copy(command)}
 					aria-label="Copy installation command"
 				>
-					{#if copied}
+					{#if clipboard.copied}
 						<svg
 							width="16"
 							height="16"
@@ -125,7 +128,7 @@
 			</div>
 
 			<p class="cli-hint">
-				{#if mode === 'manual'}
+				{#if tab === 'manual'}
 					Install dependencies manually, then copy the usage and component source below.
 				{:else}
 					Pulls the component from
@@ -270,19 +273,21 @@
 	}
 
 	.cli-code {
-		display: flex;
-		align-items: center;
+		display: block;
 		width: 100%;
-		height: 60px;
-		padding: 0 80px 0 1.4em;
+		min-height: 60px;
+		box-sizing: border-box;
+		padding: 1rem 80px 1rem 1.4em;
 		font-family: 'Geist Mono', ui-monospace, monospace;
 		font-size: 14px;
 		letter-spacing: -0.2px;
 		color: var(--text-primary);
 		white-space: pre;
+		word-break: normal;
 		overflow-x: auto;
 		overflow-y: hidden;
 		background: none;
+		line-height: 1.55;
 		scrollbar-width: none;
 	}
 
@@ -293,9 +298,8 @@
 
 	.cli-copy {
 		position: absolute;
-		top: 50%;
+		top: 1rem;
 		right: 0.6em;
-		transform: translateY(-50%);
 		appearance: none;
 		display: inline-flex;
 		align-items: center;
@@ -325,6 +329,12 @@
 		margin: 1.5em 0 0;
 		font-size: 0.95rem;
 		color: var(--text-muted);
+	}
+
+	.cli-hint-inline {
+		font-family: 'Geist Mono', ui-monospace, monospace;
+		font-size: 0.9em;
+		color: var(--text-primary);
 	}
 
 	.cli-hint a {

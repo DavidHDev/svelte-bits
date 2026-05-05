@@ -123,5 +123,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'circular-gallery': () => import('./CircularGalleryDemo.svelte'),
 	'dome-gallery': () => import('./DomeGalleryDemo.svelte'),
 	'infinite-menu': () => import('./InfiniteMenuDemo.svelte'),
-	'model-viewer': () => import('./ModelViewerDemo.svelte')
+	'model-viewer': () => import('./ModelViewerDemo.svelte'),
+	'scrambled-text': () => import('./ScrambledTextDemo.svelte'),
+	'circular-text': () => import('./CircularTextDemo.svelte')
 };

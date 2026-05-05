@@ -16,6 +16,8 @@ export const COMPONENT_DEPENDENCIES: Record<string, string[]> = {
 	'falling-text': ['matter-js'],
 	'count-up': ['motion'],
 	'scroll-float': ['gsap']
+	'scrambled-text': ['gsap'],
+	'circular-text': ['motion']
 };
 
 export function dependenciesForSlug(slug: string | undefined): string[] {

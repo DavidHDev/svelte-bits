@@ -5,13 +5,15 @@
 		PKG_TO_RUNNER,
 		RUNNER_TO_PKG,
 		RUNNERS,
-		shadcnCommand,
+		jsrepoAddSnippet,
+		REGISTRY_BASE,
 		registryUrl,
+		shadcnAddSnippet,
 		type PackageManager,
 		type Runner
 	} from '$lib/constants/cli';
 
-	type Method = 'manual' | 'cli';
+	type Method = 'manual' | 'jsrepo' | 'shadcn';
 
 	let method = $state<Method>('manual');
 	let pkg = $state<PackageManager>('npm');
@@ -19,11 +21,13 @@
 	let dropdownEl = $state<HTMLDivElement | null>(null);
 
 	const runner = $derived<Runner>(PKG_TO_RUNNER[pkg]);
-	const featuredCommand = $derived(shadcnCommand('aurora', pkg));
-	const genericCommand = $derived(`${runner} shadcn@latest add ${registryUrl('<component>')}`);
+	const featuredJsrepoCommand = $derived(jsrepoAddSnippet('aurora', pkg));
+	const genericJsrepoCommand = $derived(jsrepoAddSnippet('<component>', pkg));
+	const featuredShadcnCommand = $derived(shadcnAddSnippet('aurora', pkg));
+	const genericShadcnCommand = $derived(shadcnAddSnippet('<component>', pkg));
 
 	const usageSnippet = `<` + `script lang="ts">
-  import ShinyText from '$lib/components/ShinyText.svelte';
+  import ShinyText from '$lib/components/svelte-bits/ShinyText.svelte';
 <` + `/script>
 
 <ShinyText text="Hello, you!" speed={3} />`;
@@ -61,9 +65,8 @@
 	<h3 class="docs-category-title">Pick The Method</h3>
 
 	<p class="docs-paragraph">
-		You can keep it simple and copy code directly from the documentation, or you can use the
-		<a class="docs-link" href="https://ui.shadcn.com/" target="_blank" rel="noreferrer">shadcn</a>
-		CLI to install components into your project.
+		You can paste source from each component page, or pull them
+		in with <a class="docs-link" href="https://www.jsrepo.dev/" target="_blank" rel="noreferrer">jsrepo</a>, or the <a class="docs-link" href="https://ui.shadcn.com/docs/registry" target="_blank" rel="noreferrer">shadcn CLI</a>.
 	</p>
 
 	<p class="docs-paragraph dim">Click the cards below to change your preferred method.</p>
@@ -94,23 +97,38 @@
 		<button
 			type="button"
 			class="installation-method"
-			class:method-active={method === 'cli'}
-			onclick={() => (method = 'cli')}
+			class:method-active={method === 'jsrepo'}
+			onclick={() => (method = 'jsrepo')}
 		>
-			<svg
+			<img
+				class="installation-method-logo"
+				src="/vendor/install-brands/jsrepo-favicon.ico"
+				alt=""
 				width="44"
 				height="44"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.6"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<polyline points="4 17 10 11 4 5" />
-				<line x1="12" y1="19" x2="20" y2="19" />
-			</svg>
-			<span class="installation-method-label">CLI</span>
+				loading="lazy"
+				decoding="async"
+			/>
+			<span class="installation-method-label">jsrepo</span>
+		</button>
+
+		<button
+			type="button"
+			class="installation-method"
+			class:method-active={method === 'shadcn'}
+			onclick={() => (method = 'shadcn')}
+			aria-label="shadcn CLI"
+		>
+			<img
+				class="installation-method-logo"
+				src="/vendor/install-brands/shadcn-favicon.ico"
+				alt=""
+				width="44"
+				height="44"
+				loading="lazy"
+				decoding="async"
+			/>
+			<span class="installation-method-label">shadcn</span>
 		</button>
 	</div>
 
@@ -150,31 +168,6 @@
 		</p>
 		<CodeBlock language="svelte" code={usageSnippet} />
 	{:else}
-		<p class="docs-paragraph dim">
-			Use a one-time command to pull any component directly into your project.
-		</p>
-
-		<p class="docs-paragraph">
-			Svelte Bits publishes every component as a
-			<a
-				class="docs-link"
-				href="https://ui.shadcn.com/docs/registry"
-				target="_blank"
-				rel="noreferrer">shadcn registry</a
-			>
-			item, served as static JSON from
-			<code class="prop-code">{registryUrl('<component>')}</code>. The
-			<a class="docs-link" href="https://ui.shadcn.com/" target="_blank" rel="noreferrer"
-				>shadcn</a
-			> CLI works in any Svelte or SvelteKit project — it just copies the source file into your codebase.
-		</p>
-
-		<h4 class="docs-category-subtitle">Installation</h4>
-		<p class="docs-paragraph short">
-			Pick your package runner, then run the command. The example below installs
-			<a class="docs-link" href="/backgrounds/aurora">Aurora</a>:
-		</p>
-
 		<div class="install-runner-row">
 			<span class="install-runner-label">Runner</span>
 			<div class="install-runner-dropdown" bind:this={dropdownEl}>
@@ -217,28 +210,64 @@
 			</div>
 		</div>
 
-		<CodeBlock language="bash" code={featuredCommand} />
+		{#if method === 'jsrepo'}
+			<h4 class="docs-category-subtitle">Installation</h4>
+			<p class="docs-paragraph short">
+				Run the commands below — the example installs
+				<a class="docs-link" href="/backgrounds/aurora">Aurora</a>:
+			</p>
 
-		<h4 class="docs-category-subtitle">Generic form</h4>
-		<p class="docs-paragraph short">
-			Replace <code class="prop-code">&lt;component&gt;</code> with the component slug (e.g.
-			<code class="prop-code">aurora</code>, <code class="prop-code">shiny-text</code>,
-			<code class="prop-code">dock</code>). Slugs are listed on each component page.
-		</p>
-		<CodeBlock language="bash" code={genericCommand} />
+			<CodeBlock language="bash" code={featuredJsrepoCommand} />
 
-		<h4 class="docs-category-subtitle">Where it lands</h4>
-		<p class="docs-paragraph short">
-			By default the file is copied to
-			<code class="prop-code">$lib/components/svelte-bits/&lt;Component&gt;.svelte</code>. You can
-			move it anywhere — it's just a Svelte file. Any required dependencies (
-			<code class="prop-code">gsap</code>, <code class="prop-code">ogl</code>, etc.) are installed
-			automatically by shadcn.
-		</p>
+			<h4 class="docs-category-subtitle">Generic form</h4>
+			<p class="docs-paragraph short">
+				Replace <code class="prop-code">&lt;component&gt;</code> with the component slug (e.g.
+				<code class="prop-code">aurora</code>, <code class="prop-code">shiny-text</code>,
+				<code class="prop-code">dock</code>). Slugs are listed on each component page.
+			</p>
+			<CodeBlock language="bash" code={genericJsrepoCommand} />
+
+			<h4 class="docs-category-subtitle">Where it lands</h4>
+			<p class="docs-paragraph short">
+				By default the file is copied to
+				<code class="prop-code">$lib/components/&lt;Component&gt;.svelte</code>. You can
+				move it anywhere — it's just a Svelte file. Any required dependencies (
+				<code class="prop-code">gsap</code>, <code class="prop-code">ogl</code>, etc.) are detected
+				and installed with your package manager by jsrepo.
+			</p>
+		{:else}
+			<p class="docs-paragraph">
+				Requires a typical shadcn to be initialized with a <code class="prop-code">components.json</code>.
+			</p>
+
+			<h4 class="docs-category-subtitle">Installation</h4>
+			<p class="docs-paragraph short">
+				Install
+				<a class="docs-link" href="/backgrounds/aurora">Aurora</a>
+				with your runner selected above:
+			</p>
+
+			<CodeBlock language="bash" code={featuredShadcnCommand} />
+
+			<h4 class="docs-category-subtitle">Generic form</h4>
+			<p class="docs-paragraph short">
+				Substitute your slug for <code class="prop-code">&lt;component&gt;</code> — same filename as each route in the docs
+				(for example <code class="prop-code">aurora</code>, <code class="prop-code">shiny-text</code>,
+				<code class="prop-code">dock</code>):
+			</p>
+			<CodeBlock language="bash" code={genericShadcnCommand} />
+
+			<h4 class="docs-category-subtitle">Where it lands</h4>
+			<p class="docs-paragraph short">
+				The CLI follows the registry file metadata, so destinations match jsrepo installs (typically under
+				<code class="prop-code">$lib/components/svelte-bits/</code>). Relocate freely — it's ordinary Svelte
+				source. Dependencies install as part of <code class="prop-code">add</code>.
+			</p>
+		{/if}
 
 		<p class="docs-paragraph dim install-tip">
-			Tip: every component page also has a one-click install block under its
-			<span class="docs-highlight">Code</span> tab — pre-filled with the right slug for that component.
+			Tip: every component page includes an install block under its <span class="docs-highlight">Code</span> tab —
+			copy commands for jsrepo or shadcn with the slug already filled in.
 		</p>
 	{/if}
 
@@ -305,7 +334,7 @@
 
 	.installation-methods {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(3, 1fr);
 		gap: 14px;
 		margin: 18px 0 32px;
 	}
@@ -344,7 +373,33 @@
 		letter-spacing: 0.02em;
 	}
 
-	@media (max-width: 520px) {
+	.installation-method-logo {
+		width: 44px;
+		height: 44px;
+		object-fit: contain;
+		flex-shrink: 0;
+		transition:
+			opacity 0.18s ease,
+			filter 0.18s ease;
+		pointer-events: none;
+	}
+
+	.installation-method:not(.method-active) .installation-method-logo {
+		opacity: 0.48;
+		filter: grayscale(0.15);
+	}
+
+	.installation-method:hover:not(.method-active) .installation-method-logo {
+		opacity: 0.85;
+		filter: grayscale(0.08);
+	}
+
+	.installation-method.method-active .installation-method-logo {
+		opacity: 1;
+		filter: none;
+	}
+
+	@media (max-width: 720px) {
 		.installation-methods {
 			grid-template-columns: 1fr;
 		}

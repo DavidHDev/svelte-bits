@@ -1,4 +1,4 @@
-export const NEW: string[] = ["True Focus", "Falling Text"];
+export const NEW: string[] = ["True Focus", "Falling Text", "Text Cursor"];
 
 export const UPDATED: string[] = [
 

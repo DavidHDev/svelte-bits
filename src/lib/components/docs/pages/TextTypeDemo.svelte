@@ -114,7 +114,7 @@
 	{#snippet preview()}
 		<div
 			class="demo-container relative w-full overflow-hidden p-16"
-			style="min-height:350px;display:flex;align-items:flex-start;justify-content:flex-start;font-size:1.5rem;font-weight:500;"
+			style="min-height:350px;display:flex;align-items:flex-start;justify-content:flex-start;font-size:clamp(1.5rem, 4vw, 4rem);font-weight:700;"
 		>
 			<ReplayButton onClick={() => replay++} />
 			{#key replay}

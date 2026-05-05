@@ -1764,6 +1764,22 @@
       ]
     },
     {
+      "name": "scrambled-text",
+      "type": "registry:component",
+      "title": "Scrambled Text",
+      "description": "Detects cursor position and applies a distortion effect to text.",
+      "categories": [
+        "text-animations"
+      ],
+      "files": [
+        {
+          "path": "ScrambledText.svelte",
+          "type": "registry:component",
+          "target": "$lib/components/svelte-bits/ScrambledText.svelte"
+        }
+      ]
+    },
+    {
       "name": "shiny-text",
       "type": "registry:component",
       "title": "Shiny Text",

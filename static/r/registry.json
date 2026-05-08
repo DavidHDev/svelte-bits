@@ -1979,6 +1979,24 @@
 			]
 		},
 		{
+			"name": "scroll-reveal",
+			"title": "Scroll Reveal",
+			"description": "Words reveal in sequence as the container scrolls into view, with optional rotation and blur tied to the scroll position.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ScrollReveal.svelte",
+					"target": "$lib/components/svelte-bits/ScrollReveal.svelte"
+				}
+			]
+		},
+		{
 			"name": "shiny-text",
 			"title": "Shiny Text",
 			"description": "Animated shiny gradient sweep across text, with yoyo + direction controls.",

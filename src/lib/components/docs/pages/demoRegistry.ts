@@ -136,4 +136,5 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'rotating-text': () => import('./RotatingTextDemo.svelte'),
 	'scroll-reveal': () => import('./ScrollRevealDemo.svelte'),
 	'ascii-text': () => import('./ASCIITextDemo.svelte'),
+	'scroll-velocity': () => import('./ScrollVelocityDemo.svelte'),
 };

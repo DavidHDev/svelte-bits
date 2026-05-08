@@ -129,6 +129,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'circular-text': () => import('./CircularTextDemo.svelte'),
 	'text-type': () => import('./TextTypeDemo.svelte'),
 	'shuffle': () => import('./ShuffleDemo.svelte'),
+	'decrypted-text': () => import('./DecryptedTextDemo.svelte'),
 	'rotating-text': () => import('./RotatingTextDemo.svelte'),
 	'scroll-reveal': () => import('./ScrollRevealDemo.svelte'),
 	'ascii-text': () => import('./ASCIITextDemo.svelte'),

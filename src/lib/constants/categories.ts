@@ -300,7 +300,8 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'circular-text',
 	'text-type',
 	'shuffle',
-	'scroll-reveal'
+	'scroll-reveal',
+	'ascii-text',
 ]);
 
 // Helper: is this subcategory label fully ported?

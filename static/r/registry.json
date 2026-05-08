@@ -1820,6 +1820,24 @@
 			]
 		},
 		{
+			"name": "ascii-text",
+			"title": "ASCII Text",
+			"description": "Renders text with an animated ASCII background for a retro feel.",
+			"type": "registry:component",
+			"dependencies": [
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ASCIIText.svelte",
+					"target": "$lib/components/svelte-bits/ASCIIText.svelte"
+				}
+			]
+		},
+		{
 			"name": "blur-text",
 			"title": "Blur Text",
 			"description": "Per-word/letter blur-in animation triggered when scrolled into view, with configurable direction, easing and stepped keyframes.",
@@ -1870,6 +1888,21 @@
 					"type": "registry:component",
 					"path": "CountUp.svelte",
 					"target": "$lib/components/svelte-bits/CountUp.svelte"
+				}
+			]
+		},
+		{
+			"name": "decrypted-text",
+			"title": "Decrypted Text",
+			"description": "Scrambled-character reveal effect that decrypts a string on hover, click, or scroll-into-view, with sequential or random iteration modes.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DecryptedText.svelte",
+					"target": "$lib/components/svelte-bits/DecryptedText.svelte"
 				}
 			]
 		},
@@ -1940,6 +1973,24 @@
 			]
 		},
 		{
+			"name": "rotating-text",
+			"title": "Rotating Text",
+			"description": "Cycles through an array of phrases with per-character stagger animations on entry and exit, driven by motion springs.",
+			"type": "registry:component",
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "RotatingText.svelte",
+					"target": "$lib/components/svelte-bits/RotatingText.svelte"
+				}
+			]
+		},
+		{
 			"name": "scrambled-text",
 			"title": "Scrambled Text",
 			"description": "Detects cursor position and applies a distortion effect to text.",
@@ -1972,6 +2023,24 @@
 					"type": "registry:component",
 					"path": "ScrollFloat.svelte",
 					"target": "$lib/components/svelte-bits/ScrollFloat.svelte"
+				}
+			]
+		},
+		{
+			"name": "scroll-reveal",
+			"title": "Scroll Reveal",
+			"description": "Words reveal in sequence as the container scrolls into view, with optional rotation and blur tied to the scroll position.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ScrollReveal.svelte",
+					"target": "$lib/components/svelte-bits/ScrollReveal.svelte"
 				}
 			]
 		},

@@ -20,7 +20,10 @@ export const COMPONENT_DEPENDENCIES: Record<string, string[]> = {
 	'scrambled-text': ['gsap'],
 	'circular-text': ['motion'],
 	'text-type': ['gsap'],
-	'shuffle': ['gsap']
+	'shuffle': ['gsap'],
+	'rotating-text': ['motion'],
+	'scroll-reveal': ['gsap'],
+	'ascii-text': ['three'],
 };
 
 export function dependenciesForSlug(slug: string | undefined): string[] {

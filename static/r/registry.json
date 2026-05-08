@@ -2114,6 +2114,21 @@
 			]
 		},
 		{
+			"name": "text-pressure",
+			"title": "Text Pressure",
+			"description": "Variable-font heading where each character reacts to cursor proximity by morphing its width, weight, italic and opacity axes.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "TextPressure.svelte",
+					"target": "$lib/components/svelte-bits/TextPressure.svelte"
+				}
+			]
+		},
+		{
 			"name": "text-type",
 			"title": "Text Type",
 			"description": "Typewriter effect that types and deletes through one or more sentences with a configurable cursor, blink rate, variable speed, and color rotation.",

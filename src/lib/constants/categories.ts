@@ -300,6 +300,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'circular-text',
 	'text-type',
 	'shuffle',
+	'fuzzy-text',
 	'decrypted-text',
 	'rotating-text',
 	'scroll-reveal',

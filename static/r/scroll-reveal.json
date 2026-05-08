@@ -1,0 +1,20 @@
+{
+	"$schema": "https://ui.shadcn.com/schema/registry-item.json",
+	"name": "scroll-reveal",
+	"title": "Scroll Reveal",
+	"description": "Words reveal in sequence as the container scrolls into view, with optional rotation and blur tied to the scroll position.",
+	"type": "registry:component",
+	"files": [
+		{
+			"type": "registry:component",
+			"path": "ScrollReveal.svelte",
+			"target": "$lib/components/svelte-bits/ScrollReveal.svelte",
+			"content": "<script module lang=\"ts\">\n\timport { gsap } from 'gsap';\n\timport { ScrollTrigger } from 'gsap/ScrollTrigger';\n\n\tgsap.registerPlugin(ScrollTrigger);\n</script>\n\n<script lang=\"ts\">\n\ttype Props = {\n\t\ttext: string;\n\t\tscrollContainer?: HTMLElement | null;\n\t\tenableBlur?: boolean;\n\t\tbaseOpacity?: number;\n\t\tbaseRotation?: number;\n\t\tblurStrength?: number;\n\t\tcontainerClassName?: string;\n\t\ttextClassName?: string;\n\t\trotationEnd?: string;\n\t\twordAnimationEnd?: string;\n\t};\n\n\tlet {\n\t\ttext,\n\t\tscrollContainer = null,\n\t\tenableBlur = true,\n\t\tbaseOpacity = 0.1,\n\t\tbaseRotation = 3,\n\t\tblurStrength = 4,\n\t\tcontainerClassName = '',\n\t\ttextClassName = '',\n\t\trotationEnd = 'bottom bottom',\n\t\twordAnimationEnd = 'bottom bottom'\n\t}: Props = $props();\n\n\tlet containerEl: HTMLHeadingElement | undefined = $state();\n\n\tconst splitParts = $derived(text.split(/(\\s+)/));\n\n\t$effect(() => {\n\t\tconst el = containerEl;\n\t\tif (!el) return;\n\n\t\tvoid enableBlur;\n\t\tvoid baseOpacity;\n\t\tvoid baseRotation;\n\t\tvoid blurStrength;\n\t\tvoid rotationEnd;\n\t\tvoid wordAnimationEnd;\n\t\tvoid scrollContainer;\n\t\tvoid splitParts;\n\n\t\tconst scroller = scrollContainer ?? window;\n\t\tconst triggers: ScrollTrigger[] = [];\n\n\t\tconst rotationTween = gsap.fromTo(\n\t\t\tel,\n\t\t\t{ transformOrigin: '0% 50%', rotate: baseRotation },\n\t\t\t{\n\t\t\t\tease: 'none',\n\t\t\t\trotate: 0,\n\t\t\t\tscrollTrigger: {\n\t\t\t\t\ttrigger: el,\n\t\t\t\t\tscroller,\n\t\t\t\t\tstart: 'top bottom',\n\t\t\t\t\tend: rotationEnd,\n\t\t\t\t\tscrub: true\n\t\t\t\t}\n\t\t\t}\n\t\t);\n\t\tif (rotationTween.scrollTrigger) triggers.push(rotationTween.scrollTrigger);\n\n\t\tconst wordElements = el.querySelectorAll('.scroll-reveal-word');\n\n\t\tconst opacityTween = gsap.fromTo(\n\t\t\twordElements,\n\t\t\t{ opacity: baseOpacity, willChange: 'opacity' },\n\t\t\t{\n\t\t\t\tease: 'none',\n\t\t\t\topacity: 1,\n\t\t\t\tstagger: 0.05,\n\t\t\t\tscrollTrigger: {\n\t\t\t\t\ttrigger: el,\n\t\t\t\t\tscroller,\n\t\t\t\t\tstart: 'top bottom-=20%',\n\t\t\t\t\tend: wordAnimationEnd,\n\t\t\t\t\tscrub: true\n\t\t\t\t}\n\t\t\t}\n\t\t);\n\t\tif (opacityTween.scrollTrigger) triggers.push(opacityTween.scrollTrigger);\n\n\t\tif (enableBlur) {\n\t\t\tconst blurTween = gsap.fromTo(\n\t\t\t\twordElements,\n\t\t\t\t{ filter: `blur(${blurStrength}px)` },\n\t\t\t\t{\n\t\t\t\t\tease: 'none',\n\t\t\t\t\tfilter: 'blur(0px)',\n\t\t\t\t\tstagger: 0.05,\n\t\t\t\t\tscrollTrigger: {\n\t\t\t\t\t\ttrigger: el,\n\t\t\t\t\t\tscroller,\n\t\t\t\t\t\tstart: 'top bottom-=20%',\n\t\t\t\t\t\tend: wordAnimationEnd,\n\t\t\t\t\t\tscrub: true\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t);\n\t\t\tif (blurTween.scrollTrigger) triggers.push(blurTween.scrollTrigger);\n\t\t}\n\n\t\treturn () => {\n\t\t\ttriggers.forEach((t) => t.kill());\n\t\t};\n\t});\n</script>\n\n<h2 bind:this={containerEl} class=\"scroll-reveal {containerClassName}\">\n\t<p class=\"scroll-reveal-text {textClassName}\">\n\t\t{#each splitParts as part, i (i)}\n\t\t\t{#if /^\\s+$/.test(part)}{part}{:else}<span class=\"scroll-reveal-word\">{part}</span>{/if}\n\t\t{/each}\n\t</p>\n</h2>\n\n<style>\n\t.scroll-reveal {\n\t\tmargin: 20px 0;\n\t}\n\n\t.scroll-reveal-text {\n\t\tfont-size: clamp(1.6rem, 4vw, 3rem);\n\t\tline-height: 1.5;\n\t\tfont-weight: 600;\n\t}\n\n\t.scroll-reveal-word {\n\t\tdisplay: inline-block;\n\t}\n</style>\n"
+		}
+	],
+	"registryDependencies": [],
+	"dependencies": [
+		"gsap",
+		"gsap@^3.15.0"
+	]
+}

@@ -307,6 +307,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'rotating-text',
 	'scroll-reveal',
 	'ascii-text',
+	'scroll-velocity',
 ]);
 
 // Helper: is this subcategory label fully ported?

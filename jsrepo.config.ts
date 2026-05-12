@@ -1,5 +1,6 @@
 import { defineConfig, Config } from 'jsrepo';
 
+import { componentDependenciesOutput } from './scripts/component-dependencies-output.js';
 import { getRegistryItems } from './scripts/registry-items.js';
 import { stripSvelteBitsHeader } from './src/lib/utils/svelte-bits-source-header';
 // soon
@@ -11,7 +12,10 @@ export default defineConfig({
 		name: 'svelte-bits',
 		homepage: 'https://sveltebits.xyz',
 		excludeDeps: ['svelte', '@sveltejs/kit'],
-		outputs: [shadcnOutput({ dir: './static/r', format: true })],
+		outputs: [
+			shadcnOutput({ dir: './static/r', format: true }),
+			componentDependenciesOutput({ path: './src/lib/constants/componentDependencies.ts' })
+		],
 		items: await getRegistryItems(cwd),
 		defaultPaths: {
 			component: '$lib/components'

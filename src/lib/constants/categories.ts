@@ -1,5 +1,5 @@
 export const NEW: string[] = [
-	
+	'Cursor Grid'
 ];
 
 export const UPDATED: string[] = [
@@ -62,6 +62,7 @@ export const CATEGORIES: Category[] = [
 			'Ghost Cursor',
 			'Gradual Blur',
 			'Click Spark',
+			'Cursor Grid',
 			'Magnet',
 			'Sticker Peel',
 			'Pixel Trail',
@@ -187,6 +188,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'animated-content',
 	'dock',
 	'aurora',
+	'cursor-grid',
 	'balatro',
 	'iridescence',
 	'silk',

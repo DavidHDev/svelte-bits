@@ -88,12 +88,12 @@
 				</a>
 				by
 				<a
-					href="https://x.com/davidhdev"
+					href="https://x.com/davidhaz"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="ln-footer-creator"
 				>
-					davidhdev
+					davidhaz
 				</a>.
 			</p>
 			<p class="ln-footer-copy">© {year} Svelte Bits</p>

@@ -55,6 +55,7 @@ export const COMPONENT_DEPENDENCIES: Record<string, string[]> = {
 	'liquid-ether': ['three'],
 	'magic-bento': ['gsap'],
 	'magic-rings': ['three'],
+	'masked-heading': ['gsap'],
 	'masonry': ['gsap'],
 	'meta-balls': ['ogl'],
 	'model-viewer': ['three'],

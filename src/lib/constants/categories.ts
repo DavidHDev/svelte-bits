@@ -1,5 +1,5 @@
 export const NEW: string[] = [
-	'Cursor Grid'
+	'Masked Heading'
 ];
 
 export const UPDATED: string[] = [
@@ -22,6 +22,7 @@ export const CATEGORIES: Category[] = [
 			'Split Text',
 			'Blur Text',
 			'Circular Text',
+			'Masked Heading',
 			'Text Type',
 			'Shuffle',
 			'Shiny Text',
@@ -184,6 +185,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'index',
 	'shiny-text',
 	'split-text',
+	'masked-heading',
 	'scroll-float',
 	'animated-content',
 	'dock',

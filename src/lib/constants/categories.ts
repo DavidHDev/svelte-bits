@@ -1,6 +1,4 @@
-export const NEW: string[] = [
-	'Masked Heading'
-];
+export const NEW: string[] = [];
 
 export const UPDATED: string[] = [
 
@@ -64,6 +62,7 @@ export const CATEGORIES: Category[] = [
 			'Gradual Blur',
 			'Click Spark',
 			'Cursor Grid',
+			'Scroll Expand',
 			'Magnet',
 			'Sticker Peel',
 			'Pixel Trail',
@@ -185,6 +184,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'index',
 	'shiny-text',
 	'split-text',
+	'scroll-expand',
 	'masked-heading',
 	'scroll-float',
 	'animated-content',

@@ -1,5 +1,5 @@
 export const NEW: string[] = [
-	'Cursor Grid'
+	'Scroll Expand'
 ];
 
 export const UPDATED: string[] = [
@@ -63,6 +63,7 @@ export const CATEGORIES: Category[] = [
 			'Gradual Blur',
 			'Click Spark',
 			'Cursor Grid',
+			'Scroll Expand',
 			'Magnet',
 			'Sticker Peel',
 			'Pixel Trail',
@@ -184,6 +185,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'index',
 	'shiny-text',
 	'split-text',
+	'scroll-expand',
 	'scroll-float',
 	'animated-content',
 	'dock',

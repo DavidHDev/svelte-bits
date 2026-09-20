@@ -71,6 +71,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'grid-scan': () => import('./GridScanDemo.svelte'),
 	'click-spark': () => import('./ClickSparkDemo.svelte'),
 	'cursor-grid': () => import('./CursorGridDemo.svelte'),
+	'scroll-expand': () => import('./ScrollExpandDemo.svelte'),
 	'magnet': () => import('./MagnetDemo.svelte'),
 	'magnet-lines': () => import('./MagnetLinesDemo.svelte'),
 	'glare-hover': () => import('./GlareHoverDemo.svelte'),

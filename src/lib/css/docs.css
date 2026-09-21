@@ -10,10 +10,11 @@
 	width: 100%;
 	max-width: 100%;
 	margin: 0 auto;
-	--sidebar-width: 200px;
+	--sidebar-width: 256px;
 	--content-gap: 2em;
 	display: grid;
-	grid-template-columns: calc(var(--sidebar-width) + var(--content-gap)) minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr);
+	padding-left: calc(var(--sidebar-width) + var(--content-gap));
 	padding-right: var(--content-gap);
 }
 
@@ -21,6 +22,7 @@
 	.docs-wrapper {
 		display: block;
 		padding-right: 0;
+		padding-left: 0;
 	}
 }
 
@@ -52,34 +54,6 @@
 }
 
 /* ─── Sidebar ──────────────────────────────────────────────────────────────── */
-.sidebar {
-	position: sticky;
-	top: 0;
-	align-self: start;
-	height: 100vh;
-	width: 100%;
-	max-width: 200px;
-	margin-left: 2em;
-	overflow-y: auto;
-	padding: 92px 0 6em 0;
-	background-color: var(--bg-body);
-	z-index: 5;
-	scrollbar-width: none;
-	-ms-overflow-style: none;
-}
-
-.sidebar::-webkit-scrollbar {
-	width: 0;
-	height: 0;
-	display: none;
-}
-
-@media only screen and (max-width: 967px) {
-	.docs-wrapper > .sidebar {
-		display: none;
-	}
-}
-
 .sidebar-inner {
 	position: relative;
 	padding: 0;
@@ -186,7 +160,7 @@
 /* Active line indicator */
 .sidebar-active-line {
 	position: absolute;
-	left: -0.001px;
+	left: -1px;
 	width: 2px;
 	height: 18px;
 	background: var(--color-accent);

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import Navbar from '$lib/components/landing/Navbar/Navbar.svelte';
 	import Footer from '$lib/components/landing/Footer/Footer.svelte';
 	import Sidebar from './Sidebar.svelte';
@@ -22,13 +22,27 @@
 	function getFocusable(container: HTMLElement) {
 		return Array.from(
 			container.querySelectorAll<HTMLElement>(
-				'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-			)
-		).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+				'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+			),
+		).filter(
+			(el) => !el.hasAttribute('disabled') && el.tabIndex !== -1 && el.getClientRects().length > 0,
+		);
 	}
 
 	$effect(() => {
 		if (!drawerOpen || !drawerEl) return;
+		const previousFocus = document.activeElement as HTMLElement | null;
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		let active = true;
+		tick().then(() => {
+			if (active) (drawerEl?.querySelector<HTMLElement>('input') ?? drawerEl)?.focus();
+		});
+		const viewport = matchMedia('(min-width: 968px)');
+		const onResize = () => {
+			if (viewport.matches) close();
+		};
+		viewport.addEventListener('change', onResize);
 		const onKey = (event: KeyboardEvent) => {
 			if (event.key === 'Escape') {
 				event.preventDefault();
@@ -49,12 +63,18 @@
 			}
 		};
 		document.addEventListener('keydown', onKey);
-		return () => document.removeEventListener('keydown', onKey);
+		return () => {
+			active = false;
+			document.removeEventListener('keydown', onKey);
+			viewport.removeEventListener('change', onResize);
+			document.body.style.overflow = previousOverflow;
+			previousFocus?.focus({ preventScroll: true });
+		};
 	});
 </script>
 
 <div class="docs-app">
-	<Navbar showDocs onhamburger={toggle} />
+	<Navbar showDocs {drawerOpen} onhamburger={toggle} />
 
 	<div
 		class="docs-drawer-backdrop"
@@ -65,6 +85,7 @@
 
 	<div
 		class="docs-drawer"
+		id="docs-navigation-drawer"
 		data-open={drawerOpen}
 		bind:this={drawerEl}
 		tabindex="-1"
@@ -74,27 +95,13 @@
 		aria-hidden={!drawerOpen}
 		inert={!drawerOpen}
 	>
-		<Sidebar onnavigate={close} />
+		<Sidebar variant="drawer" onnavigate={close} />
 	</div>
 
-	<div class="docs-wrapper">
+	<div class="docs-wrapper" inert={drawerOpen}>
 		<Sidebar />
 		{@render children()}
 	</div>
 
 	<Footer />
 </div>
-
-<style>
-	/* The .docs-drawer Sidebar component is .sidebar (sticky) — override
-	   inside the drawer so it flows naturally. */
-	.docs-drawer :global(.sidebar) {
-		position: static;
-		padding: 0;
-		margin-left: 0;
-		max-width: none;
-		width: 100%;
-		height: auto;
-		display: block;
-	}
-</style>

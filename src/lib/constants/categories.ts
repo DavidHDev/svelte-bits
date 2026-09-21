@@ -1,3 +1,5 @@
+import { MICRO_COMPONENTS } from './micro';
+
 export const NEW: string[] = [];
 
 export const UPDATED: string[] = [
@@ -119,6 +121,10 @@ export const CATEGORIES: Category[] = [
 		]
 	},
 	{
+		name: 'Micro',
+		subcategories: Object.values(MICRO_COMPONENTS).map(component => component.title)
+	},
+	{
 		name: 'Backgrounds',
 		subcategories: [
 			'Liquid Ether',
@@ -178,6 +184,39 @@ export const decodeLabel = (s: string) =>
 // List of subcategory slugs that have a real implementation in svelte-bits.
 // Anything not in this set renders a "Coming soon" placeholder on the demo page.
 export const IMPLEMENTED_DEMOS = new Set<string>([
+	'warm-tooltip',
+	'voice-pill',
+	'tear-ticket',
+	'prompt-bar',
+	'folder-float',
+	'swipe-row',
+	'sling-button',
+	'rubber-segment',
+	'code-slots',
+	'swipe-toast',
+	'slide-commit',
+	'glide-select',
+	'peek-rating',
+	'comet-dial',
+	'branched-menu',
+	'scrub-field',
+	'jelly-radio',
+	'fuse-button',
+	'dodge-field',
+	'wake-slider',
+	'thought-line',
+	'refine-frame',
+	'pulse-heart',
+	'squish-switch',
+	'flip-card',
+	'bell-toggle',
+	'slosh-gauge',
+	'hold-button',
+	'call-chip',
+	'status-mark',
+	'spring-check',
+	'paper-crumple',
+	'lattice-loader',
 	'introduction',
 	'installation',
 	'mcp-server',

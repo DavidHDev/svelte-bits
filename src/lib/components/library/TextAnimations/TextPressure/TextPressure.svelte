@@ -6,6 +6,7 @@
 }
 -->
 <script lang="ts">
+	import { tick, untrack } from 'svelte';
 	type Props = {
 		text?: string;
 		fontFamily?: string;
@@ -24,9 +25,9 @@
 	};
 
 	let {
-		text = 'Compressa',
-		fontFamily = 'Compressa VF',
-		fontUrl = 'https://res.cloudinary.com/dr6lvwubh/raw/upload/v1529908256/CompressaPRO-GX.woff2',
+		text = 'Hello!',
+		fontFamily = 'Roboto Flex',
+		fontUrl = 'https://fonts.gstatic.com/s/robotoflex/v30/NaNeepOXO_NexZs0b5QrzlOHb8wCikXpYqmZsWI-__OGbt8jZktqc2V3Zs0KvDLdBP8SBZtOs2IifRuUZQMsPJtUsR4DEK6cULNeUx9XgTnH37Ha_FIAp4Fm0PP1hw45DntW2x0wZGzhPmr1YNMYKYn9_1IQXGwJAiUJVUMdN5YUW4O8HtSoXjC1z3QSabshNFVe9-EmFw.woff2',
 		width = true,
 		weight = true,
 		italic = true,
@@ -37,28 +38,42 @@
 		textColor = '#FFFFFF',
 		strokeColor = '#FF0000',
 		class: className = '',
-		minFontSize = 24
+		minFontSize = 24,
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let titleEl: HTMLHeadingElement | undefined = $state();
 	let spans: (HTMLSpanElement | null)[] = [];
 
-	// svelte-ignore state_referenced_locally
-	let fontSize = $state(minFontSize);
+	let fontSize = $state(untrack(() => minFontSize));
+	let fontVersion = $state(0);
 	let scaleY = $state(1);
 	let lineHeight = $state(1);
 
 	const chars = $derived(text.split(''));
 
 	$effect(() => {
-		if (typeof document === 'undefined') return;
-		try {
-			const face = new FontFace(fontFamily, `url(${fontUrl})`);
-			face.load().then((loaded) => document.fonts.add(loaded)).catch(() => {});
-		} catch {
-			// FontFace unsupported — silently skip; the fallback family kicks in.
-		}
+		const family = fontFamily;
+		const url = fontUrl;
+		if (!url) return;
+		let active = true;
+		const face = new FontFace(family, `url(${JSON.stringify(url)})`, {
+			weight: '100 1000',
+			stretch: '25% 151%',
+			display: 'swap',
+		});
+		face
+			.load()
+			.then((loaded) => {
+				if (!active) return;
+				document.fonts.add(loaded);
+				fontVersion++;
+			})
+			.catch(() => {});
+		return () => {
+			active = false;
+			document.fonts.delete(face);
+		};
 	});
 
 	$effect(() => {
@@ -94,8 +109,8 @@
 		};
 
 		const getAttr = (distance: number, maxDist: number, minVal: number, maxVal: number) => {
-			const val = maxVal - Math.abs((maxVal * distance) / maxDist);
-			return Math.max(minVal, val + minVal);
+			const proximity = Math.max(0, 1 - distance / Math.max(1, maxDist));
+			return minVal + (maxVal - minVal) * proximity;
 		};
 
 		let rafId = 0;
@@ -112,20 +127,20 @@
 					const rect = span.getBoundingClientRect();
 					const charCenter = {
 						x: rect.x + rect.width / 2,
-						y: rect.y + rect.height / 2
+						y: rect.y + rect.height / 2,
 					};
 					const d = dist(mouse, charCenter);
 
-					const wdth = width ? Math.floor(getAttr(d, maxDist, 5, 200)) : 100;
-					const wght = weight ? Math.floor(getAttr(d, maxDist, 100, 900)) : 400;
+					const wdth = width ? Math.floor(getAttr(d, maxDist, 25, 151)) : 100;
+					const wght = weight ? Math.floor(getAttr(d, maxDist, 100, 1000)) : 400;
 					const italVal = italic ? getAttr(d, maxDist, 0, 1).toFixed(2) : '0';
 					const alphaVal = alpha ? getAttr(d, maxDist, 0, 1).toFixed(2) : '1';
 
-					const newFontVariationSettings = `'wght' ${wght}, 'wdth' ${wdth}, 'ital' ${italVal}`;
+					const newFontVariationSettings = `'wght' ${wght}, 'wdth' ${wdth}, 'ital' ${italVal}, 'slnt' ${-10 * Number(italVal)}`;
 					if (span.style.fontVariationSettings !== newFontVariationSettings) {
 						span.style.fontVariationSettings = newFontVariationSettings;
 					}
-					if (alpha && span.style.opacity !== alphaVal) {
+					if (span.style.opacity !== alphaVal) {
 						span.style.opacity = alphaVal;
 					}
 				});
@@ -143,29 +158,35 @@
 	});
 
 	$effect(() => {
-		void chars.length;
+		void chars;
+		void fontVersion;
+		void fontFamily;
+		void flex;
 		void minFontSize;
 		void scale;
 
 		let timeoutId: ReturnType<typeof setTimeout> | undefined;
-		const setSize = () => {
+		let active = true;
+		const setSize = async () => {
 			if (!containerEl || !titleEl) return;
 			const { width: containerW, height: containerH } = containerEl.getBoundingClientRect();
-			let newFontSize = containerW / (chars.length / 2);
+			let newFontSize = containerW / (Math.max(1, chars.length) / 2);
 			newFontSize = Math.max(newFontSize, minFontSize);
 			fontSize = newFontSize;
 			scaleY = 1;
 			lineHeight = 1;
 
-			requestAnimationFrame(() => {
-				if (!titleEl) return;
-				const textRect = titleEl.getBoundingClientRect();
-				if (scale && textRect.height > 0) {
-					const yRatio = containerH / textRect.height;
-					scaleY = yRatio;
-					lineHeight = yRatio;
-				}
-			});
+			await tick();
+			if (!active || !titleEl) return;
+			const totalWidth = spans
+				.slice(0, chars.length)
+				.reduce((sum, span) => sum + (span?.getBoundingClientRect().width ?? 0), 0);
+			if (totalWidth > containerW)
+				fontSize = Math.max(minFontSize, (newFontSize * containerW) / totalWidth);
+			await tick();
+			if (!active || !titleEl) return;
+			const textRect = titleEl.getBoundingClientRect();
+			if (scale && textRect.height > 0) scaleY = containerH / textRect.height;
 		};
 
 		const debounced = () => {
@@ -174,9 +195,11 @@
 		};
 
 		setSize();
-		window.addEventListener('resize', debounced);
+		const observer = new ResizeObserver(debounced);
+		if (containerEl) observer.observe(containerEl);
 		return () => {
-			window.removeEventListener('resize', debounced);
+			active = false;
+			observer.disconnect();
 			if (timeoutId) clearTimeout(timeoutId);
 		};
 	});
@@ -186,7 +209,7 @@
 	<h1
 		bind:this={titleEl}
 		class="text-pressure-title {className} {flex ? 'flex-layout' : ''} {stroke ? 'has-stroke' : ''}"
-		style="font-family:{fontFamily};font-size:{fontSize}px;line-height:{lineHeight};transform:scale(1, {scaleY});color:{textColor};--text-pressure-stroke:{strokeColor};"
+		style="font-family:'{fontFamily}', sans-serif;font-size:{fontSize}px;line-height:{lineHeight};transform:scale(1, {scaleY});color:{textColor};--text-pressure-stroke:{strokeColor};"
 	>
 		{#each chars as char, i (i)}
 			<span

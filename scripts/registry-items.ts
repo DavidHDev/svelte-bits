@@ -1,3 +1,4 @@
+import { MICRO_COMPONENTS } from '../src/lib/constants/micro';
 /**
  * Discovers library components and builds jsrepo {@link RegistryItem} entries.
  * Used by jsrepo.config.ts (dynamic registry) — run `pnpm exec jsrepo build`.
@@ -132,7 +133,8 @@ export async function getRegistryItems(cwd: string): Promise<RegistryItem[]> {
 		const { header } = parseSvelteBitsHeader(raw);
 
 		const title = header.title ?? pascalToTitle(item.pascalName);
-		const description = header.description ?? `${title} component from svelte-bits.`;
+		const micro = MICRO_COMPONENTS[item.pascalName as keyof typeof MICRO_COMPONENTS];
+		const description = header.description ?? micro?.description ?? `${title} component from svelte-bits.`;
 		const target = `$lib/components/svelte-bits/${item.pascalName}.svelte`;
 
 		const registryItem: RegistryItem = {

@@ -9,12 +9,13 @@
 	type Props = {
 		showDocs?: boolean;
 		onhamburger?: () => void;
+		drawerOpen?: boolean;
 	};
 
-	let { showDocs = false, onhamburger }: Props = $props();
+	let { showDocs = false, onhamburger, drawerOpen = false }: Props = $props();
 
 	const NAV_LINKS = [
-		{ label: 'Docs', to: '/get-started/introduction', match: '/get-started' }
+		{ label: 'Docs', to: '/get-started/introduction', match: '/get-started' },
 	] as const;
 
 	const stars = useStars();
@@ -137,9 +138,7 @@
 	});
 </script>
 
-<header
-	class="ln-navbar {scrolled ? 'ln-navbar-scrolled' : ''} {showDocs ? 'ln-navbar-docs' : ''}"
->
+<header class="ln-navbar {scrolled ? 'ln-navbar-scrolled' : ''} {showDocs ? 'ln-navbar-docs' : ''}">
 	<div class="ln-navbar-inner" bind:this={navbarInnerEl}>
 		<div class="ln-navbar-left">
 			<a href="/" class="ln-navbar-logo" aria-label="svelte-bits home">
@@ -149,11 +148,7 @@
 
 			<span class="ln-navbar-divider">/</span>
 
-			<nav
-				class="ln-navbar-links"
-				bind:this={linksEl}
-				onmouseleave={handleLinksLeave}
-			>
+			<nav class="ln-navbar-links" bind:this={linksEl} onmouseleave={handleLinksLeave}>
 				<div class="ln-navbar-link-highlight" bind:this={highlightEl}></div>
 				{#each NAV_LINKS as { label, to, match } (to)}
 					<a
@@ -169,7 +164,17 @@
 
 		<div class="ln-navbar-right">
 			<button type="button" class="ln-navbar-search" onclick={toggleSearch} aria-label="Search">
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<svg
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
 					<circle cx="11" cy="11" r="8" />
 					<path d="m21 21-4.35-4.35" />
 				</svg>
@@ -178,9 +183,28 @@
 			</button>
 
 			{#if showDocs}
-				<div class="ln-navbar-prefs-wrapper" role="presentation" onmouseenter={handlePrefsEnter} onmouseleave={handlePrefsLeave}>
-					<button type="button" class="ln-navbar-icon-btn ln-navbar-prefs-trigger" aria-label="Preferences">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<div
+					class="ln-navbar-prefs-wrapper"
+					role="presentation"
+					onmouseenter={handlePrefsEnter}
+					onmouseleave={handlePrefsLeave}
+				>
+					<button
+						type="button"
+						class="ln-navbar-icon-btn ln-navbar-prefs-trigger"
+						aria-label="Preferences"
+					>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
 							<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
 							<circle cx="12" cy="7" r="4" />
 						</svg>
@@ -189,8 +213,20 @@
 					{#if prefsOpen}
 						<div class="ln-navbar-prefs-menu">
 							<a href="/favorites" class="ln-navbar-prefs-fav" onclick={() => (prefsOpen = false)}>
-								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-									<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+								<svg
+									width="13"
+									height="13"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									aria-hidden="true"
+								>
+									<path
+										d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"
+									/>
 								</svg>
 								Favorites
 							</a>
@@ -223,7 +259,7 @@
 
 			<button
 				type="button"
-				class="ln-navbar-hamburger {menuOpen ? 'open' : ''}"
+				class="ln-navbar-hamburger {(showDocs ? drawerOpen : menuOpen) ? 'open' : ''}"
 				onclick={() => {
 					if (showDocs) {
 						onhamburger?.();
@@ -232,7 +268,8 @@
 					}
 				}}
 				aria-label="Menu"
-				aria-expanded={menuOpen}
+				aria-expanded={showDocs ? drawerOpen : menuOpen}
+				aria-controls={showDocs ? 'docs-navigation-drawer' : undefined}
 			>
 				<span></span><span></span><span></span>
 			</button>
@@ -241,11 +278,7 @@
 		{#if menuOpen && !showDocs}
 			<div class="ln-navbar-mobile-menu">
 				{#each NAV_LINKS as { label, to } (to)}
-					<a
-						class="ln-navbar-mobile-link"
-						href={to}
-						onclick={() => (menuOpen = false)}
-					>
+					<a class="ln-navbar-mobile-link" href={to} onclick={() => (menuOpen = false)}>
 						{label}
 					</a>
 				{/each}

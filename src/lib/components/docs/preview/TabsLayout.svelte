@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import Dependencies from './Dependencies.svelte';
+	import PreviewResizer from './PreviewResizer.svelte';
 	import { dependenciesForSlug } from '$lib/constants/componentDependencies';
+	import { CATEGORIES, slug } from '$lib/constants/categories';
 	import { stripSvelteBitsHeader } from '$lib/utils/svelte-bits-source-header';
+	import { isComponentSaved, toggleSavedComponent } from '$lib/utils/favorites';
 	import type { PropRow } from './PropTable.svelte';
 	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
+	import { UsePreviewFrame } from '$lib/hooks/use-preview-frame.svelte';
 
 	type Props = {
 		preview: Snippet;
@@ -32,6 +36,16 @@
 		props = []
 	}: Props = $props();
 
+	type DeviceKind = 'desktop' | 'tablet' | 'mobile';
+
+	const TABLET_WIDTH = 768;
+	const MOBILE_WIDTH = 375;
+	const WIDTH_PRESETS: { label: string; kind: DeviceKind; width: number | null }[] = [
+		{ label: 'Desktop', kind: 'desktop', width: null },
+		{ label: `Tablet · ${TABLET_WIDTH}px`, kind: 'tablet', width: TABLET_WIDTH },
+		{ label: `Mobile · ${MOBILE_WIDTH}px`, kind: 'mobile', width: MOBILE_WIDTH }
+	];
+
 	let active: 'preview' | 'code' = $state('preview');
 	const previewTabId = $derived(`${page.params.subcategory ?? 'component'}-preview-tab`);
 	const codeTabId = $derived(`${page.params.subcategory ?? 'component'}-code-tab`);
@@ -41,6 +55,80 @@
 	const promptComponentName = $derived(componentName ?? page.params.subcategory?.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(''));
 	const hasPrompt = $derived(Boolean(promptComponentName && source));
 	const clipboard = new UseClipboard();
+	const shareClipboard = new UseClipboard();
+
+	// --- Preview width (device presets + drag handle) ---
+	let previewWidth = $state<number | null>(null);
+	let resizing = $state(false);
+	let previewPanel: HTMLDivElement | undefined = $state();
+	const frame = new UsePreviewFrame();
+	const canResize = $derived(page.params.category !== 'get-started' && active === 'preview');
+	const widthPresets = $derived(
+		canResize && frame.current
+			? WIDTH_PRESETS.filter((preset) => preset.width === null || preset.width < frame.current!.fullWidth)
+			: []
+	);
+	const showWidthPresets = $derived(widthPresets.length > 1);
+
+	$effect(() => {
+		if (!canResize || !previewPanel) return;
+		return frame.observe(previewPanel);
+	});
+
+	// If the space shrinks below the chosen width (e.g. window resize), fall back to full width.
+	$effect(() => {
+		const current = frame.current;
+		if (current && previewWidth !== null && previewWidth >= current.fullWidth) previewWidth = null;
+	});
+
+	// Sliding highlight behind the selected size button.
+	let sizeTrack: HTMLDivElement | undefined = $state();
+	let pill = $state<{ x: number; width: number; ready: boolean } | null>(null);
+
+	$effect(() => {
+		void previewWidth;
+		void widthPresets.length;
+		const track = sizeTrack;
+		if (!track) {
+			pill = null;
+			return;
+		}
+		const measure = () => {
+			const selected = track.querySelector<HTMLElement>('[aria-pressed="true"]');
+			const previous = untrack(() => pill);
+			if (!selected) {
+				pill = null;
+				return;
+			}
+			const x = selected.offsetLeft;
+			const width = selected.offsetWidth;
+			if (previous && previous.x === x && previous.width === width) return;
+			pill = { x, width, ready: previous !== null };
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(track);
+		return () => observer.disconnect();
+	});
+
+	// --- Favorite + share ---
+	const favoriteKey = $derived.by(() => {
+		const category = CATEGORIES.find((c) => slug(c.name) === page.params.category);
+		const title = category?.subcategories.find((s) => slug(s) === page.params.subcategory);
+		return category && title ? `${category.name}/${title}` : null;
+	});
+	const showFavorite = $derived(Boolean(favoriteKey) && page.params.category !== 'get-started');
+	let isSaved = $derived(favoriteKey ? isComponentSaved(favoriteKey) : false);
+	const favoriteLabel = $derived(isSaved ? 'Remove from favorites' : 'Add to favorites');
+
+	function toggleFavorite() {
+		if (!favoriteKey) return;
+		isSaved = toggleSavedComponent(favoriteKey).saved;
+	}
+
+	function copyShareLink() {
+		shareClipboard.copy(window.location.href);
+	}
 
 	function buildPrompt() {
 		const sourceShown = stripSvelteBitsHeader(source);
@@ -115,6 +203,30 @@ ${sourceShown}
 	}
 </script>
 
+{#snippet deviceIcon(kind: DeviceKind)}
+	<svg
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		stroke-width="2"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		aria-hidden="true"
+	>
+		{#if kind === 'desktop'}
+			<rect x="2" y="3" width="20" height="14" rx="2" />
+			<line x1="8" y1="21" x2="16" y2="21" />
+			<line x1="12" y1="17" x2="12" y2="21" />
+		{:else if kind === 'tablet'}
+			<rect x="4" y="2" width="16" height="20" rx="2" />
+			<line x1="12" y1="18" x2="12.01" y2="18" />
+		{:else}
+			<rect x="6" y="2" width="12" height="20" rx="2" />
+			<line x1="12" y1="18" x2="12.01" y2="18" />
+		{/if}
+	</svg>
+{/snippet}
+
 <div class="tabs-root">
 	<div
 		class="tabs-list"
@@ -179,6 +291,84 @@ ${sourceShown}
 		</button>
 
 		<div class="tab-actions">
+			{#if showWidthPresets}
+				<div class="tab-group tab-group--sizes" role="group" aria-label="Preview size" bind:this={sizeTrack}>
+					<span
+						class="tab-pill"
+						aria-hidden="true"
+						data-ready={pill?.ready ? '' : undefined}
+						style:width={pill ? `${pill.width}px` : undefined}
+						style:transform={pill ? `translateX(${pill.x}px)` : undefined}
+						style:opacity={pill ? 1 : 0}
+					></span>
+					{#each widthPresets as preset (preset.label)}
+						<button
+							type="button"
+							class="tab-icon"
+							aria-label={preset.label}
+							title={preset.label}
+							aria-pressed={previewWidth === preset.width}
+							onclick={() => (previewWidth = preset.width)}
+						>
+							{@render deviceIcon(preset.kind)}
+						</button>
+					{/each}
+				</div>
+			{/if}
+			{#if showFavorite}
+				<div class="tab-group" role="group" aria-label="Page actions">
+					<button
+						type="button"
+						class="tab-icon tab-favorite"
+						aria-label={favoriteLabel}
+						title={favoriteLabel}
+						aria-pressed={isSaved}
+						data-saved={isSaved ? '' : undefined}
+						onclick={toggleFavorite}
+					>
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<path
+								d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+							/>
+						</svg>
+					</button>
+					<button
+						type="button"
+						class="tab-icon"
+						aria-label={shareClipboard.copied ? 'Share link copied' : 'Copy share link'}
+						title={shareClipboard.copied ? 'Share link copied' : 'Copy share link'}
+						onclick={copyShareLink}
+					>
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							{#if shareClipboard.copied}
+								<polyline points="20 6 9 17 4 12" />
+							{:else}
+								<circle cx="18" cy="5" r="3" />
+								<circle cx="6" cy="12" r="3" />
+								<circle cx="18" cy="19" r="3" />
+								<line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+								<line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+							{/if}
+						</svg>
+					</button>
+				</div>
+			{/if}
 			{#if hasPrompt}
 				<button
 					type="button"
@@ -216,10 +406,38 @@ ${sourceShown}
 	</div>
 
 	{#if active === 'preview'}
-		<div id={previewPanelId} class="tab-panel" data-active="true" role="tabpanel" aria-labelledby={previewTabId}>
+		<div
+			id={previewPanelId}
+			class="tab-panel preview-panel"
+			data-active="true"
+			data-resizing={resizing ? '' : undefined}
+			role="tabpanel"
+			aria-labelledby={previewTabId}
+			bind:this={previewPanel}
+			style:--preview-width={previewWidth === null ? undefined : `${previewWidth}px`}
+		>
+			{#if canResize && frame.current}
+				<div
+					class="preview-stage"
+					aria-hidden="true"
+					data-visible={previewWidth !== null || resizing ? '' : undefined}
+					style:top="{frame.current.top}px"
+					style:left="{frame.current.left}px"
+					style:width="{frame.current.fullWidth}px"
+					style:height="{frame.current.height}px"
+				></div>
+			{/if}
 			<div class="demo-container">
 				{@render preview()}
 			</div>
+			{#if canResize && frame.current}
+				<PreviewResizer
+					frame={frame.current}
+					width={previewWidth}
+					onwidthchange={(next) => (previewWidth = next)}
+					onresizingchange={(next) => (resizing = next)}
+				/>
+			{/if}
 			{#if customize}
 				{@render customize()}
 			{/if}

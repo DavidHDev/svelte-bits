@@ -342,6 +342,261 @@
 	display: block;
 }
 
+/* ─── Toolbar icon groups (preview size, favorite, share) ─────────────────── */
+.tab-group {
+	position: relative;
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	gap: 2px;
+	height: 40px;
+	padding: 3px;
+	border: 1px solid var(--border-secondary);
+	border-radius: 10px;
+	isolation: isolate;
+}
+
+.tab-pill {
+	position: absolute;
+	top: 3px;
+	left: 0;
+	z-index: 0;
+	height: 32px;
+	border-radius: 7px;
+	background: var(--bg-elevated);
+	pointer-events: none;
+}
+
+.tab-pill[data-ready] {
+	transition:
+		transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+		width 380ms cubic-bezier(0.22, 1, 0.36, 1),
+		opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tab-icon {
+	position: relative;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: 7px;
+	background: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	transition:
+		background-color var(--transition-fast),
+		color var(--transition-fast),
+		transform 0.1s ease;
+}
+
+.tab-icon svg {
+	width: 16px;
+	height: 16px;
+	flex: none;
+}
+
+.tab-icon:hover {
+	background: var(--bg-hover);
+	color: var(--text-primary);
+}
+
+.tab-icon:active {
+	transform: scale(0.96);
+}
+
+.tab-icon:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 1px;
+}
+
+.tab-group--sizes .tab-icon[aria-pressed='true'],
+.tab-group--sizes .tab-icon[aria-pressed='true']:hover {
+	background: transparent;
+	color: var(--color-accent);
+}
+
+.tab-favorite[data-saved] {
+	color: var(--color-primary);
+}
+
+.tab-favorite[data-saved] svg path {
+	fill: currentColor;
+}
+
+@media (max-width: 767px) {
+	.tab-group--sizes {
+		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tab-pill[data-ready] {
+		transition: none;
+	}
+}
+
+/* ─── Resizable preview (stage, drag handle, width readout) ───────────────── */
+.preview-panel {
+	position: relative;
+	--stage-border: var(--border-primary);
+	--stage-line: var(--border-secondary);
+	--stage-fill: var(--bg-elevated);
+	--resize-bar: var(--bg-hover);
+	--resize-bar-hover: var(--text-dimmed);
+	--resize-bar-active: var(--text-primary);
+	--resize-ease: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.preview-panel > .demo-container {
+	position: relative;
+	max-width: min(100%, var(--preview-width, 100%));
+	transition: max-width var(--resize-ease);
+}
+
+.preview-stage {
+	position: absolute;
+	border: 1px solid var(--stage-border);
+	border-radius: var(--radius-lg);
+	background: var(--stage-fill);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity var(--resize-ease);
+}
+
+.preview-stage::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background-image:
+		linear-gradient(to right, var(--stage-line) 1px, transparent 1px),
+		linear-gradient(to bottom, var(--stage-line) 1px, transparent 1px);
+	background-size: 40px 40px;
+	-webkit-mask-image:
+		repeating-linear-gradient(to right, #000 0 3px, transparent 3px 8px),
+		repeating-linear-gradient(to bottom, #000 0 3px, transparent 3px 8px);
+	-webkit-mask-composite: source-in;
+	mask-image:
+		repeating-linear-gradient(to right, #000 0 3px, transparent 3px 8px),
+		repeating-linear-gradient(to bottom, #000 0 3px, transparent 3px 8px);
+	mask-composite: intersect;
+}
+
+.preview-stage[data-visible] {
+	opacity: 1;
+}
+
+.preview-resize-handle {
+	position: absolute;
+	z-index: 3;
+	display: none;
+	width: 24px;
+	align-items: center;
+	justify-content: center;
+	cursor: ew-resize;
+	touch-action: none;
+	outline: none;
+	transition: left var(--resize-ease);
+}
+
+.preview-resize-bar {
+	width: 4px;
+	height: 48px;
+	border-radius: 999px;
+	background: var(--resize-bar);
+	transition:
+		background-color var(--transition-fast),
+		transform var(--transition-fast);
+}
+
+.preview-resize-grip {
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	color: var(--text-dimmed);
+	opacity: 0.5;
+	pointer-events: none;
+	transition:
+		color var(--transition-fast),
+		opacity var(--transition-fast);
+}
+
+.preview-resize-handle:hover .preview-resize-bar,
+.preview-resize-handle:focus-visible .preview-resize-bar {
+	background: var(--resize-bar-hover);
+}
+
+.preview-resize-handle:hover .preview-resize-grip,
+.preview-resize-handle:focus-visible .preview-resize-grip {
+	color: var(--text-primary);
+	opacity: 1;
+}
+
+.preview-resize-handle[data-dragging] .preview-resize-bar {
+	background: var(--resize-bar-active);
+}
+
+.preview-resize-handle[data-dragging] .preview-resize-grip {
+	color: var(--bg-body);
+	opacity: 1;
+}
+
+.preview-resize-handle:focus-visible .preview-resize-bar {
+	box-shadow:
+		0 0 0 2px var(--bg-body),
+		0 0 0 4px var(--resize-bar-hover);
+}
+
+.preview-width-indicator {
+	position: absolute;
+	z-index: 3;
+	transform: translate(-50%, calc(-100% - 10px));
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity var(--resize-ease);
+}
+
+.preview-width-indicator[data-visible] {
+	opacity: 1;
+}
+
+.preview-panel[data-resizing] > .demo-container,
+.preview-panel[data-resizing] .preview-resize-handle {
+	transition: none;
+}
+
+:root[data-preview-resizing],
+:root[data-preview-resizing] * {
+	cursor: ew-resize !important;
+	user-select: none !important;
+}
+
+@media (min-width: 1024px) {
+	.preview-resize-handle {
+		display: flex;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.preview-panel > .demo-container,
+	.preview-stage,
+	.preview-resize-handle,
+	.preview-width-indicator {
+		transition: none;
+	}
+}
+
 /* ─── Code highlighter ─────────────────────────────────────────────────────── */
 .code-highlighter {
 	border: 1px solid var(--border-secondary);

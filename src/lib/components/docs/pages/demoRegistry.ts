@@ -93,6 +93,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'shape-grid': () => import('./ShapeGridDemo.svelte'),
 	'shiny-text': () => import('./ShinyTextDemo.svelte'),
 	'splash-cursor': () => import('./SplashCursorDemo.svelte'),
+	'depth-text': () => import('./DepthTextDemo.svelte'),
 	'split-text': () => import('./SplitTextDemo.svelte'),
 	'scroll-float': () => import('./ScrollFloatDemo.svelte'),
 	'star-border': () => import('./StarBorderDemo.svelte'),

@@ -1,6 +1,6 @@
 import { MICRO_COMPONENTS } from './micro';
 
-export const NEW: string[] = [];
+export const NEW: string[] = ['Depth Text'];
 
 export const UPDATED: string[] = [
 
@@ -19,6 +19,7 @@ export const CATEGORIES: Category[] = [
 	{
 		name: 'Text Animations',
 		subcategories: [
+			'Depth Text',
 			'Split Text',
 			'Blur Text',
 			'Circular Text',
@@ -222,6 +223,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'mcp-server',
 	'index',
 	'shiny-text',
+	'depth-text',
 	'split-text',
 	'scroll-expand',
 	'masked-heading',

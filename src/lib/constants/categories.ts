@@ -1,6 +1,6 @@
 import { MICRO_COMPONENTS } from './micro';
 
-export const NEW: string[] = [];
+export const NEW: string[] = ['Line Sidebar'];
 
 export const UPDATED: string[] = [
 
@@ -84,6 +84,7 @@ export const CATEGORIES: Category[] = [
 	{
 		name: 'Components',
 		subcategories: [
+			'Line Sidebar',
 			'Animated List',
 			'Scroll Stack',
 			'Bubble Menu',
@@ -306,6 +307,7 @@ export const IMPLEMENTED_DEMOS = new Set<string>([
 	'laser-flow',
 	'metallic-paint',
 	'image-trail',
+	'line-sidebar',
 	'animated-list',
 	'border-glow',
 	'bounce-cards',

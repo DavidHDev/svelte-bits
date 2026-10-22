@@ -128,6 +128,7 @@ export const DOC_PAGE_REGISTRY: Record<string, DemoLoader> = {
 	'laser-flow': () => import('./LaserFlowDemo.svelte'),
 	'metallic-paint': () => import('./MetallicPaintDemo.svelte'),
 	'image-trail': () => import('./ImageTrailDemo.svelte'),
+	'line-sidebar': () => import('./LineSidebarDemo.svelte'),
 	'animated-list': () => import('./AnimatedListDemo.svelte'),
 	'border-glow': () => import('./BorderGlowDemo.svelte'),
 	'bounce-cards': () => import('./BounceCardsDemo.svelte'),

@@ -2,137 +2,354 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
+	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorList from '$lib/components/docs/preview/PreviewColorList.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import BackgroundContent from '$lib/components/docs/preview/BackgroundContent.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
 	import Grainient from '$lib/components/library/Backgrounds/Grainient/Grainient.svelte';
 	import source from '$lib/components/library/Backgrounds/Grainient/Grainient.svelte?raw';
+	import { DEFAULT_PROPS, PRESET_OPTIONS, presetProps } from './presets/Grainient';
 
-	const D = {
-		timeSpeed: 0.25,
-		warpStrength: 1,
-		warpFrequency: 5,
-		warpSpeed: 2,
-		grainAmount: 0.1,
-		contrast: 1.5,
-		saturation: 1,
-		zoom: 0.9,
-		grainAnimated: false,
-		color1: '#FFB089',
-		color2: '#ff8a3d',
-		color3: '#FF3E00'
-	};
+	const TYPE_OPTIONS = [
+		{ value: 'linear', label: 'Linear' },
+		{ value: 'radial', label: 'Radial' }
+	];
 
-	let timeSpeed = $state(D.timeSpeed);
-	let warpStrength = $state(D.warpStrength);
-	let warpFrequency = $state(D.warpFrequency);
-	let warpSpeed = $state(D.warpSpeed);
-	let grainAmount = $state(D.grainAmount);
-	let contrast = $state(D.contrast);
-	let saturation = $state(D.saturation);
-	let zoom = $state(D.zoom);
-	let grainAnimated = $state(D.grainAnimated);
-	let color1 = $state(D.color1);
-	let color2 = $state(D.color2);
-	let color3 = $state(D.color3);
-	let showContent = $state(true);
+	const propData: PropRow[] = [
+		{
+			name: 'colors',
+			type: 'string[]',
+			default: "['#14110e', '#2a0f0a', '#9a3412', '#f97316', '#fed7aa']",
+			description: 'Two to eight colors, from the base to the highlight. Use your page background as the first color so the edges blend in.'
+		},
+		{
+			name: 'type',
+			type: "'linear' | 'radial'",
+			default: "'linear'",
+			description: 'Linear runs the colors across the container. Radial puts the last color in the middle.'
+		},
+		{
+			name: 'angle',
+			type: 'number',
+			default: '55',
+			description: 'Direction of a linear gradient in degrees, like CSS: 0 runs bottom to top, 90 left to right.'
+		},
+		{
+			name: 'bands',
+			type: 'number',
+			default: '1',
+			description: 'How many times the colors repeat back and forth, from 1 to 8. Higher values make stripes or rings.'
+		},
+		{
+			name: 'softness',
+			type: 'number',
+			default: '1',
+			description: 'Blend between colors, from 0 (crisp, poster-like edges) to 1 (smooth).'
+		},
+		{
+			name: 'flow',
+			type: 'number',
+			default: '0.8',
+			description: 'How much the gradient bends into waves, from 0 (straight) to 3. Above 1 it starts to marble.'
+		},
+		{
+			name: 'scale',
+			type: 'number',
+			default: '1',
+			description: 'Size of the waves, from 0.25 to 3.'
+		},
+		{
+			name: 'speed',
+			type: 'number',
+			default: '1',
+			description: 'Speed of the drifting waves. 0 holds them still.'
+		},
+		{
+			name: 'silk',
+			type: 'number',
+			default: '0.35',
+			description: 'Satin shading on the folds, from 0 to 1. Combine with bands for glossy ribbons.'
+		},
+		{
+			name: 'grainAmount',
+			type: 'number',
+			default: '0.08',
+			description: 'Strength of the film grain, from 0 to 0.5.'
+		},
+		{
+			name: 'grainSize',
+			type: 'number',
+			default: '1.2',
+			description: 'Size of the grain in pixels, from 0.5 to 4.'
+		},
+		{
+			name: 'grainAnimated',
+			type: 'boolean',
+			default: 'true',
+			description: 'Shifts the grain every frame like film. When off, the grain stays fixed.'
+		},
+		{
+			name: 'contrast',
+			type: 'number',
+			default: '1',
+			description: 'Contrast of the colors, from 0.2 to 2.'
+		},
+		{
+			name: 'saturation',
+			type: 'number',
+			default: '1',
+			description: 'Saturation of the colors, from 0 (grayscale) to 2.'
+		},
+		{
+			name: 'variation',
+			type: 'number',
+			default: '0',
+			description: 'Picks a different pattern of waves.'
+		},
+		{
+			name: 'interactive',
+			type: 'boolean',
+			default: 'true',
+			description: 'Lets the cursor drag the colors around like paint. The trail settles back after a moment.'
+		},
+		{
+			name: 'stir',
+			type: 'number',
+			default: '1',
+			description: 'How far the cursor drags the colors, from 0 to 2.'
+		},
+		{
+			name: 'clickSwirl',
+			type: 'boolean',
+			default: 'true',
+			description: 'Clicking twists the colors into a swirl that slowly unwinds.'
+		},
+		{
+			name: 'intro',
+			type: 'boolean',
+			default: 'true',
+			description: 'Blooms the colors out from the middle on mount.'
+		},
+		{
+			name: 'lightMode',
+			type: 'boolean',
+			default: 'false',
+			description: 'Builds a light version of the palette: the first color becomes white and the others run in reverse, deepest last.'
+		},
+		{
+			name: 'dpr',
+			type: 'number',
+			default: 'auto',
+			description: 'Maximum device pixel ratio, capped at 2.'
+		},
+		{
+			name: 'class',
+			type: 'string',
+			default: "''",
+			description: 'Extra class names for the container.'
+		},
+		{
+			name: 'style',
+			type: 'string',
+			default: '-',
+			description: 'Inline styles for the container.'
+		}
+	];
 
-	const sO = '<' + 'script lang="ts">';
-	const sC = '</' + 'script>';
-
-	const hasChanges = $derived(
-		timeSpeed !== D.timeSpeed ||
-			warpStrength !== D.warpStrength ||
-			warpFrequency !== D.warpFrequency ||
-			warpSpeed !== D.warpSpeed ||
-			grainAmount !== D.grainAmount ||
-			contrast !== D.contrast ||
-			saturation !== D.saturation ||
-			zoom !== D.zoom ||
-			grainAnimated !== D.grainAnimated ||
-			color1 !== D.color1 ||
-			color2 !== D.color2 ||
-			color3 !== D.color3
-	);
-
-	function reset() {
-		timeSpeed = D.timeSpeed;
-		warpStrength = D.warpStrength;
-		warpFrequency = D.warpFrequency;
-		warpSpeed = D.warpSpeed;
-		grainAmount = D.grainAmount;
-		contrast = D.contrast;
-		saturation = D.saturation;
-		zoom = D.zoom;
-		grainAnimated = D.grainAnimated;
-		color1 = D.color1;
-		color2 = D.color2;
-		color3 = D.color3;
-	}
-
-	const usage = $derived(`${sO}
+	const usage = `<script lang="ts">
   import Grainient from '$lib/components/Grainient.svelte';
-${sC}
+</${'script'}>
 
 <div style="width: 100%; height: 600px; position: relative;">
-  <Grainient color1="${color1}" color2="${color2}" color3="${color3}" />
-</div>`);
+  <Grainient
+    colors={['#14110e', '#2a0f0a', '#9a3412', '#f97316', '#fed7aa']}
+    angle={55}
+    flow={0.8}
+    silk={0.35}
+    grainAmount={0.08}
+  />
+</div>`;
 
-	const props: PropRow[] = [
-		{ name: 'timeSpeed', type: 'number', default: '0.25', description: 'Animation time multiplier.' },
-		{ name: 'colorBalance', type: 'number', default: '0', description: 'Balance between color stops.' },
-		{ name: 'warpStrength', type: 'number', default: '1', description: 'Warp distortion strength.' },
-		{ name: 'warpFrequency', type: 'number', default: '5', description: 'Warp frequency.' },
-		{ name: 'warpSpeed', type: 'number', default: '2', description: 'Warp animation speed.' },
-		{ name: 'warpAmplitude', type: 'number', default: '50', description: 'Warp amplitude.' },
-		{ name: 'blendAngle', type: 'number', default: '0', description: 'Color blend angle.' },
-		{ name: 'blendSoftness', type: 'number', default: '0.05', description: 'Color blend softness.' },
-		{ name: 'rotationAmount', type: 'number', default: '500', description: 'Noise-driven rotation.' },
-		{ name: 'noiseScale', type: 'number', default: '2', description: 'Noise scale.' },
-		{ name: 'grainAmount', type: 'number', default: '0.1', description: 'Grain intensity.' },
-		{ name: 'grainScale', type: 'number', default: '2', description: 'Grain texture scale.' },
-		{ name: 'grainAnimated', type: 'boolean', default: 'false', description: 'Animate the grain.' },
-		{ name: 'contrast', type: 'number', default: '1.5', description: 'Contrast multiplier.' },
-		{ name: 'gamma', type: 'number', default: '1', description: 'Gamma correction.' },
-		{ name: 'saturation', type: 'number', default: '1', description: 'Color saturation.' },
-		{ name: 'centerX', type: 'number', default: '0', description: 'X center offset.' },
-		{ name: 'centerY', type: 'number', default: '0', description: 'Y center offset.' },
-		{ name: 'zoom', type: 'number', default: '0.9', description: 'Zoom factor.' },
-		{ name: 'color1', type: 'string', default: '"#FF9FFC"', description: 'First color stop.' },
-		{ name: 'color2', type: 'string', default: '"#FF8A4C"', description: 'Second color stop.' },
-		{ name: 'color3', type: 'string', default: '"#B497CF"', description: 'Third color stop.' }
-	];
+	const demo = createComponentProps(DEFAULT_PROPS);
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, ...rest } = settings;
+		return rest;
+	});
+	let key = $state(0);
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value, { defaults: demo.defaultProps }), preset: value });
+	};
 </script>
 
-<svelte:head><title>Grainient - svelte-bits</title></svelte:head>
-
-<h1 class="sub-category">Grainient</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="Grainient" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="relative h-[500px] w-full overflow-hidden rounded-[14px]">
-			<Grainient {timeSpeed} {warpStrength} {warpFrequency} {warpSpeed} {grainAmount} {contrast} {saturation} {zoom} {grainAnimated} {color1} {color2} {color3} />
-			<BackgroundContentToggle {showContent} onToggle={(v) => (showContent = v)} />
+<TabsLayout propsState={demo} componentName="Grainient" {usage} {source} {propData} demoOnlyProps={['preset']}>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 500px; padding: 0; overflow: hidden;">
+			{#key key}
+				<Grainient {...componentProps} />
+			{/key}
+			<BackgroundContent headline="Grainy gradients that flow with you." />
+			<RefreshButton onClick={() => key++} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="grainient" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewColorPicker title="Color 1" value={color1} onChange={(v) => (color1 = v)} />
-			<PreviewColorPicker title="Color 2" value={color2} onChange={(v) => (color2 = v)} />
-			<PreviewColorPicker title="Color 3" value={color3} onChange={(v) => (color3 = v)} />
-			<PreviewSlider title="Time Speed" min={0} max={2} step={0.05} value={timeSpeed} onChange={(v) => (timeSpeed = v)} />
-			<PreviewSlider title="Warp Strength" min={0} max={3} step={0.05} value={warpStrength} onChange={(v) => (warpStrength = v)} />
-			<PreviewSlider title="Warp Frequency" min={0} max={20} step={0.1} value={warpFrequency} onChange={(v) => (warpFrequency = v)} />
-			<PreviewSlider title="Warp Speed" min={0} max={10} step={0.1} value={warpSpeed} onChange={(v) => (warpSpeed = v)} />
-			<PreviewSlider title="Grain Amount" min={0} max={0.5} step={0.01} value={grainAmount} onChange={(v) => (grainAmount = v)} />
-			<PreviewSlider title="Contrast" min={0} max={3} step={0.05} value={contrast} onChange={(v) => (contrast = v)} />
-			<PreviewSlider title="Saturation" min={0} max={3} step={0.05} value={saturation} onChange={(v) => (saturation = v)} />
-			<PreviewSlider title="Zoom" min={0.1} max={3} step={0.05} value={zoom} onChange={(v) => (zoom = v)} />
-			<PreviewSwitch title="Animate Grain" checked={grainAnimated} onChange={(v) => (grainAnimated = v)} />
+			<PreviewColorList
+				title="Colors"
+				colors={settings.colors}
+				min={2}
+				max={8}
+				onChange={(value) => demo.updateProp('colors', value)}
+			/>
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewSelect
+				title="Type"
+				options={TYPE_OPTIONS}
+				value={settings.type}
+				onChange={(value) => demo.updateProp('type', value)}
+			/>
+			<PreviewSlider
+				title="Angle"
+				min={0}
+				max={360}
+				step={1}
+				value={settings.angle}
+				valueUnit="°"
+				isDisabled={settings.type === 'radial'}
+				onChange={(value) => demo.updateProp('angle', value)}
+			/>
+			<PreviewSlider
+				title="Bands"
+				min={1}
+				max={6}
+				step={1}
+				value={settings.bands}
+				onChange={(value) => demo.updateProp('bands', value)}
+			/>
+			<PreviewSlider
+				title="Softness"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.softness}
+				onChange={(value) => demo.updateProp('softness', value)}
+			/>
+			<PreviewSlider
+				title="Flow"
+				min={0}
+				max={2}
+				step={0.05}
+				value={settings.flow}
+				onChange={(value) => demo.updateProp('flow', value)}
+			/>
+			<PreviewSlider
+				title="Scale"
+				min={0.25}
+				max={3}
+				step={0.05}
+				value={settings.scale}
+				onChange={(value) => demo.updateProp('scale', value)}
+			/>
+			<PreviewSlider
+				title="Speed"
+				min={0}
+				max={3}
+				step={0.05}
+				value={settings.speed}
+				onChange={(value) => demo.updateProp('speed', value)}
+			/>
+			<PreviewSlider
+				title="Silk"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.silk}
+				onChange={(value) => demo.updateProp('silk', value)}
+			/>
+			<PreviewSlider
+				title="Grain Amount"
+				min={0}
+				max={0.3}
+				step={0.01}
+				value={settings.grainAmount}
+				onChange={(value) => demo.updateProp('grainAmount', value)}
+			/>
+			<PreviewSlider
+				title="Grain Size"
+				min={0.5}
+				max={4}
+				step={0.1}
+				value={settings.grainSize}
+				valueUnit="px"
+				onChange={(value) => demo.updateProp('grainSize', value)}
+			/>
+			<PreviewSlider
+				title="Contrast"
+				min={0.5}
+				max={1.6}
+				step={0.01}
+				value={settings.contrast}
+				onChange={(value) => demo.updateProp('contrast', value)}
+			/>
+			<PreviewSlider
+				title="Saturation"
+				min={0}
+				max={2}
+				step={0.01}
+				value={settings.saturation}
+				onChange={(value) => demo.updateProp('saturation', value)}
+			/>
+			<PreviewSlider
+				title="Variation"
+				min={0}
+				max={20}
+				step={1}
+				value={settings.variation}
+				onChange={(value) => demo.updateProp('variation', value)}
+			/>
+			<PreviewSlider
+				title="Stir"
+				min={0}
+				max={2}
+				step={0.05}
+				value={settings.stir}
+				isDisabled={!settings.interactive}
+				onChange={(value) => demo.updateProp('stir', value)}
+			/>
+			<PreviewSwitch
+				title="Animated Grain"
+				isChecked={settings.grainAnimated}
+				onChange={(value) => demo.updateProp('grainAnimated', value)}
+			/>
+			<PreviewSwitch
+				title="Interactive"
+				isChecked={settings.interactive}
+				onChange={(value) => demo.updateProp('interactive', value)}
+			/>
+			<PreviewSwitch
+				title="Click Swirl"
+				isChecked={settings.clickSwirl}
+				onChange={(value) => demo.updateProp('clickSwirl', value)}
+			/>
+			<PreviewSwitch
+				title="Intro"
+				isChecked={settings.intro}
+				onChange={(value) => demo.updateProp('intro', value)}
+			/>
+			<PreviewSwitch
+				title="Light Mode"
+				isChecked={settings.lightMode}
+				onChange={(value) => demo.updateProp('lightMode', value)}
+			/>
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>

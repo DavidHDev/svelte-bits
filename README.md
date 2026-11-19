@@ -1,118 +1,121 @@
 <div align="center">
-	<br>
-	<br>
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="src/lib/assets/logo/svelte-bits-logo-black.svg">
-    <source media="(prefers-color-scheme: dark)" srcset="src/lib/assets/logo/svelte-bits-logo.svg">
-    <img src="src/lib/assets/logo/svelte-bits-logo-black.svg" alt="svelte-bits logo" width="600">
-  </picture>
-	<br>
-	<br>
-  <strong>A creative library of animated Svelte components.</strong>
   <br />
-  <sub>Stand out with free, customizable animations for text, backgrounds, and UI.</sub>
-	<br>
-	<br>
-  <a href="https://github.com/DavidHDev/svelte-bits/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/DavidHDev/svelte-bits"></a>
-  <a href="https://github.com/DavidHDev/svelte-bits/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/License-MIT+Commons_Clause-orange"></a>
-  <br>
-  <br>
-  <a href="https://sveltebits.xyz/">Documentation</a> · <a href="https://sveltebits.xyz/get-started/installation">Quick Start</a> · <a href="https://github.com/DavidHDev/react-bits">React Bits</a>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="src/lib/assets/logo/svelte-bits-logo.svg">
+    <source media="(prefers-color-scheme: light)" srcset="src/lib/assets/logo/svelte-bits-logo-black.svg">
+    <img src="src/lib/assets/logo/svelte-bits-logo-black.svg" alt="Svelte Bits" width="420">
+  </picture>
+  <br />
+  <br />
+  <h3>Animated Svelte components for websites people remember.</h3>
+  <p>217 free animated components and backgrounds for Svelte.<br />Tune them yourself, or hand them to your agent.</p>
+  <p>
+    <a href="https://github.com/DavidHDev/svelte-bits/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/DavidHDev/svelte-bits?style=flat&logo=github&label=Stars&color=322A24&labelColor=1D1814"></a>
+    <a href="https://github.com/DavidHDev/svelte-bits/blob/main/LICENSE.md"><img alt="License: MIT + Commons Clause" src="https://img.shields.io/badge/License-MIT%20%2B%20Commons%20Clause-322A24?style=flat&labelColor=1D1814"></a>
+  </p>
+  <p>
+    <a href="https://sveltebits.xyz/get-started/introduction">Documentation</a> ·
+    <a href="https://sveltebits.xyz/get-started/installation">Installation</a> ·
+    <a href="https://sveltebits.xyz/get-started/mcp">MCP</a> ·
+    <a href="https://sveltebits.xyz/get-started/index">Browse</a> ·
+    <a href="https://sveltebits.xyz/get-started/changelog">Changelog</a>
+  </p>
+  <br />
 </div>
 
-<br />
+## What's inside
 
-## Why Svelte Bits?
+Svelte Bits is the official Svelte port of [React Bits](https://github.com/DavidHDev/react-bits). Every component is a single Svelte 5 file written in TypeScript and styled with Tailwind, so there is one file to copy and nothing else to wire up. Ports keep the original dependencies, shaders, physics and props.
 
-Svelte Bits helps you **ship stunning Svelte interfaces faster**. Instead of spending hours crafting animations from scratch, grab a polished component and customize it to fit your project.
+| Category                                                    | Count | What you'll find                                                  |
+| ----------------------------------------------------------- | ----: | ----------------------------------------------------------------- |
+| [Text Animations](https://sveltebits.xyz/c/text-animations) |    33 | Split text, typewriters, rotating words and scroll reveals        |
+| [Animations](https://sveltebits.xyz/c/animations)           |    38 | Cursor effects, hover interactions, borders and image effects     |
+| [Components](https://sveltebits.xyz/c/components)           |    48 | Cards, navigation, carousels and galleries                        |
+| [Micro](https://sveltebits.xyz/c/micro)                     |    34 | Buttons, toggles, indicators and other small interface details    |
+| [Backgrounds](https://sveltebits.xyz/c/backgrounds)         |    64 | Gradients, particles, grids and shader effects for whole sections |
 
-> **Text Animations** · **Animations** · **Components** · **Backgrounds**
-
-## Features
-
-- **React Bits parity** — a Svelte port of the React Bits landing page, docs, and component collection
-- **Copy-paste components** — every component is a standalone `.svelte` file
-- **TypeScript + Tailwind** — one focused variant per component, no framework boilerplate
-- **Real animation stacks** — ports keep the original dependencies, shaders, physics, and behavior
-- **Fully customizable** — tweak props or edit the source directly
-- **Cloudflare-ready docs** — the site builds with the SvelteKit Cloudflare adapter
+The docs site gives every component a live demo with controls, and many of them come with presets to start from. You can search the whole library, browse it by category, save favorites, and switch between dark and light mode.
 
 ## Installation
 
-Svelte Bits supports manual copy-paste, [jsrepo](https://www.jsrepo.dev/), or the [shadcn CLI](https://ui.shadcn.com/docs/registry) with **direct HTTPS URLs** to each hosted registry item.
-
-**jsrepo** (configure once, then add components):
+Add any component with the [shadcn](https://ui.shadcn.com/) CLI, using the component's name in kebab case:
 
 ```bash
-pnpm dlx jsrepo init https://sveltebits.xyz/r
-pnpm dlx jsrepo add aurora
+npx shadcn@latest add https://sveltebits.xyz/r/split-text.json
 ```
 
-**shadcn** (`add` with the item’s `.json` URL):
+Or with [jsrepo](https://jsrepo.dev):
 
 ```bash
-pnpm dlx shadcn@latest add https://sveltebits.xyz/r/aurora.json
+npx jsrepo add https://sveltebits.xyz/r/split-text.json
 ```
 
-Each component page lists dependencies, props, usage, and copy-ready install snippets. See the [installation guide](https://sveltebits.xyz/get-started/installation) for runners (npm/pnpm/Yarn/Bun) and MCP setup if you browse registries with the [shadcn MCP server](https://ui.shadcn.com/docs/mcp).
+On pnpm, Yarn or Bun, replace `npx` with `pnpm dlx`, `yarn dlx` or `bunx --bun`.
 
-## Local Development
+Prefer to copy by hand? Open a component's Code tab, paste the file into your project (for example `src/lib/components/SplitText.svelte`) and install the dependencies it lists. The [installation guide](https://sveltebits.xyz/get-started/installation) covers both.
+
+### Usage
+
+```svelte
+<script lang="ts">
+  import SplitText from '$lib/components/SplitText.svelte';
+</script>
+
+<SplitText text="Hello, you!" delay={100} duration={0.6} />
+```
+
+### Use it with your agent
+
+Svelte Bits works with the shadcn MCP server, so Claude Code, Cursor, Codex, VS Code and Antigravity can find and add components for you. Add the registry to your `components.json`:
+
+```json
+{
+  "registries": {
+    "@sveltebits": "https://sveltebits.xyz/r/{name}.json"
+  }
+}
+```
+
+Then connect your client, for example `npx shadcn@latest mcp init --client claude`, and ask for what you need. See the [MCP guide](https://sveltebits.xyz/get-started/mcp) for every client.
+
+## Local development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Build the registry and production site:
+`npm run dev` starts the site and rebuilds the component registry in `static/r/` when components change. Other scripts:
 
-```bash
-npm run build
-```
+| Command                  | What it does                         |
+| ------------------------ | ------------------------------------ |
+| `npm run registry:build` | Builds the registry once with jsrepo |
+| `npm run build`          | Builds the production site           |
+| `npm run check`          | Runs Svelte diagnostics              |
 
-Run Svelte diagnostics:
+### Cloudflare deployment
 
-```bash
-npm run check
-```
+The site uses `@sveltejs/adapter-cloudflare` in `svelte.config.js` and a Worker-style `wrangler.jsonc`. Build with `npm run build`, then deploy with `npx wrangler deploy`.
 
-## Cloudflare Deployment
+The build output goes to `.svelte-kit/cloudflare`, with the Worker entry at `.svelte-kit/cloudflare/_worker.js` and static assets served from the same directory through the `ASSETS` binding. When deploying through the Cloudflare dashboard, use:
 
-This repo uses `@sveltejs/adapter-cloudflare` in `svelte.config.js` and a Worker-style `wrangler.jsonc`.
-
-Build locally with:
-
-```bash
-npm run build
-```
-
-Deploy with Wrangler:
-
-```bash
-npx wrangler deploy
-```
-
-The Cloudflare output is emitted to `.svelte-kit/cloudflare`, with the Worker entry at `.svelte-kit/cloudflare/_worker.js` and static assets served from the same directory via the `ASSETS` binding.
-
-If deploying through the Cloudflare dashboard, use:
-
-| Setting | Value |
-| ------- | ----- |
-| Build command | `npm run build` |
+| Setting                | Value                    |
+| ---------------------- | ------------------------ |
+| Build command          | `npm run build`          |
 | Build output directory | `.svelte-kit/cloudflare` |
-| Node.js version | `20` or newer |
+| Node.js version        | `20` or newer            |
 
-## Contributing
+## Community
 
-Svelte Bits is being built incrementally from [React Bits](https://github.com/DavidHDev/react-bits). Component ports must preserve the upstream implementation as closely as possible, including dependencies, shaders, spring configs, props, and behavior.
+**Contributing.** Ideas and fixes are welcome. Browse the [open issues](https://github.com/DavidHDev/svelte-bits/issues) or open a new one before sending a pull request. Component ports must match the React Bits original as closely as possible, including dependencies, shaders, spring configs, props and behavior.
 
-## Maintainer
-
-**[David Haz](https://github.com/DavidHDev)** — creator & lead maintainer
+**Other versions.** Svelte Bits is a port of [React Bits](https://reactbits.dev/), which is also available for [Vue](https://vue-bits.dev/).
 
 ## Credit
 
-Svelte Bits is an official Svelte port inspired by [React Bits](https://github.com/DavidHDev/react-bits). React Bits occasionally draws inspiration from publicly available code examples, rewritten as full-fledged customizable components.
+React Bits, and so Svelte Bits, occasionally draws inspiration from publicly available code examples. These are rewritten as full-fledged, customizable components. If you recognize your work, [open an issue](https://github.com/DavidHDev/svelte-bits/issues) to request credit.
 
 ## License
 
-[MIT + Commons Clause](https://github.com/DavidHDev/svelte-bits/blob/main/LICENSE.md)
+[MIT + Commons Clause](https://github.com/DavidHDev/svelte-bits/blob/main/LICENSE.md), free for personal and commercial use. Created and maintained by [David Haz](https://github.com/DavidHDev).

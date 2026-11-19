@@ -14,10 +14,10 @@
 		hoverStyles?: { bgColor?: string; textColor?: string };
 	};
 	export const DEFAULT_BUBBLE_ITEMS: BubbleMenuItem[] = [
-		{ label: 'home', href: '#', ariaLabel: 'Home', rotation: -8, hoverStyles: { bgColor: '#FF8A4C', textColor: '#120F17' } },
-		{ label: 'about', href: '#', ariaLabel: 'About', rotation: 8, hoverStyles: { bgColor: '#FFC18A', textColor: '#120F17' } },
+		{ label: 'home', href: '#', ariaLabel: 'Home', rotation: -8, hoverStyles: { bgColor: '#FF8A4C', textColor: '#14110E' } },
+		{ label: 'about', href: '#', ariaLabel: 'About', rotation: 8, hoverStyles: { bgColor: '#FFC18A', textColor: '#14110E' } },
 		{ label: 'projects', href: '#', ariaLabel: 'Projects', rotation: 8, hoverStyles: { bgColor: '#FF6B2C', textColor: '#ffffff' } },
-		{ label: 'blog', href: '#', ariaLabel: 'Blog', rotation: 8, hoverStyles: { bgColor: '#FF8A4C', textColor: '#120F17' } },
+		{ label: 'blog', href: '#', ariaLabel: 'Blog', rotation: 8, hoverStyles: { bgColor: '#FF8A4C', textColor: '#14110E' } },
 		{ label: 'contact', href: '#', ariaLabel: 'Contact', rotation: -8, hoverStyles: { bgColor: '#E86A2A', textColor: '#ffffff' } }
 	];
 </script>

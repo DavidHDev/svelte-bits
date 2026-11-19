@@ -1,11 +1,11 @@
 <script lang="ts">
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import SpringCheck, {
@@ -72,9 +72,9 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedColor = $derived(color);
-	const renderedFill = $derived(fillColor);
-	const renderedCheck = $derived(checkColor);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
+	const renderedFill = $derived(theme.isLight ? (fillColor === DEFAULT_PROPS.fillColor ? '#18181b' : fillColor) : fillColor);
+	const renderedCheck = $derived(theme.isLight ? (checkColor === DEFAULT_PROPS.checkColor ? '#ffffff' : checkColor) : checkColor);
 	const propData: PropRow[] = [
 		{
 			name: 'label',
@@ -211,8 +211,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Spring Check - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Spring Check</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -227,7 +225,7 @@
 			>
 				{#key epoch}<div class="flex min-w-[260px] flex-col items-start gap-1">
 						{#each ROWS as row (row.label)}<SpringCheck
-								{...props}
+								{...props} color={renderedColor} fillColor={renderedFill} checkColor={renderedCheck}
 								label={row.label}
 								defaultChecked={row.defaultChecked}
 							/>{/each}
@@ -235,21 +233,21 @@
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="spring-check" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Ink"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Fill"
-				value={renderedFill}
+				color={renderedFill}
 				onChange={(val) => updateProp('fillColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Check"
-				value={renderedCheck}
+				color={renderedCheck}
 				onChange={(val) => updateProp('checkColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Box Size"
 				min={16}

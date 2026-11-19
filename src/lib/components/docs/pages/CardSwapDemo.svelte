@@ -2,123 +2,390 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
-	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
+	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
+	import PropTable from '$lib/components/docs/preview/PropTable.svelte';
+	import Dependencies from '$lib/components/docs/preview/Dependencies.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
+	import { theme as colorTheme } from '$lib/theme.svelte';
+	import { BridgeIcon, CloudIcon, Moon02Icon, PlantIcon, StarsIcon, SunsetIcon } from '@hugeicons/core-free-icons';
 	import CardSwap, { type CardSwapItem } from '$lib/components/library/Components/CardSwap/CardSwap.svelte';
 	import source from '$lib/components/library/Components/CardSwap/CardSwap.svelte?raw';
 
-	const DEFAULTS = {
+	type Preset = 'stack' | 'flat' | 'tower' | 'fan' | 'calm';
+
+	const CLOUDS = 'https://images.unsplash.com/photo-1778849097774-0ab2a873a858?w=900&q=80&auto=format&fit=crop';
+
+	const ITEMS: Record<'dark' | 'light', CardSwapItem[]> = {
+		dark: [
+			{ title: 'Blue hour', image: '/assets/demo/night-sky.webp', icon: StarsIcon },
+			{ title: 'Moonrise', image: '/assets/demo/night-landscape.webp', icon: Moon02Icon },
+			{ title: 'Dusk', image: '/assets/demo/night-portrait.webp', icon: BridgeIcon },
+			{ title: 'Pink drift', image: CLOUDS, icon: CloudIcon }
+		],
+		light: [
+			{ title: 'Golden hour', image: '/assets/demo/day-sky.webp', icon: SunsetIcon },
+			{ title: 'Canola field', image: '/assets/demo/day-landscape.webp', icon: PlantIcon },
+			{ title: 'The pier', image: '/assets/demo/day-portrait.webp', icon: BridgeIcon },
+			{ title: 'Pink drift', image: CLOUDS, icon: CloudIcon }
+		]
+	};
+
+	const LOOK = {
 		cardDistance: 60,
 		verticalDistance: 70,
-		delay: 5000,
+		depth: 90,
 		skewAmount: 6,
-		easing: 'elastic' as 'elastic' | 'linear',
-		pauseOnHover: false
+		visibleCards: 4,
+		cardRadius: 18
 	};
-	let cardDistance = $state(DEFAULTS.cardDistance);
-	let verticalDistance = $state(DEFAULTS.verticalDistance);
-	let delay = $state(DEFAULTS.delay);
-	let skewAmount = $state(DEFAULTS.skewAmount);
-	let easing = $state<'elastic' | 'linear'>(DEFAULTS.easing);
-	let pauseOnHover = $state(DEFAULTS.pauseOnHover);
+
+	const DEFAULT_PROPS = {
+		preset: 'stack' as Preset,
+		...LOOK,
+		delay: 4000,
+		speed: 1,
+		bounce: 0.35,
+		parallax: 0.5,
+		hoverSpread: 0.12,
+		dim: 0.5,
+		autoplay: true,
+		pauseOnHover: true,
+		draggable: true
+	};
+
+	const PRESETS: Record<Preset, Partial<typeof DEFAULT_PROPS>> = {
+		stack: LOOK,
+		flat: { ...LOOK, skewAmount: 0, cardDistance: 50, verticalDistance: 46, depth: 80 },
+		tower: { ...LOOK, skewAmount: 0, cardDistance: 0, verticalDistance: 56, depth: 100 },
+		fan: { ...LOOK, cardDistance: 96, verticalDistance: 26, depth: 70, skewAmount: 10 },
+		calm: { ...LOOK, speed: 0.6, bounce: 0, delay: 6000, hoverSpread: 0 }
+	};
+
+	const PRESET_OPTIONS = [
+		{ value: 'stack', label: 'Stack' },
+		{ value: 'flat', label: 'Flat' },
+		{ value: 'tower', label: 'Tower' },
+		{ value: 'fan', label: 'Fan' },
+		{ value: 'calm', label: 'Calm' }
+	];
+
+	const propData = [
+		{
+			name: 'items',
+			type: 'CardSwapItem[]',
+			default: 'Sample cards',
+			description: 'Cards to show when no cards are passed. Each item takes title, image, icon and alt.'
+		},
+		{
+			name: 'cards',
+			type: 'Snippet[]',
+			default: 'undefined',
+			description: 'Your own cards. Each snippet renders inside the matching card tile.'
+		},
+		{ name: 'width', type: 'number', default: '460', description: 'Width of each card, in px.' },
+		{ name: 'height', type: 'number', default: '340', description: 'Height of each card, in px.' },
+		{
+			name: 'cardDistance',
+			type: 'number',
+			default: '60',
+			description: 'Horizontal step between stacked cards, in px.'
+		},
+		{
+			name: 'verticalDistance',
+			type: 'number',
+			default: '70',
+			description: 'Vertical step between stacked cards, in px.'
+		},
+		{
+			name: 'depth',
+			type: 'number',
+			default: '90',
+			description: 'How far back each card sits, in px. More depth makes the cards behind smaller.'
+		},
+		{ name: 'skewAmount', type: 'number', default: '6', description: 'Slant of the cards, in degrees.' },
+		{
+			name: 'visibleCards',
+			type: 'number',
+			default: '4',
+			description: 'How many cards show in the stack. Extra cards wait hidden at the back.'
+		},
+		{ name: 'delay', type: 'number', default: '4000', description: 'Time between swaps, in ms.' },
+		{
+			name: 'autoplay',
+			type: 'boolean',
+			default: 'true',
+			description: 'Sends the front card to the back on a timer.'
+		},
+		{
+			name: 'pauseOnHover',
+			type: 'boolean',
+			default: 'true',
+			description: 'Pauses the timer while the cursor is over a card.'
+		},
+		{
+			name: 'draggable',
+			type: 'boolean',
+			default: 'true',
+			description: 'Lets people drag or fling the front card to send it to the back.'
+		},
+		{ name: 'speed', type: 'number', default: '1', description: 'Speed of the swap animation.' },
+		{
+			name: 'bounce',
+			type: 'number',
+			default: '0.35',
+			description: 'How much the cards overshoot as they settle, from 0 to 1.'
+		},
+		{
+			name: 'parallax',
+			type: 'number',
+			default: '0.5',
+			description: 'How much the stack shifts in depth as the cursor moves, from 0 to 1.'
+		},
+		{
+			name: 'hoverSpread',
+			type: 'number',
+			default: '0.12',
+			description: 'How much the stack fans out while hovered.'
+		},
+		{
+			name: 'dim',
+			type: 'number',
+			default: '0.5',
+			description: 'How much the cards behind fade back, from 0 to 1.'
+		},
+		{ name: 'cardRadius', type: 'number', default: '18', description: 'Corner radius of the cards, in px.' },
+		{
+			name: 'intro',
+			type: 'boolean',
+			default: 'true',
+			description: 'Fans the cards out from the front one on mount.'
+		},
+		{ name: 'theme', type: "'dark' | 'light'", default: "'dark'", description: 'Color theme of the cards.' },
+		{
+			name: 'onCardClick',
+			type: '(index: number) => void',
+			default: 'undefined',
+			description: 'Called when a card is clicked. Clicking a card behind also brings it to the front.'
+		},
+		{
+			name: 'onChange',
+			type: '(index: number) => void',
+			default: 'undefined',
+			description: 'Called with the index of the new front card after each swap.'
+		},
+		{
+			name: 'bind:this',
+			type: '{ next, prev }',
+			default: 'undefined',
+			description: 'Call next() or prev() to swap from your own controls.'
+		},
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the container.' }
+	];
+
+	const scriptOpen = '<' + 'script lang="ts">';
+	const scriptClose = '</' + 'script>';
+
+	const usage = `${scriptOpen}
+  import CardSwap, { type CardSwapItem } from '$lib/components/CardSwap.svelte';
+
+  const items: CardSwapItem[] = [
+    { title: 'Golden hour', image: '/photos/sky.jpg' },
+    { title: 'Canola field', image: '/photos/field.jpg' },
+    { title: 'The pier', image: '/photos/pier.jpg' },
+    { title: 'Pink drift', image: '/photos/clouds.jpg' }
+  ];
+${scriptClose}
+
+<div style="height: 600px;">
+  <CardSwap {items} delay={4000} />
+</div>
+
+{#snippet card()}
+  Your content
+{/snippet}
+
+<div style="height: 600px;">
+  <CardSwap width={420} height={300} cards={[card, card, card]} />
+</div>`;
+
+	const demo = createComponentProps(DEFAULT_PROPS, { lightProps: null });
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, ...rest } = settings;
+		return rest;
+	});
+	const swapTheme = $derived<'light' | 'dark'>(colorTheme.isLight ? 'light' : 'dark');
+	const computedProps = $derived(swapTheme === 'light' ? { theme: 'light' } : {});
 	let key = $state(0);
 
-	const hasChanges = $derived(
-		cardDistance !== DEFAULTS.cardDistance ||
-			verticalDistance !== DEFAULTS.verticalDistance ||
-			delay !== DEFAULTS.delay ||
-			skewAmount !== DEFAULTS.skewAmount ||
-			easing !== DEFAULTS.easing ||
-			pauseOnHover !== DEFAULTS.pauseOnHover
-	);
-	function reset() {
-		cardDistance = DEFAULTS.cardDistance;
-		verticalDistance = DEFAULTS.verticalDistance;
-		delay = DEFAULTS.delay;
-		skewAmount = DEFAULTS.skewAmount;
-		easing = DEFAULTS.easing;
-		pauseOnHover = DEFAULTS.pauseOnHover;
-		key++;
-	}
-
-	const cards: CardSwapItem[] = [
-		{ content: card1, style: 'display:flex;flex-direction:column;overflow:hidden;' },
-		{ content: card2, style: 'display:flex;flex-direction:column;overflow:hidden;' },
-		{ content: card3, style: 'display:flex;flex-direction:column;overflow:hidden;' }
-	];
-
-	const usage = $derived(
-		`<CardSwap cards={cards} cardDistance={${cardDistance}} verticalDistance={${verticalDistance}} delay={${delay}} skewAmount={${skewAmount}} easing="${easing}" pauseOnHover={${pauseOnHover}} />`
-	);
-
-	const props: PropRow[] = [
-		{ name: 'cards', type: 'CardSwapItem[]', default: '-', description: 'Cards to display in the stack.' },
-		{ name: 'width', type: 'number | string', default: '500', description: 'Card container width.' },
-		{ name: 'height', type: 'number | string', default: '400', description: 'Card container height.' },
-		{ name: 'cardDistance', type: 'number', default: '60', description: 'X-axis spacing between cards.' },
-		{ name: 'verticalDistance', type: 'number', default: '70', description: 'Y-axis spacing between cards.' },
-		{ name: 'delay', type: 'number', default: '5000', description: 'Milliseconds between swaps.' },
-		{ name: 'pauseOnHover', type: 'boolean', default: 'false', description: 'Pause animation on hover.' },
-		{ name: 'onCardClick', type: '(idx: number) => void', default: '-', description: 'Callback when a card is clicked.' },
-		{ name: 'skewAmount', type: 'number', default: '6', description: 'Skew angle (deg) for top/bottom edges.' },
-		{ name: 'easing', type: '"linear" | "elastic"', default: '"elastic"', description: 'Animation easing type.' }
-	];
+	const applyPreset = (value: string) => {
+		const preset = value as Preset;
+		const defaults = demo.defaultProps as typeof DEFAULT_PROPS;
+		const base = Object.fromEntries(
+			Object.keys(DEFAULT_PROPS).map((name) => [name, defaults[name as keyof typeof DEFAULT_PROPS]])
+		) as typeof DEFAULT_PROPS;
+		demo.updateProps({ ...base, ...PRESETS[preset], preset });
+	};
 </script>
 
-{#snippet headerStripe(label: string, glyph: string)}
-	<div style="border-bottom:1px solid #fff;background:linear-gradient(to top, #2A1F12, #060606);flex-shrink:0;color:white;padding:8px;display:flex;align-items:center;gap:6px;">
-		<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:white;"></span>
-		<span>{glyph}</span>
-		<span>{label}</span>
-	</div>
-{/snippet}
-{#snippet card1()}
-	{@render headerStripe('Smooth', '●')}
-	<div style="position:relative;flex:1;background:#2A1F12;"></div>
-{/snippet}
-{#snippet card2()}
-	{@render headerStripe('Reliable', '◇')}
-	<div style="position:relative;flex:1;background:#222222;"></div>
-{/snippet}
-{#snippet card3()}
-	{@render headerStripe('Customizable', '⚙')}
-	<div style="position:relative;flex:1;background:#52341F;"></div>
-{/snippet}
-
-<svelte:head><title>Card Swap - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Card Swap</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="CardSwap" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="demo-container" style="position:relative;height:500px;overflow:hidden;display:flex;">
-			<div style="width:50%;display:flex;flex-direction:column;justify-content:center;padding:0 0 0 6rem;">
-				<div style="font-size:2rem;font-weight:500;line-height:1.1;margin-bottom:1rem;">
-					Card stacks have never<br />looked so good
-				</div>
-				<div style="font-size:1.1rem;font-weight:400;line-height:1.1;color:#999;">Just look at it go!</div>
-			</div>
-			<div style="width:50%;height:100%;position:relative;">
-				{#key key}
-					<CardSwap {cards} {cardDistance} {verticalDistance} {delay} {skewAmount} {easing} {pauseOnHover} />
-				{/key}
-			</div>
+<TabsLayout
+	propsState={demo}
+	componentName="CardSwap"
+	{usage}
+	{source}
+	{propData}
+	demoOnlyProps={['preset']}
+	{computedProps}
+	dependencies={['@hugeicons/svelte', '@hugeicons/core-free-icons']}
+>
+	{#snippet previewTab()}
+		<div class="demo-container card-swap-demo" style="position: relative; padding: 0; overflow: hidden;">
+			{#key key}
+				<CardSwap items={ITEMS[swapTheme]} {...componentProps} theme={swapTheme} />
+			{/key}
+			<RefreshButton onClick={() => key++} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="card-swap" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewSlider title="Card Distance" min={0} max={150} step={1} value={cardDistance} onChange={(v) => { cardDistance = v; key++; }} />
-			<PreviewSlider title="Vertical Distance" min={0} max={150} step={1} value={verticalDistance} onChange={(v) => { verticalDistance = v; key++; }} />
-			<PreviewSlider title="Delay (ms)" min={1000} max={10000} step={500} value={delay} onChange={(v) => { delay = v; key++; }} />
-			<PreviewSlider title="Skew Amount" min={0} max={30} step={1} value={skewAmount} onChange={(v) => { skewAmount = v; key++; }} />
-			<PreviewSelect title="Easing" value={easing} options={[
-				{ label: 'elastic', value: 'elastic' },
-				{ label: 'linear', value: 'linear' }
-			]} onChange={(v) => { easing = v as 'elastic' | 'linear'; key++; }} />
-			<PreviewSwitch title="Pause on Hover" checked={pauseOnHover} onChange={(v) => { pauseOnHover = v; key++; }} />
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewSlider
+				title="Card Distance"
+				min={0}
+				max={120}
+				step={2}
+				value={settings.cardDistance}
+				valueUnit="px"
+				onChange={(v: number) => demo.updateProp('cardDistance', v)}
+			/>
+			<PreviewSlider
+				title="Vertical Distance"
+				min={0}
+				max={120}
+				step={2}
+				value={settings.verticalDistance}
+				valueUnit="px"
+				onChange={(v: number) => demo.updateProp('verticalDistance', v)}
+			/>
+			<PreviewSlider
+				title="Depth"
+				min={0}
+				max={200}
+				step={5}
+				value={settings.depth}
+				valueUnit="px"
+				onChange={(v: number) => demo.updateProp('depth', v)}
+			/>
+			<PreviewSlider
+				title="Skew"
+				min={-12}
+				max={12}
+				step={1}
+				value={settings.skewAmount}
+				valueUnit="°"
+				onChange={(v: number) => demo.updateProp('skewAmount', v)}
+			/>
+			<PreviewSlider
+				title="Visible Cards"
+				min={1}
+				max={4}
+				step={1}
+				value={settings.visibleCards}
+				onChange={(v: number) => demo.updateProp('visibleCards', v)}
+			/>
+			<PreviewSlider
+				title="Card Radius"
+				min={0}
+				max={32}
+				step={1}
+				value={settings.cardRadius}
+				valueUnit="px"
+				onChange={(v: number) => demo.updateProp('cardRadius', v)}
+			/>
+			<PreviewSlider
+				title="Delay"
+				min={1500}
+				max={8000}
+				step={250}
+				value={settings.delay}
+				valueUnit="ms"
+				onChange={(v: number) => demo.updateProp('delay', v)}
+			/>
+			<PreviewSlider
+				title="Speed"
+				min={0.3}
+				max={2}
+				step={0.05}
+				value={settings.speed}
+				onChange={(v: number) => demo.updateProp('speed', v)}
+			/>
+			<PreviewSlider
+				title="Bounce"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.bounce}
+				onChange={(v: number) => demo.updateProp('bounce', v)}
+			/>
+			<PreviewSlider
+				title="Parallax"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.parallax}
+				onChange={(v: number) => demo.updateProp('parallax', v)}
+			/>
+			<PreviewSlider
+				title="Hover Spread"
+				min={0}
+				max={0.4}
+				step={0.01}
+				value={settings.hoverSpread}
+				onChange={(v: number) => demo.updateProp('hoverSpread', v)}
+			/>
+			<PreviewSlider
+				title="Dim"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.dim}
+				onChange={(v: number) => demo.updateProp('dim', v)}
+			/>
+			<PreviewSwitch
+				title="Autoplay"
+				isChecked={settings.autoplay}
+				onChange={(v: boolean) => demo.updateProp('autoplay', v)}
+			/>
+			<PreviewSwitch
+				title="Pause On Hover"
+				isChecked={settings.pauseOnHover}
+				onChange={(v: boolean) => demo.updateProp('pauseOnHover', v)}
+			/>
+			<PreviewSwitch
+				title="Draggable"
+				isChecked={settings.draggable}
+				onChange={(v: boolean) => demo.updateProp('draggable', v)}
+			/>
 		</Customize>
+
+		<PropTable data={propData} />
+		<Dependencies dependencyList={['@hugeicons/svelte', '@hugeicons/core-free-icons']} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>
+
+<style>
+	.card-swap-demo {
+		height: 460px;
+	}
+
+	@media (min-width: 48em) {
+		.card-swap-demo {
+			height: 600px;
+		}
+	}
+</style>

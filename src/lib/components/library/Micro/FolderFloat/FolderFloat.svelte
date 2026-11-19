@@ -1,10 +1,18 @@
+<!-- @svelte-bits
+{
+  "title": "FolderFloat",
+  "description": "Folder whose notes spring out into a floating cloud when it opens on hover or press.",
+  "dependencies": ["matter-js"]
+}
+-->
 <script module lang="ts">
 	import Matter from 'matter-js';
-	type CSSProperties = Record<string, string | number | undefined | null>;
 
 	const { Bodies, Body, Composite, Engine } = Matter;
+
 	export type FolderFloatItem = string | { label: string; value: string };
 	export type FolderFloatTrigger = 'hover' | 'click';
+
 	export interface FolderFloatProps {
 		items?: FolderFloatItem[];
 		label?: string;
@@ -35,18 +43,12 @@
 		bounce?: number;
 		className?: string;
 	}
+
 	type Entry = { label: string; value: string };
 	type Size = { w: number; h: number };
 	type Zone = { left: number; right: number; top: number; bottom: number };
-	type Drag = {
-		i: number;
-		id: number;
-		dx: number;
-		dy: number;
-		sx: number;
-		sy: number;
-		moved: boolean;
-	};
+	type Drag = { i: number; id: number; dx: number; dy: number; sx: number; sy: number; moved: boolean };
+	type PhasedBody = Matter.Body & { plugin: { phase: number } };
 	interface World {
 		engine: Matter.Engine | null;
 		bodies: Matter.Body[];
@@ -58,17 +60,12 @@
 		zone: Zone | null;
 		live: boolean;
 	}
-	interface Latest {
-		onSelect?: FolderFloatProps['onSelect'];
-		onOpenChange?: FolderFloatProps['onOpenChange'];
-		drift: number;
-		reduce: boolean;
-	}
+
 	const DEFAULT_ITEMS: FolderFloatItem[] = [
 		'Try a warmer palette',
 		'Tighten the spacing',
 		'Logo feels small',
-		'Love the new hero',
+		'Love the new hero'
 	];
 	const PAD = 28;
 	const CHAR = 6.8;
@@ -76,17 +73,13 @@
 	const ROW = 52;
 	const DRAG_MIN = 4;
 	const ZONE_PAD = 8;
+
 	const jitter = (i: number) => {
 		const x = Math.sin(i * 12.9898 + 4.1414) * 43758.5453;
 		return x - Math.floor(x);
 	};
-	const layout = (
-		list: Entry[],
-		spread: number,
-		lift: number,
-		tilt: number,
-		sizes: (Size | null)[],
-	) => {
+
+	const layout = (list: Entry[], spread: number, lift: number, tilt: number, sizes: (Size | null)[]) => {
 		const rows: { items: { i: number; pw: number }[]; width: number }[] = [];
 		let row: { i: number; pw: number }[] = [];
 		let width = 0;
@@ -107,40 +100,17 @@
 			const shift = (ri % 2 ? 1 : -1) * Math.min(16, spread * 0.1);
 			r.items.forEach(({ i, pw }) => {
 				const j = jitter(i);
-				pos[i] = {
-					x: x + pw / 2 + shift + (j - 0.5) * 6,
-					y: -lift - ri * ROW - j * 6,
-					r: tilt * (j * 2 - 1),
-				};
+				pos[i] = { x: x + pw / 2 + shift + (j - 0.5) * 6, y: -lift - ri * ROW - j * 6, r: tilt * (j * 2 - 1) };
 				x += pw + GAP;
 			});
 		});
 		return pos;
 	};
-
-	function css(value: CSSProperties | undefined): string {
-		const unitless =
-			/^(opacity|zIndex|fontWeight|lineHeight|flex|flexGrow|flexShrink|order|scale|aspectRatio|strokeWidth|strokeDashoffset|strokeDasharray|fillOpacity|strokeOpacity|stopOpacity|pathLength)$/;
-		return Object.entries(value ?? {})
-			.filter(([, v]) => v !== undefined && v !== null)
-			.map(([key, value]) => {
-				const name = key.startsWith('--')
-					? key
-					: key.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase());
-				return (
-					name +
-					':' +
-					(typeof value === 'number' && value !== 0 && !key.startsWith('--') && !unitless.test(key)
-						? value + 'px'
-						: value)
-				);
-			})
-			.join(';');
-	}
 </script>
 
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
+
 	let {
 		items = DEFAULT_ITEMS,
 		label = 'Design feedback',
@@ -152,12 +122,12 @@
 		drift = 0.5,
 		onSelect,
 		onOpenChange,
-		folderColor = '#4D4036',
-		frontColor = '#736153',
-		paperColor = '#F5EFE9',
-		itemColor = '#F5EFE9',
-		itemTextColor = '#1D1814',
-		labelColor = '#F5EFE9',
+		folderColor = '#443c35',
+		frontColor = '#5a524b',
+		paperColor = '#f5f5f5',
+		itemColor = '#f5f5f5',
+		itemTextColor = '#1c1917',
+		labelColor = '#f5f5f5',
 		width = 200,
 		height = 148,
 		radius = 14,
@@ -169,191 +139,142 @@
 		openDuration = 520,
 		stagger = 45,
 		bounce = 0.3,
-		className = '',
+		className = ''
 	}: FolderFloatProps = $props();
+
 	let open = $state(untrack(() => defaultOpen));
-	function setOpen(nextState: typeof open | ((previous: typeof open) => typeof open)) {
-		open = typeof nextState === 'function' ? nextState(open) : nextState;
-	}
-	let popped = $state(untrack(() => -1));
-	function setPopped(nextState: typeof popped | ((previous: typeof popped) => typeof popped)) {
-		popped = typeof nextState === 'function' ? nextState(popped) : nextState;
-	}
-	let live = $state(untrack(() => false));
-	function setLive(nextState: typeof live | ((previous: typeof live) => typeof live)) {
-		live = typeof nextState === 'function' ? nextState(live) : nextState;
-	}
-	let sizes = $state<Size[]>(untrack(() => []));
-	function setSizes(nextState: typeof sizes | ((previous: typeof sizes) => typeof sizes)) {
-		sizes = typeof nextState === 'function' ? nextState(sizes) : nextState;
-	}
-	const anchorRef = { current: untrack(() => null) as HTMLDivElement | null };
-	const pillRefs = { current: untrack(() => []) as (HTMLButtonElement | null)[] };
-	const world = {
-		current: untrack(() => ({
-			engine: null,
-			bodies: [],
-			sizes: [],
-			raf: 0,
-			last: 0,
-			t0: 0,
-			drag: null,
-			zone: null,
-			live: false,
-		})) as World,
+	let popped = $state(-1);
+	let live = $state(false);
+	let sizes = $state<Size[]>([]);
+	let anchorEl = $state<HTMLDivElement | null>(null);
+	const pills: (HTMLButtonElement | null)[] = [];
+	const world: World = {
+		engine: null,
+		bodies: [],
+		sizes: [],
+		raf: 0,
+		last: 0,
+		t0: 0,
+		drag: null,
+		zone: null,
+		live: false
 	};
-	const latest = { current: untrack(() => ({}) as Latest) as Latest };
-	$effect.pre(() => {
-		latest.current = { onSelect, onOpenChange, drift, reduce: latest.current.reduce ?? false };
-	});
-	const popTimer = {
-		current: untrack(() => undefined) as ReturnType<typeof setTimeout> | undefined,
-	};
-	const liveTimer = {
-		current: untrack(() => undefined) as ReturnType<typeof setTimeout> | undefined,
-	};
-	const list: Entry[] = $derived(
-		items.map((item) => (typeof item === 'string' ? { label: item, value: item } : item)),
-	);
+	let reduce = false;
+	let popTimer: ReturnType<typeof setTimeout> | undefined;
+	let liveTimer: ReturnType<typeof setTimeout> | undefined;
+
+	const list: Entry[] = $derived(items.map((item) => (typeof item === 'string' ? { label: item, value: item } : item)));
 	const n = $derived(list.length);
 	const sub = $derived(sublabel || `${n} ${n === 1 ? 'note' : 'notes'}`);
 	const pos = $derived(layout(list, spread, lift, tilt, sizes));
 	const labelsKey = $derived(list.map((item) => item.label).join('|'));
-	$effect(() => {
-		n;
-		labelsKey;
-		return untrack(() => {
-			const measure = () => {
-				const next = pillRefs.current
-					.slice(0, n)
-					.map((el) => (el ? { w: el.offsetWidth, h: el.offsetHeight } : null));
-				if (next.some((s) => !s)) return;
-				const sized = next as Size[];
-				setSizes((prev) =>
-					prev.length === sized.length &&
-					prev.every((s, i) => s.w === sized[i].w && s.h === sized[i].h)
-						? prev
-						: sized,
-				);
-			};
-			measure();
-			document.fonts?.ready.then(measure);
-		});
-	});
+	const posKey = $derived(pos.map((p) => `${p.x},${p.y}`).join('|'));
+	const hover = $derived(trigger === 'hover');
+
+	const pill = (i: number) => (el: HTMLButtonElement) => {
+		pills[i] = el;
+		return () => {
+			if (pills[i] === el) pills[i] = null;
+		};
+	};
+
+	const measure = () => {
+		const next = pills.slice(0, n).map((el) => (el ? { w: el.offsetWidth, h: el.offsetHeight } : null));
+		if (next.length < n || next.some((s) => !s)) return;
+		const sized = next as Size[];
+		if (sizes.length === sized.length && sizes.every((s, i) => s.w === sized[i].w && s.h === sized[i].h)) return;
+		sizes = sized;
+	};
+
 	const stopPhysics = () => {
-		const w = world.current;
-		clearTimeout(liveTimer.current);
-		cancelAnimationFrame(w.raf);
-		w.raf = 0;
-		if (w.engine) {
-			w.bodies.forEach((b, i) => {
-				const el = pillRefs.current[i];
+		clearTimeout(liveTimer);
+		cancelAnimationFrame(world.raf);
+		world.raf = 0;
+		if (world.engine) {
+			world.bodies.forEach((b, i) => {
+				const el = pills[i];
 				if (!el) return;
 				el.style.setProperty('--x', `${b.position.x.toFixed(1)}px`);
-				el.style.setProperty('--y', `${(b.position.y - w.sizes[i].h / 2).toFixed(1)}px`);
+				el.style.setProperty('--y', `${(b.position.y - world.sizes[i].h / 2).toFixed(1)}px`);
 			});
-			Composite.clear(w.engine.world, false, true);
-			Engine.clear(w.engine);
-			w.engine = null;
+			Composite.clear(world.engine.world, false, true);
+			Engine.clear(world.engine);
+			world.engine = null;
 		}
-		w.bodies = [];
-		w.drag = null;
-		w.live = false;
-		setLive(false);
+		world.bodies = [];
+		world.drag = null;
+		world.live = false;
+		live = false;
 	};
+
 	const startPhysics = () => {
-		const w = world.current;
+		const w = world;
 		if (w.engine) return;
-		const els = pillRefs.current.slice(0, n);
-		if (els.some((el) => !el)) return;
+		const els = pills.slice(0, n);
+		if (els.length < n || els.some((el) => !el)) return;
 		const engine = Engine.create({ gravity: { x: 0, y: 0 } });
 		engine.enableSleeping = false;
 		w.engine = engine;
 		w.sizes = (els as HTMLButtonElement[]).map((el) => ({ w: el.offsetWidth, h: el.offsetHeight }));
-		const ys = pos.map((p) => p.y);
+		const laid = pos;
+		const ys = laid.map((p) => p.y);
 		const zone = {
 			left: -spread - ZONE_PAD,
 			right: spread + ZONE_PAD,
 			top: Math.min(...ys) - ZONE_PAD,
-			bottom: -lift + Math.max(...w.sizes.map((s) => s.h)),
+			bottom: -lift + Math.max(...w.sizes.map((s) => s.h))
 		};
 		w.zone = zone;
-		w.bodies = els.map((el, i) => {
+		w.bodies = els.map((_, i) => {
 			const { w: bw, h: bh } = w.sizes[i];
-			const b = Bodies.rectangle(pos[i].x, pos[i].y + bh / 2, bw, bh, {
+			const b = Bodies.rectangle(laid[i].x, laid[i].y + bh / 2, bw, bh, {
 				chamfer: { radius: Math.min(bh / 2 - 1, 16) },
 				restitution: 0.55,
 				friction: 0,
 				frictionAir: 0.08,
-				inertia: Infinity,
+				inertia: Infinity
 			});
-			(b as Matter.Body & { plugin: { phase: number } }).plugin = {
-				phase: jitter(i) * Math.PI * 2,
-			};
+			(b as PhasedBody).plugin = { phase: jitter(i) * Math.PI * 2 };
 			return b;
 		});
 		const T = 80;
 		const walls = [
-			Bodies.rectangle(
-				(zone.left + zone.right) / 2,
-				zone.top - T / 2,
-				zone.right - zone.left + 2 * T,
-				T,
-				{
-					isStatic: true,
-				},
-			),
-			Bodies.rectangle(
-				(zone.left + zone.right) / 2,
-				zone.bottom + T / 2,
-				zone.right - zone.left + 2 * T,
-				T,
-				{
-					isStatic: true,
-				},
-			),
-			Bodies.rectangle(
-				zone.left - T / 2,
-				(zone.top + zone.bottom) / 2,
-				T,
-				zone.bottom - zone.top + 2 * T,
-				{
-					isStatic: true,
-				},
-			),
-			Bodies.rectangle(
-				zone.right + T / 2,
-				(zone.top + zone.bottom) / 2,
-				T,
-				zone.bottom - zone.top + 2 * T,
-				{
-					isStatic: true,
-				},
-			),
+			Bodies.rectangle((zone.left + zone.right) / 2, zone.top - T / 2, zone.right - zone.left + 2 * T, T, {
+				isStatic: true
+			}),
+			Bodies.rectangle((zone.left + zone.right) / 2, zone.bottom + T / 2, zone.right - zone.left + 2 * T, T, {
+				isStatic: true
+			}),
+			Bodies.rectangle(zone.left - T / 2, (zone.top + zone.bottom) / 2, T, zone.bottom - zone.top + 2 * T, {
+				isStatic: true
+			}),
+			Bodies.rectangle(zone.right + T / 2, (zone.top + zone.bottom) / 2, T, zone.bottom - zone.top + 2 * T, {
+				isStatic: true
+			})
 		];
 		Composite.add(engine.world, [...w.bodies, ...walls]);
 		w.live = true;
 		w.last = 0;
 		w.t0 = performance.now();
-		setLive(true);
+		live = true;
 		const tick = (now: number) => {
-			const s = world.current;
+			const s = world;
 			if (!s.engine) return;
 			const dt = s.last ? Math.min(32, now - s.last) : 16;
 			s.last = now;
 			const t = (now - s.t0) / 1000;
-			const k = latest.current.drift * 0.00005 * Math.min(1, t / 2);
+			const k = drift * 0.00005 * Math.min(1, t / 2);
 			s.bodies.forEach((b, i) => {
 				if (s.drag && s.drag.i === i) return;
-				const ph = (b as Matter.Body & { plugin: { phase: number } }).plugin.phase;
+				const ph = (b as PhasedBody).plugin.phase;
 				Body.applyForce(b, b.position, {
 					x: Math.sin(t * 0.9 + ph) * k * b.mass,
-					y: Math.cos(t * 1.3 + ph * 1.7) * k * b.mass,
+					y: Math.cos(t * 1.3 + ph * 1.7) * k * b.mass
 				});
 			});
 			Engine.update(s.engine, dt);
 			s.bodies.forEach((b, i) => {
-				const el = pillRefs.current[i];
+				const el = pills[i];
 				if (!el) return;
 				el.style.setProperty('--x', `${b.position.x.toFixed(1)}px`);
 				el.style.setProperty('--y', `${(b.position.y - s.sizes[i].h / 2).toFixed(1)}px`);
@@ -362,64 +283,83 @@
 		};
 		w.raf = requestAnimationFrame(tick);
 	};
+
 	const set = (next: boolean) => {
 		if (!next) stopPhysics();
-		setOpen((prev) => {
-			if (prev === next) return prev;
-			latest.current.onOpenChange?.(next);
-			return next;
-		});
+		if (open === next) return;
+		open = next;
+		onOpenChange?.(next);
 	};
+
 	$effect(() => {
-		open;
-		physics;
-		openDuration;
-		stagger;
 		n;
-		startPhysics;
-		stopPhysics;
+		labelsKey;
+		untrack(() => {
+			measure();
+			document.fonts?.ready.then(measure);
+		});
+	});
+
+	$effect(() => {
+		const laid = pos;
+		untrack(() => {
+			laid.forEach((p, i) => {
+				const el = pills[i];
+				if (!el) return;
+				el.style.setProperty('--x', `${p.x.toFixed(1)}px`);
+				el.style.setProperty('--y', `${p.y.toFixed(1)}px`);
+			});
+		});
+	});
+
+	$effect(() => {
+		const isOpen = open;
+		const usePhysics = physics;
+		const delay = openDuration + (n - 1) * stagger + 80;
+		spread;
+		lift;
+		posKey;
 		return untrack(() => {
-			clearTimeout(liveTimer.current);
-			if (!open || !physics || latest.current.reduce) {
-				if (!open) stopPhysics();
-				else if (!physics) stopPhysics();
-				return undefined;
+			clearTimeout(liveTimer);
+			if (!isOpen || !usePhysics || reduce) {
+				if (!isOpen) stopPhysics();
+				else if (!usePhysics) stopPhysics();
+				return;
 			}
-			liveTimer.current = setTimeout(startPhysics, openDuration + (n - 1) * stagger + 80);
-			return () => clearTimeout(liveTimer.current);
+			liveTimer = setTimeout(startPhysics, delay);
+			return () => clearTimeout(liveTimer);
 		});
 	});
-	$effect(() => {
-		return untrack(() => {
-			const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-			const sync = () => {
-				latest.current.reduce = mq.matches;
-			};
-			sync();
-			mq.addEventListener('change', sync);
-			return () => mq.removeEventListener('change', sync);
-		});
-	});
-	$effect(() => {
-		stopPhysics;
-		return untrack(() => () => {
-			clearTimeout(popTimer.current);
+
+	onMount(() => {
+		const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+		const sync = () => {
+			reduce = mq.matches;
+		};
+		sync();
+		mq.addEventListener('change', sync);
+		return () => {
+			mq.removeEventListener('change', sync);
+			clearTimeout(popTimer);
 			stopPhysics();
-		});
+		};
 	});
+
 	const pick = (item: Entry, i: number) => {
-		latest.current.onSelect?.(item.value, i);
-		clearTimeout(popTimer.current);
-		setPopped(i);
-		popTimer.current = setTimeout(() => setPopped(-1), 320);
+		onSelect?.(item.value, i);
+		clearTimeout(popTimer);
+		popped = i;
+		popTimer = setTimeout(() => (popped = -1), 320);
 		if (closeOnSelect) set(false);
 	};
-	const pointerAt = (e: PointerEvent & { currentTarget: HTMLButtonElement }) => {
-		const r = anchorRef.current?.getBoundingClientRect();
+
+	const pointerAt = (e: PointerEvent) => {
+		const r = anchorEl?.getBoundingClientRect();
 		return r ? { x: e.clientX - r.left, y: e.clientY - r.top } : { x: 0, y: 0 };
 	};
+
 	const down = (e: PointerEvent & { currentTarget: HTMLButtonElement }, i: number) => {
-		const w = world.current;
+		const w = world;
 		if (!w.live || e.button !== 0) return;
 		const b = w.bodies[i];
 		if (!b) return;
@@ -431,14 +371,17 @@
 			dy: b.position.y - p.y,
 			sx: e.clientX,
 			sy: e.clientY,
-			moved: false,
+			moved: false
 		};
 		try {
 			e.currentTarget.setPointerCapture(e.pointerId);
-		} catch {}
+		} catch {
+			return;
+		}
 	};
+
 	const move = (e: PointerEvent & { currentTarget: HTMLButtonElement }, i: number) => {
-		const w = world.current;
+		const w = world;
 		const d = w.drag;
 		if (!d || d.i !== i || d.id !== e.pointerId) return;
 		if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) >= DRAG_MIN) {
@@ -455,84 +398,78 @@
 		Body.setVelocity(b, { x: (x - b.position.x) * 0.6, y: (y - b.position.y) * 0.6 });
 		Body.setPosition(b, { x, y });
 	};
+
 	const up = (e: PointerEvent & { currentTarget: HTMLButtonElement }, i: number, item: Entry) => {
-		const w = world.current;
+		const w = world;
 		const d = w.drag;
 		if (!d || d.i !== i || d.id !== e.pointerId) return;
 		w.drag = null;
 		e.currentTarget.removeAttribute('data-drag');
-		try {
-			e.currentTarget.releasePointerCapture(e.pointerId);
-		} catch {}
+		if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
 		if (!d.moved && e.type === 'pointerup') pick(item, i);
 	};
-	const hover = $derived(trigger === 'hover');
 </script>
 
 <div
-	class={`group relative inline-block text-[13px] leading-none font-medium [width:var(--ff-w)] [padding-top:var(--ff-tab)] [font-family:inherit] ${className ? ` ${className}` : ''}`}
+	class="group relative inline-block text-[13px] leading-none font-medium [width:var(--ff-w)] [padding-top:var(--ff-tab)] [font-family:inherit]{className ? ` ${className}` : ''}"
 	data-open={open ? '' : undefined}
 	data-live={live ? '' : undefined}
 	data-physics={physics ? '' : undefined}
 	data-trigger={trigger}
+	role="presentation"
 	onpointerenter={hover ? () => set(true) : undefined}
 	onpointerleave={hover
 		? () => {
-				if (!world.current.drag) set(false);
+				if (!world.drag) set(false);
 			}
 		: undefined}
-	onkeydown={(e: KeyboardEvent & { currentTarget: HTMLDivElement }) => {
+	onkeydown={(e) => {
 		if (e.key === 'Escape' && open) {
 			e.stopPropagation();
 			set(false);
 		}
 	}}
-	style={css({
-		'--ff-w': `${width}px`,
-		'--ff-h': `${height}px`,
-		'--ff-r': `${radius}px`,
-		'--ff-back': folderColor,
-		'--ff-front': frontColor,
-		'--ff-paper': paperColor,
-		'--ff-item': itemColor,
-		'--ff-item-ink': itemTextColor,
-		'--ff-label': labelColor,
-		'--ff-spread': `${spread}px`,
-		'--ff-lift': `${lift}px`,
-		'--ff-angle': `${flapAngle}deg`,
-		'--ff-rest': `${restAngle}deg`,
-		'--ff-open': `${openDuration}ms`,
-		'--ff-close': `${Math.round(openDuration * 0.6)}ms`,
-		'--ff-stagger': `${stagger}ms`,
-		'--ff-n': n,
-		'--ff-tab': '14px',
-		'--ff-ease-out': 'cubic-bezier(0.23, 1, 0.32, 1)',
-		'--ff-spring': `cubic-bezier(0.34, ${(1 + bounce * 1.9).toFixed(2)}, 0.64, 1)`,
-	} as CSSProperties)}
+	style:--ff-w="{width}px"
+	style:--ff-h="{height}px"
+	style:--ff-r="{radius}px"
+	style:--ff-back={folderColor}
+	style:--ff-front={frontColor}
+	style:--ff-paper={paperColor}
+	style:--ff-item={itemColor}
+	style:--ff-item-ink={itemTextColor}
+	style:--ff-label={labelColor}
+	style:--ff-spread="{spread}px"
+	style:--ff-lift="{lift}px"
+	style:--ff-angle="{flapAngle}deg"
+	style:--ff-rest="{restAngle}deg"
+	style:--ff-open="{openDuration}ms"
+	style:--ff-close="{Math.round(openDuration * 0.6)}ms"
+	style:--ff-stagger="{stagger}ms"
+	style:--ff-n={n}
+	style:--ff-tab="14px"
+	style:--ff-ease-out="cubic-bezier(0.23, 1, 0.32, 1)"
+	style:--ff-spring="cubic-bezier(0.34, {(1 + bounce * 1.9).toFixed(2)}, 0.64, 1)"
 >
 	<div
-		bind:this={anchorRef.current}
+		bind:this={anchorEl}
 		class="absolute top-[var(--ff-tab)] left-1/2 z-[1] h-0 w-0 group-data-[open]:before:absolute group-data-[open]:before:top-[calc(-1*(var(--ff-lift)+120px))] group-data-[open]:before:left-[calc(-1*(var(--ff-spread)+100px))] group-data-[open]:before:h-[calc(var(--ff-lift)+120px)] group-data-[open]:before:w-[calc(2*var(--ff-spread)+200px)] group-data-[open]:before:content-['']"
 	>
-		{#each list as item, i}{@const p = pos[i]}<button
-				bind:this={pillRefs.current[i]}
+		{#each list as item, i (`${item.value}-${i}`)}
+			<button
+				{@attach pill(i)}
 				type="button"
 				class="pointer-events-none absolute top-0 left-1/2 m-0 h-[34px] cursor-pointer rounded-[17px] border-0 px-3.5 whitespace-nowrap opacity-0 shadow-[0_4px_12px_rgba(0,0,0,0.14)] outline-none [background:var(--ff-item)] [color:var(--ff-item-ink)] [font:inherit] [transform:translate(-50%,44px)_scale(0.6)] [transform-origin:50%_50%] [-webkit-tap-highlight-color:transparent] [transition:transform_var(--ff-close)_var(--ff-ease-out)_calc((var(--ff-n)-1-var(--i))*var(--ff-stagger)*0.5),opacity_160ms_ease_calc((var(--ff-n)-1-var(--i))*var(--ff-stagger)*0.5+var(--ff-close)*0.45),scale_160ms_var(--ff-ease-out)] group-data-[open]:pointer-events-auto group-data-[open]:opacity-100 group-data-[open]:[transform:translate(calc(-50%+var(--x)),var(--y))_rotate(var(--r))_scale(1)] group-data-[open]:[transition:transform_var(--ff-open)_var(--ff-spring)_calc(var(--i)*var(--ff-stagger)),opacity_160ms_ease_calc(var(--i)*var(--ff-stagger)),scale_160ms_var(--ff-ease-out)] group-data-[live]:cursor-grab group-data-[live]:[transition:scale_160ms_var(--ff-ease-out)] data-[drag]:cursor-grabbing! group-data-[open]:hover:[scale:1.05] group-data-[open]:active:[scale:0.97] data-[pop]:[animation:folder-float-pop_320ms_var(--ff-ease-out)] motion-reduce:[transition:opacity_200ms_ease] motion-reduce:group-data-[open]:[transition:opacity_200ms_ease_calc(var(--i)*var(--ff-stagger))]"
 				tabindex={open ? 0 : -1}
 				aria-hidden={!open}
 				data-pop={popped === i ? '' : undefined}
-				style={css({
-					'--i': i,
-					'--x': `${p.x.toFixed(1)}px`,
-					'--y': `${p.y.toFixed(1)}px`,
-					'--r': `${p.r.toFixed(2)}deg`,
-				} as CSSProperties)}
+				style:--i={i}
+				style:--r="{(pos[i]?.r ?? 0).toFixed(2)}deg"
 				onpointerdown={(e) => down(e, i)}
 				onpointermove={(e) => move(e, i)}
 				onpointerup={(e) => up(e, i, item)}
 				onpointercancel={(e) => up(e, i, item)}
 				onclick={(e) => {
-					if (!world.current.live || e.detail === 0) pick(item, i);
+					if (!world.live || e.detail === 0) pick(item, i);
 				}}
 			>
 				<span
@@ -540,7 +477,8 @@
 				>
 					{item.label}
 				</span>
-			</button>{/each}
+			</button>
+		{/each}
 	</div>
 	<div class="relative [width:var(--ff-w)] [height:var(--ff-h)]">
 		<span

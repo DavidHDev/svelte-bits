@@ -6,7 +6,7 @@
 		{
 			"name": "animated-content",
 			"title": "Animated Content",
-			"description": "Scroll-triggered entrance animation with distance, direction, scale and opacity controls. Powered by GSAP + ScrollTrigger.",
+			"description": "Wrapper that reveals its content on scroll with slides, blur, 3D tilts, soft wipes and staggered children.",
 			"type": "registry:component",
 			"dependencies": [
 				"gsap",
@@ -22,31 +22,13 @@
 			]
 		},
 		{
-			"name": "antigravity",
-			"title": "Antigravity",
-			"description": "Instanced 3D particles that orbit and react to the mouse with wave physics, rendered with three.js.",
+			"name": "blob-cursor",
+			"title": "BlobCursor",
+			"description": "Liquid metal blob cursor that stretches, sloshes and bursts into droplets, in chrome, jelly, pearl or ink.",
 			"type": "registry:component",
 			"dependencies": [
 				"three",
 				"three@^0.184.0"
-			],
-			"registryDependencies": [],
-			"files": [
-				{
-					"type": "registry:component",
-					"path": "Antigravity.svelte",
-					"target": "$lib/components/svelte-bits/Antigravity.svelte"
-				}
-			]
-		},
-		{
-			"name": "blob-cursor",
-			"title": "Blob Cursor",
-			"description": "Gooey blob cursor with a trail of lagging blobs, smoothed via GSAP.",
-			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -60,7 +42,7 @@
 		{
 			"name": "click-spark",
 			"title": "Click Spark",
-			"description": "Clickable container that emits radial spark lines on click.",
+			"description": "Bursts of sparks at every click, as dashes, comets, dots or stars, that can spill around buttons.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -75,12 +57,9 @@
 		{
 			"name": "crosshair",
 			"title": "Crosshair",
-			"description": "Animated crosshair lines that follow the cursor with subtle SVG turbulence on hover.",
+			"description": "Crosshair cursor with live coordinates that locks onto links and buttons and measures them.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -91,14 +70,29 @@
 			]
 		},
 		{
-			"name": "cubes",
-			"title": "Cubes",
-			"description": "3D cube grid that tilts toward the cursor with optional ripple-on-click and idle drift.",
+			"name": "crystalized-ball",
+			"title": "CrystalizedBall",
+			"description": "A glass ball with a crackling electric rim and glowing dust that swirls with the cursor.",
 			"type": "registry:component",
 			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
+				"ogl",
+				"ogl@^1.0.11"
 			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CrystalizedBall.svelte",
+					"target": "$lib/components/svelte-bits/CrystalizedBall.svelte"
+				}
+			]
+		},
+		{
+			"name": "cubes",
+			"title": "Cubes",
+			"description": "A grid of outlined 3D cubes that turn to face the cursor, spin when swept and ripple on click.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -111,7 +105,7 @@
 		{
 			"name": "cursor-grid",
 			"title": "Cursor Grid",
-			"description": "A grid of cells that light up near the cursor and fade out.",
+			"description": "A crisp grid whose cells light up and fade behind the cursor, with grid styles, tiles and click pulses.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -124,9 +118,42 @@
 			]
 		},
 		{
+			"name": "dither-veil",
+			"title": "DitherVeil",
+			"description": "A 1-bit dithered photo the cursor burns through to full colour, knitting back cell by cell.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DitherVeil.svelte",
+					"target": "$lib/components/svelte-bits/DitherVeil.svelte"
+				}
+			]
+		},
+		{
+			"name": "elastic-mesh",
+			"title": "ElasticMesh",
+			"description": "Turns text or any logo into a puffy inflated shape you can press, poke and stretch like jelly.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ElasticMesh.svelte",
+					"target": "$lib/components/svelte-bits/ElasticMesh.svelte"
+				}
+			]
+		},
+		{
 			"name": "electric-border",
 			"title": "Electric Border",
-			"description": "Animated electric arcs around rounded rectangle borders rendered to canvas with noise displacement.",
+			"description": "Wraps any element in crackling strands of current that surge near the cursor and leap off in sparks.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -139,9 +166,27 @@
 			]
 		},
 		{
+			"name": "electric-logo",
+			"title": "Electric Logo",
+			"description": "Turns any logo into a living lightning outline, with arcs that leap off its edges.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ElectricLogo.svelte",
+					"target": "$lib/components/svelte-bits/ElectricLogo.svelte"
+				}
+			]
+		},
+		{
 			"name": "fade-content",
 			"title": "Fade Content",
-			"description": "Scroll-triggered fade-in (with optional blur) entrance using GSAP + ScrollTrigger, with optional auto-disappearance.",
+			"description": "Wrapper that fades content in on scroll, plain or out of focus, from washed-out gray, or through grain, mist and pixel blocks.",
 			"type": "registry:component",
 			"dependencies": [
 				"gsap",
@@ -158,13 +203,10 @@
 		},
 		{
 			"name": "ghost-cursor",
-			"title": "Ghost Cursor",
-			"description": "WebGL ghostly cursor trail rendered with three.js + bloom + film grain post-processing.",
+			"title": "GhostCursor",
+			"description": "A ghost of glowing smoke that floats after the cursor and curls away as it rises.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -176,8 +218,8 @@
 		},
 		{
 			"name": "glare-hover",
-			"title": "Glare Hover",
-			"description": "Hover-triggered moving glare highlight across a card.",
+			"title": "GlareHover",
+			"description": "A glossy light streak that sweeps across any element in the direction the cursor moves.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -190,9 +232,24 @@
 			]
 		},
 		{
+			"name": "glow-cursor",
+			"title": "GlowCursor",
+			"description": "Light that pours from the cursor, drifts softly through the air and cools as it fades.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GlowCursor.svelte",
+					"target": "$lib/components/svelte-bits/GlowCursor.svelte"
+				}
+			]
+		},
+		{
 			"name": "gradual-blur",
 			"title": "Gradual Blur",
-			"description": "Multi-layer gradient-masked backdrop blur for soft fade-out edges (top/bottom/left/right).",
+			"description": "Progressive edge blur for headers, footers, captions and carousels, with an optional fade to color that hides at the ends of a scroll.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -205,9 +262,24 @@
 			]
 		},
 		{
+			"name": "halftone-reveal",
+			"title": "HalftoneReveal",
+			"description": "A halftone print of an image whose dots swell into the real photo under the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "HalftoneReveal.svelte",
+					"target": "$lib/components/svelte-bits/HalftoneReveal.svelte"
+				}
+			]
+		},
+		{
 			"name": "image-trail",
 			"title": "Image Trail",
-			"description": "Mouse trail of images with 8 visually distinct GSAP variants.",
+			"description": "Cursor-based image trail with several built-in variants.",
 			"type": "registry:component",
 			"dependencies": [
 				"gsap",
@@ -225,12 +297,9 @@
 		{
 			"name": "laser-flow",
 			"title": "Laser Flow",
-			"description": "Volumetric laser beam with wisps and tilting fog volume, rendered with three.js raw shader.",
+			"description": "A beam of light that splashes onto your content and pours over its corners.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -243,7 +312,7 @@
 		{
 			"name": "logo-loop",
 			"title": "Logo Loop",
-			"description": "Smooth, infinite, pause-on-hover marquee for partner logos with optional fade-out edges.",
+			"description": "Continuously looping marquee of brand or tech logos with seamless repeat and hover pause.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -256,27 +325,9 @@
 			]
 		},
 		{
-			"name": "magic-rings",
-			"title": "Magic Rings",
-			"description": "WebGL2 concentric ring animation with mouse parallax, hover scale, and click burst. Real three.js shader.",
-			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
-			"registryDependencies": [],
-			"files": [
-				{
-					"type": "registry:component",
-					"path": "MagicRings.svelte",
-					"target": "$lib/components/svelte-bits/MagicRings.svelte"
-				}
-			]
-		},
-		{
 			"name": "magnet",
 			"title": "Magnet",
-			"description": "Magnetic pull effect that attracts content toward the cursor when nearby.",
+			"description": "Elements magnetically ease toward the cursor then settle back with spring physics.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -289,29 +340,11 @@
 			]
 		},
 		{
-			"name": "magnet-lines",
-			"title": "Magnet Lines",
-			"description": "A grid of small line segments that rotate to face the cursor.",
+			"name": "meta-balls",
+			"title": "MetaBalls",
+			"description": "Liquid metaballs that merge, stretch and pinch apart, with a cursor blob that pushes through them.",
 			"type": "registry:component",
 			"dependencies": [],
-			"registryDependencies": [],
-			"files": [
-				{
-					"type": "registry:component",
-					"path": "MagnetLines.svelte",
-					"target": "$lib/components/svelte-bits/MagnetLines.svelte"
-				}
-			]
-		},
-		{
-			"name": "meta-balls",
-			"title": "Meta Balls",
-			"description": "Animated metaballs (gooey blob field) with cursor interaction, rendered with OGL shader.",
-			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -324,7 +357,7 @@
 		{
 			"name": "metallic-paint",
 			"title": "Metallic Paint",
-			"description": "Image-driven liquid metallic paint shader (WebGL2) with depth field solved via SOR relaxation.",
+			"description": "Liquid chrome that flows over your logo or text, adapted from Paper's Liquid Metal shader.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -339,7 +372,7 @@
 		{
 			"name": "noise",
 			"title": "Noise",
-			"description": "Full-viewport animated film-grain canvas overlay.",
+			"description": "Film grain overlay for photos and pages, from fine 35mm grain to dust, paper and TV static.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -354,11 +387,9 @@
 		{
 			"name": "orbit-images",
 			"title": "Orbit Images",
-			"description": "Images orbiting along a configurable SVG path (ellipse, circle, star, heart, infinity, wave, custom).",
+			"description": "SVG Path customizable orbiting images effect",
 			"type": "registry:component",
-			"dependencies": [
-				"motion"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -369,14 +400,26 @@
 			]
 		},
 		{
-			"name": "pixel-trail",
-			"title": "Pixel Trail",
-			"description": "Pixelated mouse trail with optional gooey blend, rendered with three.js + a canvas-based trail texture.",
+			"name": "pixel-swap",
+			"title": "PixelSwap",
+			"description": "New content builds in pixel by pixel in a springy wave that starts wherever the cursor enters.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PixelSwap.svelte",
+					"target": "$lib/components/svelte-bits/PixelSwap.svelte"
+				}
+			]
+		},
+		{
+			"name": "pixel-trail",
+			"title": "PixelTrail",
+			"description": "Glossy pixels melt into a fluid goo trail behind the cursor, with color shifts and drips.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -389,12 +432,9 @@
 		{
 			"name": "pixel-transition",
 			"title": "Pixel Transition",
-			"description": "Hover/click reveal that transitions between two contents through a randomized pixel grid effect.",
+			"description": "Retro pixel dissolve that covers a card in solid pixels, swaps the content underneath and clears again.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -407,7 +447,22 @@
 		{
 			"name": "ribbons",
 			"title": "Ribbons",
-			"description": "Colorful spring-driven ribbon trails following the cursor, rendered with OGL polylines.",
+			"description": "Springy ribbons that trail the cursor, in lens, comet or even shapes with an optional wave.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Ribbons.svelte",
+					"target": "$lib/components/svelte-bits/Ribbons.svelte"
+				}
+			]
+		},
+		{
+			"name": "ripple-distortion",
+			"title": "RippleDistortion",
+			"description": "Pointer-driven water displacement that warps content and leaves a decaying wake.",
 			"type": "registry:component",
 			"dependencies": [
 				"ogl",
@@ -417,8 +472,8 @@
 			"files": [
 				{
 					"type": "registry:component",
-					"path": "Ribbons.svelte",
-					"target": "$lib/components/svelte-bits/Ribbons.svelte"
+					"path": "RippleDistortion.svelte",
+					"target": "$lib/components/svelte-bits/RippleDistortion.svelte"
 				}
 			]
 		},
@@ -439,13 +494,10 @@
 		},
 		{
 			"name": "shape-blur",
-			"title": "Shape Blur",
-			"description": "Mouse-reactive blurred SDF shapes (rounded rect, circle, ring, triangle) rendered with three.js.",
+			"title": "ShapeBlur",
+			"description": "A crisp logo or shape that drifts out of focus under the pointer like a camera lens.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -458,7 +510,7 @@
 		{
 			"name": "splash-cursor",
 			"title": "Splash Cursor",
-			"description": "Liquid splash burst at cursor with curling ripples and waves.",
+			"description": "A fluid simulation that trails the cursor in swirling ink and bursts into a splash on click.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -472,8 +524,8 @@
 		},
 		{
 			"name": "star-border",
-			"title": "Star Border",
-			"description": "Button-like wrapper with two animated radial-gradient sweeps tracing the top and bottom border.",
+			"title": "StarBorder",
+			"description": "A twinkling star that travels the exact outline of any button, pill or card, trailing light and stardust.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -488,12 +540,9 @@
 		{
 			"name": "sticker-peel",
 			"title": "Sticker Peel",
-			"description": "Draggable sticker that peels off on hover, with SVG specular lighting and drop shadow filters.",
+			"description": "A die-cut sticker you can peel at any edge, drag, throw and swing, in gloss, matte or holographic finishes.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -504,14 +553,41 @@
 			]
 		},
 		{
-			"name": "target-cursor",
-			"title": "Target Cursor",
-			"description": "Custom spinning crosshair cursor that snaps to corners of elements matching a selector when hovered.",
+			"name": "strands",
+			"title": "Strands",
+			"description": "Spectral strands that twist inside a frosted glass orb and swell into a smooth bulge where they come together, like the new Siri.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Strands.svelte",
+					"target": "$lib/components/svelte-bits/Strands.svelte"
+				}
+			]
+		},
+		{
+			"name": "swarm-cursor",
+			"title": "SwarmCursor",
+			"description": "A liquid swarm of particles that flows after the cursor, curls into eddies and pours around hovered buttons.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SwarmCursor.svelte",
+					"target": "$lib/components/svelte-bits/SwarmCursor.svelte"
+				}
+			]
+		},
+		{
+			"name": "target-cursor",
+			"title": "TargetCursor",
+			"description": "A reticle cursor whose corner brackets snap around targets, matching their shape.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -522,14 +598,59 @@
 			]
 		},
 		{
-			"name": "aurora",
-			"title": "Aurora",
-			"description": "WebGL aurora background with configurable color stops, amplitude, blend and speed. Real OGL shader, not a CSS gradient.",
+			"name": "acid-squares",
+			"title": "Acid Squares",
+			"description": "A rolling field of glossy squares that ripples under two drifting colored lights.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "AcidSquares.svelte",
+					"target": "$lib/components/svelte-bits/AcidSquares.svelte"
+				}
+			]
+		},
+		{
+			"name": "aero-shards",
+			"title": "Aero Shards",
+			"description": "Silk ribbons of thick glass shards streaming on layered depths among survey markers, catching light along their edges.",
 			"type": "registry:component",
 			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
+				"vgpu",
+				"vgpu@^0.3.1"
 			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "AeroShards.svelte",
+					"target": "$lib/components/svelte-bits/AeroShards.svelte"
+				}
+			]
+		},
+		{
+			"name": "antigravity",
+			"title": "Antigravity",
+			"description": "A field of particles that lifts into a glowing ring around the cursor and bursts outward on click.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Antigravity.svelte",
+					"target": "$lib/components/svelte-bits/Antigravity.svelte"
+				}
+			]
+		},
+		{
+			"name": "aurora",
+			"title": "Aurora",
+			"description": "A soft, calm aurora that flows across the top of the page and drifts toward the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -542,12 +663,9 @@
 		{
 			"name": "balatro",
 			"title": "Balatro",
-			"description": "Swirling pixel-painted Balatro-style WebGL background with mouse interaction.",
+			"description": "The swirling Balatro paint shader, with crisp pixels, a cursor that stirs the paint and click whirlpools.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -560,13 +678,9 @@
 		{
 			"name": "ballpit",
 			"title": "Ballpit",
-			"description": "Interactive 3D ball pit using Three.js physics.",
+			"description": "A soft-lit pit of physics balls you can shove with the cursor, grab, throw and blast apart.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"gsap",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -579,12 +693,9 @@
 		{
 			"name": "beams",
 			"title": "Beams",
-			"description": "Light beams animated with noise displacement.",
+			"description": "Glossy ribbons that ripple in the dark and catch the light, which follows your cursor.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -595,9 +706,24 @@
 			]
 		},
 		{
+			"name": "crt-warp",
+			"title": "CRT Warp",
+			"description": "A blocky plasma glowing on a curved CRT, with real scanlines, a phosphor mask, afterglow and a power-on intro.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CRTWarp.svelte",
+					"target": "$lib/components/svelte-bits/CRTWarp.svelte"
+				}
+			]
+		},
+		{
 			"name": "color-bends",
 			"title": "Color Bends",
-			"description": "Three.js shader background with warped color bands, pointer parallax, noise, and rotation controls.",
+			"description": "Vibrant color bends with smooth flowing animation.",
 			"type": "registry:component",
 			"dependencies": [
 				"three",
@@ -614,13 +740,10 @@
 		},
 		{
 			"name": "dark-veil",
-			"title": "Dark Veil",
-			"description": "Dark veil WebGL background with hue shift, scanlines, noise and warp controls.",
+			"title": "DarkVeil",
+			"description": "A silky veil of light that drifts in the dark and bends around the cursor.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -633,12 +756,9 @@
 		{
 			"name": "dither",
 			"title": "Dither",
-			"description": "Bayer-dithered animated wave field.",
+			"description": "Retro dithered waves with Bayer, halftone, line and noise patterns, palettes and cursor trails.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -650,8 +770,8 @@
 		},
 		{
 			"name": "dot-field",
-			"title": "Dot Field",
-			"description": "Interactive dotted canvas background with cursor bulge, glow, sparkle, and wave controls.",
+			"title": "DotField",
+			"description": "A gradient dot field seen through a lens that follows the cursor, magnifying, pinching or swirling the dots.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -666,12 +786,9 @@
 		{
 			"name": "dot-grid",
 			"title": "Dot Grid",
-			"description": "Interactive grid of dots with cursor proximity highlighting and shockwave click physics.",
+			"description": "A springy dot grid that the cursor flicks and drags through like jelly, with click shockwaves.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -702,12 +819,9 @@
 		{
 			"name": "faulty-terminal",
 			"title": "Faulty Terminal",
-			"description": "OGL terminal-style shader background with scanlines, glitches, curvature, mouse reaction, and load animation.",
+			"description": "A flickering CRT terminal of glowing glyphs, with phosphor trails under the cursor and glitches on click.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -718,14 +832,26 @@
 			]
 		},
 		{
+			"name": "ferrofluid",
+			"title": "Ferrofluid",
+			"description": "A glossy sea of magnetic fluid where swells of spikes roll in and the cursor raises a crown.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Ferrofluid.svelte",
+					"target": "$lib/components/svelte-bits/Ferrofluid.svelte"
+				}
+			]
+		},
+		{
 			"name": "floating-lines",
 			"title": "Floating Lines",
-			"description": "Layered animated wave lines with parallax & bend.",
+			"description": "Ribbons of fine glowing lines that drift in waves, part around the cursor and curl when clicked.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -736,14 +862,26 @@
 			]
 		},
 		{
+			"name": "flux-lines",
+			"title": "Flux Lines",
+			"description": "Glowing flux lines tracing a churning magnetic fluid. The cursor magnet reveals and curls them.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FluxLines.svelte",
+					"target": "$lib/components/svelte-bits/FluxLines.svelte"
+				}
+			]
+		},
+		{
 			"name": "galaxy",
 			"title": "Galaxy",
-			"description": "Animated galaxy of twinkling stars.",
+			"description": "Endless flight through a twinkling starfield with warp jumps, cursor repulsion and star palettes.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -754,14 +892,41 @@
 			]
 		},
 		{
+			"name": "ghost-fibers",
+			"title": "Ghost Fibers",
+			"description": "Layered ribbons of fine glowing fibers that twist, fold and drift through soft depth of field.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GhostFibers.svelte",
+					"target": "$lib/components/svelte-bits/GhostFibers.svelte"
+				}
+			]
+		},
+		{
+			"name": "gradient-ascii",
+			"title": "Gradient ASCII",
+			"description": "Soft gradient glows drawn in ASCII characters that scramble under the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GradientASCII.svelte",
+					"target": "$lib/components/svelte-bits/GradientASCII.svelte"
+				}
+			]
+		},
+		{
 			"name": "gradient-blinds",
 			"title": "Gradient Blinds",
-			"description": "Animated gradient blinds with spotlight tracking.",
+			"description": "Satin gradient blinds lit by a spotlight that follows the cursor, swaying and turning toward the light.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -772,14 +937,26 @@
 			]
 		},
 		{
+			"name": "gradient-waves",
+			"title": "Gradient Waves",
+			"description": "Lit satin waves rolling in from a hazy horizon, with a light that follows the cursor and swells on click.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "GradientWaves.svelte",
+					"target": "$lib/components/svelte-bits/GradientWaves.svelte"
+				}
+			]
+		},
+		{
 			"name": "grainient",
 			"title": "Grainient",
-			"description": "Animated WebGL2 grainy gradient.",
+			"description": "Flowing grainy gradients you can stir with the cursor.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -792,12 +969,9 @@
 		{
 			"name": "grid-distortion",
 			"title": "Grid Distortion",
-			"description": "Image grid distortion driven by mouse movement.",
+			"description": "Image background that breaks into a grid of blocks under the cursor and settles back into place.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -810,12 +984,9 @@
 		{
 			"name": "grid-motion",
 			"title": "Grid Motion",
-			"description": "Grid that pans with mouse position, powered by GSAP.",
+			"description": "A tilted wall of drifting tiles that slides with the pointer and lights up where it rests.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -827,17 +998,10 @@
 		},
 		{
 			"name": "grid-scan",
-			"title": "Grid Scan",
-			"description": "Animated 3D grid scan with bloom and chromatic aberration. Optional face tracking via face-api.js.",
+			"title": "GridScan",
+			"description": "A 3D grid room swept by a scanning light that follows your view.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"postprocessing",
-				"face-api.js",
-				"three@^0.184.0",
-				"postprocessing@^6.39.1",
-				"face-api.js@^0.22.2"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -848,14 +1012,27 @@
 			]
 		},
 		{
+			"name": "holo-mosaic",
+			"title": "HoloMosaic",
+			"description": "Holographic tiles that split light into sweeping color as it moves, with glitter, a flip-in intro and click waves.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "HoloMosaic.svelte",
+					"target": "$lib/components/svelte-bits/HoloMosaic.svelte"
+				}
+			]
+		},
+		{
 			"name": "hyperspeed",
 			"title": "Hyperspeed",
-			"description": "Three.js hyperspeed road background with bloom, SMAA, distortion presets, animated light trails, and hold-to-accelerate interaction.",
+			"description": "Night highway of glowing light trails on a winding road that warps into hyperspace while you hold.",
 			"type": "registry:component",
 			"dependencies": [
 				"three",
-				"postprocessing",
-				"postprocessing@^6.39.1",
 				"three@^0.184.0"
 			],
 			"registryDependencies": [],
@@ -870,12 +1047,9 @@
 		{
 			"name": "iridescence",
 			"title": "Iridescence",
-			"description": "Animated iridescent WebGL background with optional mouse parallax.",
+			"description": "Liquid iridescent surface with shifting folds that you can stir with the cursor.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -888,7 +1062,7 @@
 		{
 			"name": "letter-glitch",
 			"title": "Letter Glitch",
-			"description": "Cascading glitchy letter grid background.",
+			"description": "A calm field of letters that flicker, scramble and glitch in color, stirred by the cursor and torn by clicks.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -903,12 +1077,9 @@
 		{
 			"name": "light-pillar",
 			"title": "LightPillar",
-			"description": "Volumetric raymarched light pillar.",
+			"description": "A swirling pillar of light that ignites on load, leans toward the cursor and surges on click.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -920,13 +1091,10 @@
 		},
 		{
 			"name": "light-rays",
-			"title": "Light Rays",
-			"description": "Animated volumetric light rays rendered with OGL.",
+			"title": "LightRays",
+			"description": "Volumetric light rays from any edge, with source glow and haze. The cursor steers the beam and casts a shadow.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -937,9 +1105,39 @@
 			]
 		},
 		{
+			"name": "light-tunnel",
+			"title": "LightTunnel",
+			"description": "A swirling fibre-optic tunnel where comets of light race into depth, steered by the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LightTunnel.svelte",
+					"target": "$lib/components/svelte-bits/LightTunnel.svelte"
+				}
+			]
+		},
+		{
+			"name": "lightfall",
+			"title": "Lightfall",
+			"description": "Streaks of light falling down a curved tunnel, bending around the cursor and stretching into warp trails on hold.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Lightfall.svelte",
+					"target": "$lib/components/svelte-bits/Lightfall.svelte"
+				}
+			]
+		},
+		{
 			"name": "lightning",
 			"title": "Lightning",
-			"description": "Procedural lightning bolt WebGL background.",
+			"description": "Crackling, branching lightning that bends toward the cursor and strikes wherever you click.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -954,12 +1152,9 @@
 		{
 			"name": "line-waves",
 			"title": "Line Waves",
-			"description": "Warped line waves background powered by OGL.",
+			"description": "Fine lines that flow in silky waves while a band of light drifts through them.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -971,13 +1166,10 @@
 		},
 		{
 			"name": "liquid-chrome",
-			"title": "Liquid Chrome",
-			"description": "Liquid chrome animated WebGL background with mouse and touch interaction.",
+			"title": "LiquidChrome",
+			"description": "Soft ribbons of liquid chrome that swirl through a dark pool, ripple under the cursor and catch the light as it moves.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -990,12 +1182,9 @@
 		{
 			"name": "liquid-ether",
 			"title": "Liquid Ether",
-			"description": "Interactive liquid shader with flowing distortion and customizable colors.",
+			"description": "A glowing liquid that swirls under the cursor, colored by how fast it flows.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1006,14 +1195,74 @@
 			]
 		},
 		{
-			"name": "orb",
-			"title": "Orb",
-			"description": "Dreamy hue-shifting orb with hover interaction.",
+			"name": "magic-rings",
+			"title": "Magic Rings",
+			"description": "Glowing rings that pulse outward in a wave, swell toward the cursor and flare on click.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MagicRings.svelte",
+					"target": "$lib/components/svelte-bits/MagicRings.svelte"
+				}
+			]
+		},
+		{
+			"name": "magnet-lines",
+			"title": "Magnet Lines",
+			"description": "A field of magnetic lines that swing toward the cursor, ripple outward and spin with every click.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MagnetLines.svelte",
+					"target": "$lib/components/svelte-bits/MagnetLines.svelte"
+				}
+			]
+		},
+		{
+			"name": "micro-slats",
+			"title": "Micro Slats",
+			"description": "A wall of tiny slats that becomes a rolling sea in perspective, with glinting crests.",
 			"type": "registry:component",
 			"dependencies": [
 				"ogl",
 				"ogl@^1.0.11"
 			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MicroSlats.svelte",
+					"target": "$lib/components/svelte-bits/MicroSlats.svelte"
+				}
+			]
+		},
+		{
+			"name": "molten-metal",
+			"title": "MoltenMetal",
+			"description": "Swirling caustic filaments with white-hot cores that heat up under the cursor and flare on click.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MoltenMetal.svelte",
+					"target": "$lib/components/svelte-bits/MoltenMetal.svelte"
+				}
+			]
+		},
+		{
+			"name": "orb",
+			"title": "Orb",
+			"description": "A glowing ring of swirling color that breathes, trails an orbiting light and reaches toward the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1026,12 +1275,9 @@
 		{
 			"name": "particles",
 			"title": "Particles",
-			"description": "OGL-based 3D point cloud particles with hover interaction.",
+			"description": "A drifting 3D field of particles with glow, twinkle, constellation lines and cursor interaction.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1042,16 +1288,29 @@
 			]
 		},
 		{
-			"name": "pixel-blast",
-			"title": "PixelBlast",
-			"description": "Pixelated dithered shape field with ripples and liquid distortion.",
+			"name": "pattern-waves",
+			"title": "Pattern Waves",
+			"description": "A lit halftone surface of dots, lines or glyphs that moves like draped silk.",
 			"type": "registry:component",
 			"dependencies": [
-				"three",
-				"postprocessing",
-				"three@^0.184.0",
-				"postprocessing@^6.39.1"
+				"ogl",
+				"ogl@^1.0.11"
 			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "PatternWaves.svelte",
+					"target": "$lib/components/svelte-bits/PatternWaves.svelte"
+				}
+			]
+		},
+		{
+			"name": "pixel-blast",
+			"title": "PixelBlast",
+			"description": "Dithered pixel clouds that drift, shimmer and light up under the cursor, with ripples, shapes and a perspective floor.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1063,13 +1322,10 @@
 		},
 		{
 			"name": "pixel-snow",
-			"title": "Pixel Snow",
-			"description": "Volumetric pixel snowfall background.",
+			"title": "PixelSnow",
+			"description": "Pixel-art snowflakes drifting down in layers of depth, brushed aside by the cursor.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1082,12 +1338,9 @@
 		{
 			"name": "plasma",
 			"title": "Plasma",
-			"description": "Volumetric plasma WebGL2 background with optional mouse interaction and color tinting.",
+			"description": "Folds of satin light twisting slowly through the dark, turning to follow the cursor.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1099,13 +1352,10 @@
 		},
 		{
 			"name": "plasma-wave",
-			"title": "Plasma Wave",
-			"description": "Raymarched plasma wave background.",
+			"title": "PlasmaWave",
+			"description": "Two ribbons of plasma curling through each other, with soft glow and white-hot cores.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1118,12 +1368,9 @@
 		{
 			"name": "prism",
 			"title": "Prism",
-			"description": "Animated raymarched prism with hue and bloom.",
+			"description": "Rotating prism of glowing spectral light with configurable shape, colors and motion.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1135,13 +1382,10 @@
 		},
 		{
 			"name": "prismatic-burst",
-			"title": "PrismaticBurst",
-			"description": "Volumetric ray burst with bend and color gradient.",
+			"title": "Prismatic Burst",
+			"description": "A burst of prismatic light rays that leans toward the cursor and sends a wave of light outward on click.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1154,12 +1398,9 @@
 		{
 			"name": "radar",
 			"title": "Radar",
-			"description": "Radar sweep background rendered with OGL.",
+			"description": "A radar scope whose sweep leaves a phosphor afterglow and picks up moving contacts.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1172,12 +1413,9 @@
 		{
 			"name": "ripple-grid",
 			"title": "Ripple Grid",
-			"description": "Animated rippling grid background powered by OGL with mouse interaction.",
+			"description": "A crisp grid that ripples like water, bending and lighting up as waves pass through it.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1188,9 +1426,24 @@
 			]
 		},
 		{
+			"name": "scanner",
+			"title": "Scanner",
+			"description": "Glowing interference lines swept by a scan beam, with a CRT finish, cursor lensing and click pings.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Scanner.svelte",
+					"target": "$lib/components/svelte-bits/Scanner.svelte"
+				}
+			]
+		},
+		{
 			"name": "shape-grid",
-			"title": "Shape Grid",
-			"description": "Animated grid of squares, hexagons, circles, or triangles with hover trail and configurable scroll direction.",
+			"title": "ShapeGrid",
+			"description": "A drifting grid of shapes that lights up under the cursor, with perspective tilt and rainbow trails.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1203,14 +1456,44 @@
 			]
 		},
 		{
-			"name": "silk",
-			"title": "Silk",
-			"description": "Silk-like animated WebGL background using a Three.js shader plane.",
+			"name": "shape-waves",
+			"title": "Shape Waves",
+			"description": "A field of triangles, circles and squares that brighten and grow along rolling waves.",
 			"type": "registry:component",
 			"dependencies": [
-				"three",
-				"three@^0.184.0"
+				"vgpu",
+				"vgpu@^0.3.1"
 			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ShapeWaves.svelte",
+					"target": "$lib/components/svelte-bits/ShapeWaves.svelte"
+				}
+			]
+		},
+		{
+			"name": "side-rays",
+			"title": "SideRays",
+			"description": "Shafts of light that fan in from a corner or side, shimmer slowly and lean toward the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SideRays.svelte",
+					"target": "$lib/components/svelte-bits/SideRays.svelte"
+				}
+			]
+		},
+		{
+			"name": "silk",
+			"title": "Silk",
+			"description": "Flowing satin folds with glossy highlights that turn toward the cursor and ripple on click.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1221,14 +1504,26 @@
 			]
 		},
 		{
+			"name": "sliced-waves",
+			"title": "SlicedWaves",
+			"description": "Waves of colored light sliced into glowing bars, seen in depth with a focus that follows the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SlicedWaves.svelte",
+					"target": "$lib/components/svelte-bits/SlicedWaves.svelte"
+				}
+			]
+		},
+		{
 			"name": "soft-aurora",
 			"title": "Soft Aurora",
-			"description": "Soft aurora bands rendered with OGL using Perlin noise.",
+			"description": "Soft aurora borealis shader with 3D Perlin noise and cosine gradient palettes.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1241,12 +1536,9 @@
 		{
 			"name": "threads",
 			"title": "Threads",
-			"description": "Animated WebGL line/threads background with mouse parallax.",
+			"description": "Flowing threads that fray apart and part around the cursor, from fine silk to contour lines.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1257,9 +1549,24 @@
 			]
 		},
 		{
+			"name": "topography",
+			"title": "Topography",
+			"description": "A 3D landscape drawn in glowing contour lines that rises under the cursor, with light pulses on click.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Topography.svelte",
+					"target": "$lib/components/svelte-bits/Topography.svelte"
+				}
+			]
+		},
+		{
 			"name": "waves",
 			"title": "Waves",
-			"description": "Perlin-noise wavy line grid that reacts to the cursor.",
+			"description": "Dense flowing lines that sway like silk, bend around the cursor and spring back into place.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1272,11 +1579,49 @@
 			]
 		},
 		{
-			"name": "animated-list",
-			"title": "Animated List",
-			"description": "Scroll-aware list with item-by-item scale + fade transitions and keyboard navigation.",
+			"name": "web-threads",
+			"title": "Web Threads",
+			"description": "Glowing threads woven through luminous pinch points that light up under the cursor and carry light on click.",
 			"type": "registry:component",
 			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "WebThreads.svelte",
+					"target": "$lib/components/svelte-bits/WebThreads.svelte"
+				}
+			]
+		},
+		{
+			"name": "accordion-gallery",
+			"title": "AccordionGallery",
+			"description": "Panels expand on hover or focus, revealing parallax imagery and captions.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "AccordionGallery.svelte",
+					"target": "$lib/components/svelte-bits/AccordionGallery.svelte"
+				}
+			]
+		},
+		{
+			"name": "animated-list",
+			"title": "Animated List",
+			"description": "A scrolling list whose rows spring into view, with a gliding selection and arrow keys.",
+			"type": "registry:component",
+			"dependencies": [
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
+			],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1289,7 +1634,7 @@
 		{
 			"name": "border-glow",
 			"title": "Border Glow",
-			"description": "Card with directional, edge-sensitive mesh-gradient border glow that follows the pointer.",
+			"description": "Glowing mesh-gradient border that follows cursor direction and intensifies near edges.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1304,12 +1649,9 @@
 		{
 			"name": "bounce-cards",
 			"title": "Bounce Cards",
-			"description": "GSAP-powered card stack with elastic intro animation and optional hover-to-spread.",
+			"description": "A fan of photo cards that bounce in, then spread apart and straighten the one you hover.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1340,11 +1682,13 @@
 		{
 			"name": "card-nav",
 			"title": "Card Nav",
-			"description": "Expandable navbar with three reveal cards animated by GSAP.",
+			"description": "A navigation bar that springs open into a row of cards, each with its own links.",
 			"type": "registry:component",
 			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -1358,11 +1702,13 @@
 		{
 			"name": "card-swap",
 			"title": "Card Swap",
-			"description": "Three-card stack that auto-cycles with skewed perspective transforms (GSAP).",
+			"description": "A 3D stack of cards that sends the front card to the back on a timer, or when you fling it.",
 			"type": "registry:component",
 			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -1376,11 +1722,13 @@
 		{
 			"name": "carousel",
 			"title": "Carousel",
-			"description": "Draggable carousel with spring snap, autoplay, optional loop, and 3D rotateY parallax.",
+			"description": "Swipeable cards for feature tours, stories and galleries, with five transitions and an autoplay timer.",
 			"type": "registry:component",
 			"dependencies": [
-				"motion",
-				"motion@^12.38.0"
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -1394,12 +1742,9 @@
 		{
 			"name": "chroma-grid",
 			"title": "Chroma Grid",
-			"description": "Card grid with cursor-following spotlight reveal of color from a desaturated overlay (GSAP).",
+			"description": "A grid of grayscale photo cards where a spotlight follows the cursor and brings back color.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1410,14 +1755,26 @@
 			]
 		},
 		{
-			"name": "circular-gallery",
-			"title": "Circular Gallery",
-			"description": "WebGL bent gallery with momentum scroll, picture-frame distortion, and titles.",
+			"name": "circular-carousel",
+			"title": "CircularCarousel",
+			"description": "A 3D ring of images with bendable cards, momentum drag, snapping and click to focus.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CircularCarousel.svelte",
+					"target": "$lib/components/svelte-bits/CircularCarousel.svelte"
+				}
+			]
+		},
+		{
+			"name": "circular-gallery",
+			"title": "CircularGallery",
+			"description": "A curved image gallery you can drag, scroll or tab through, with cards that open to the full image.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1430,12 +1787,9 @@
 		{
 			"name": "counter",
 			"title": "Counter",
-			"description": "Animated rolling-digit counter with spring physics (motion).",
+			"description": "An odometer-style number whose digits roll to every new value, with currency, separators and locales.",
 			"type": "registry:component",
-			"dependencies": [
-				"motion",
-				"motion@^12.38.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1446,14 +1800,26 @@
 			]
 		},
 		{
+			"name": "curved-input",
+			"title": "CurvedInput",
+			"description": "Arc-bent input bar with text, caret and submit button all following the curve.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "CurvedInput.svelte",
+					"target": "$lib/components/svelte-bits/CurvedInput.svelte"
+				}
+			]
+		},
+		{
 			"name": "decay-card",
 			"title": "Decay Card",
-			"description": "Image card that warps with SVG turbulence + displacement, lerped to cursor velocity (GSAP).",
+			"description": "An image card that tears and melts as the pointer moves, then pulls itself back together.",
 			"type": "registry:component",
-			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1464,14 +1830,29 @@
 			]
 		},
 		{
-			"name": "dock",
-			"title": "Dock",
-			"description": "macOS-style magnification dock with spring physics. Each item scales smoothly based on cursor distance.",
+			"name": "depth-carousel",
+			"title": "DepthCarousel",
+			"description": "Cards recede into depth on a 3D rail, with drag, keyboard and auto-advance.",
 			"type": "registry:component",
 			"dependencies": [
-				"motion",
-				"motion@^12.38.0"
+				"gsap",
+				"gsap@^3.15.0"
 			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DepthCarousel.svelte",
+					"target": "$lib/components/svelte-bits/DepthCarousel.svelte"
+				}
+			]
+		},
+		{
+			"name": "dock",
+			"title": "Dock",
+			"description": "macOS style dock with smooth magnification, launch bounce, badges and context menus.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1497,13 +1878,30 @@
 			]
 		},
 		{
+			"name": "drift-wall",
+			"title": "DriftWall",
+			"description": "An endless perspective wall of tiles drifting past, lifting on hover.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DriftWall.svelte",
+					"target": "$lib/components/svelte-bits/DriftWall.svelte"
+				}
+			]
+		},
+		{
 			"name": "elastic-slider",
-			"title": "Elastic Slider",
-			"description": "Slider that stretches with overshoot decay and bounce-back spring (motion).",
+			"title": "ElasticSlider",
+			"description": "A slider that grows under your cursor and stretches like rubber when pulled past either end, then springs back.",
 			"type": "registry:component",
 			"dependencies": [
-				"motion",
-				"motion@^12.38.0"
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -1515,13 +1913,33 @@
 			]
 		},
 		{
-			"name": "flowing-menu",
-			"title": "Flowing Menu",
-			"description": "Vertical menu where rows reveal an animated marquee from the closest edge on hover (GSAP).",
+			"name": "flex-carousel",
+			"title": "Flex Carousel",
+			"description": "An infinite image row that flows through invisible liquid glass at its edges.",
 			"type": "registry:component",
 			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FlexCarousel.svelte",
+					"target": "$lib/components/svelte-bits/FlexCarousel.svelte"
+				}
+			]
+		},
+		{
+			"name": "flowing-menu",
+			"title": "Flowing Menu",
+			"description": "A full-height menu with a liquid band that glides between rows and reveals a scrolling marquee of each item.",
+			"type": "registry:component",
+			"dependencies": [
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -1533,14 +1951,26 @@
 			]
 		},
 		{
+			"name": "fluid-glass",
+			"title": "Fluid Glass",
+			"description": "A 3D glass object that refracts your headline, image or video, follows the cursor and melts between shapes.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FluidGlass.svelte",
+					"target": "$lib/components/svelte-bits/FluidGlass.svelte"
+				}
+			]
+		},
+		{
 			"name": "flying-posters",
 			"title": "Flying Posters",
-			"description": "3D posters rotate on scroll infinitely.",
+			"description": "3D posters that twist and flip as you scroll or drag through an endless column.",
 			"type": "registry:component",
-			"dependencies": [
-				"ogl",
-				"ogl@^1.0.11"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1553,7 +1983,7 @@
 		{
 			"name": "folder",
 			"title": "Folder",
-			"description": "Click to open a folder, fanning out paper snippets that follow the cursor on hover.",
+			"description": "Folder that drops its flap open or swings open like a book, with pages you can pick.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1567,8 +1997,8 @@
 		},
 		{
 			"name": "glass-icons",
-			"title": "Glass Icons",
-			"description": "Floating glass-effect icon buttons with skewed gradient cards behind a frosted face.",
+			"title": "GlassIcons",
+			"description": "Liquid glass icons that bend the color behind them, for app grids, docks and social links.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1583,7 +2013,7 @@
 		{
 			"name": "glass-surface",
 			"title": "Glass Surface",
-			"description": "Liquid-glass surface using SVG displacement filters and chromatic offset.",
+			"description": "Apple-style liquid glass that bends what is behind it, in a rounded panel or any logo shape.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1597,8 +2027,8 @@
 		},
 		{
 			"name": "gooey-nav",
-			"title": "Gooey Nav",
-			"description": "Pill-style nav with a gooey, particle-bursting active highlight powered by SVG-style filter blur+contrast.",
+			"title": "GooeyNav",
+			"description": "A navigation bar whose active pill breaks into goo that flows over to the item you pick.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1611,14 +2041,26 @@
 			]
 		},
 		{
+			"name": "holo-card",
+			"title": "HoloCard",
+			"description": "Collectible trading card with a real holographic foil and glitter that sparkles as it tilts.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "HoloCard.svelte",
+					"target": "$lib/components/svelte-bits/HoloCard.svelte"
+				}
+			]
+		},
+		{
 			"name": "infinite-menu",
 			"title": "Infinite Menu",
-			"description": "Spherical icosahedron menu rendered with WebGL2 + instanced disc atlas, dragged via arcball physics.",
+			"description": "A draggable sphere of image tiles that snaps the nearest one forward and shows its title.",
 			"type": "registry:component",
-			"dependencies": [
-				"gl-matrix",
-				"gl-matrix@^3.4.4"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1629,13 +2071,63 @@
 			]
 		},
 		{
-			"name": "magic-bento",
-			"title": "Magic Bento",
-			"description": "Bento grid with spotlight, particle stars, border glow, tilt, and magnetism.",
+			"name": "infinite-spiral",
+			"title": "Infinite Spiral",
+			"description": "An endlessly looping 3D helix of images with adjustable motion, depth and spacing.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "InfiniteSpiral.svelte",
+					"target": "$lib/components/svelte-bits/InfiniteSpiral.svelte"
+				}
+			]
+		},
+		{
+			"name": "lanyard",
+			"title": "Lanyard",
+			"description": "Swinging 3D badge on a stretchy woven band that you can drag, throw or click to flip.",
 			"type": "registry:component",
 			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
+				"three",
+				"three@^0.184.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Lanyard.svelte",
+					"target": "$lib/components/svelte-bits/Lanyard.svelte"
+				}
+			]
+		},
+		{
+			"name": "line-sidebar",
+			"title": "LineSidebar",
+			"description": "Static list navigation with a cursor-proximity effect that shifts and highlights nearby items.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "LineSidebar.svelte",
+					"target": "$lib/components/svelte-bits/LineSidebar.svelte"
+				}
+			]
+		},
+		{
+			"name": "magic-bento",
+			"title": "Magic Bento",
+			"description": "A bento grid of feature cards with live artwork, edge light that follows the cursor and a click wave.",
+			"type": "registry:component",
+			"dependencies": [
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -1649,11 +2141,13 @@
 		{
 			"name": "masonry",
 			"title": "Masonry",
-			"description": "Animated responsive masonry grid with GSAP entrance and hover effects.",
+			"description": "A masonry gallery that springs into place, reflows as it resizes and opens images in a lightbox.",
 			"type": "registry:component",
 			"dependencies": [
-				"gsap",
-				"gsap@^3.15.0"
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -1667,7 +2161,7 @@
 		{
 			"name": "model-viewer",
 			"title": "Model Viewer",
-			"description": "Interactive GLTF/GLB/FBX/OBJ model viewer with orbit, parallax, and hover effects.",
+			"description": "A product-style 3D model viewer that frames itself and floats over a soft shadow.",
 			"type": "registry:component",
 			"dependencies": [
 				"three",
@@ -1683,14 +2177,46 @@
 			]
 		},
 		{
-			"name": "pill-nav",
-			"title": "Pill Nav",
-			"description": "Animated pill-shaped nav with circular GSAP hover and mobile menu.",
+			"name": "morph-slider",
+			"title": "MorphSlider",
+			"description": "WebGL slider that melts between images with a displacement transition.",
 			"type": "registry:component",
 			"dependencies": [
+				"ogl",
 				"gsap",
+				"ogl@^1.0.11",
 				"gsap@^3.15.0"
 			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "MorphSlider.svelte",
+					"target": "$lib/components/svelte-bits/MorphSlider.svelte"
+				}
+			]
+		},
+		{
+			"name": "option-wheel",
+			"title": "OptionWheel",
+			"description": "Curved option picker that spins with scroll, drag or arrow keys, tilting items away.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "OptionWheel.svelte",
+					"target": "$lib/components/svelte-bits/OptionWheel.svelte"
+				}
+			]
+		},
+		{
+			"name": "pill-nav",
+			"title": "Pill Nav",
+			"description": "A pill navigation bar where a fill rises through each link as its label rolls over, with a sliding active dot.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1703,7 +2229,7 @@
 		{
 			"name": "pixel-card",
 			"title": "Pixel Card",
-			"description": "Card with shimmering pixel canvas effect on hover/focus.",
+			"description": "A card that fills with twinkling pixels on hover, rippling out from the center or the cursor.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1718,9 +2244,14 @@
 		{
 			"name": "profile-card",
 			"title": "Profile Card",
-			"description": "Holographic profile card with pointer/device-orientation tilt and animated shine.",
+			"description": "A framed profile card that tilts toward the cursor, with holographic foil shining through a tiled pattern.",
 			"type": "registry:component",
-			"dependencies": [],
+			"dependencies": [
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
+			],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1733,9 +2264,14 @@
 		{
 			"name": "reflective-card",
 			"title": "Reflective Card",
-			"description": "Webcam-fed metallic glass card using SVG turbulence and specular lighting filters.",
+			"description": "A metal ID card that reflects your camera or a looping video and catches the light as it tilts.",
 			"type": "registry:component",
-			"dependencies": [],
+			"dependencies": [
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
+			],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1748,12 +2284,9 @@
 		{
 			"name": "scroll-stack",
 			"title": "Scroll Stack",
-			"description": "Scroll-driven card stack with pin/scale/blur/rotation, powered by Lenis smooth-scroll.",
+			"description": "Cards pin and stack as you scroll, settling back into a dimmed deck with smooth, jitter-free motion.",
 			"type": "registry:component",
-			"dependencies": [
-				"lenis",
-				"lenis@^1.3.23"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1764,9 +2297,24 @@
 			]
 		},
 		{
+			"name": "specular-button",
+			"title": "Specular Button",
+			"description": "Glass button whose edge catches the light, with a highlight that glides toward the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SpecularButton.svelte",
+					"target": "$lib/components/svelte-bits/SpecularButton.svelte"
+				}
+			]
+		},
+		{
 			"name": "spotlight-card",
 			"title": "Spotlight Card",
-			"description": "Card with a soft radial spotlight that follows the cursor.",
+			"description": "Card lit by a soft spotlight that follows the pointer, catches its edge and reaches nearby cards.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -1781,7 +2329,7 @@
 		{
 			"name": "stack",
 			"title": "Stack",
-			"description": "Draggable card stack with spring rotation and send-to-back interaction.",
+			"description": "Pile of cards you can drag, flick or click through, with thrown cards tucking underneath.",
 			"type": "registry:component",
 			"dependencies": [
 				"motion",
@@ -1817,10 +2365,13 @@
 		{
 			"name": "stepper",
 			"title": "Stepper",
-			"description": "Animated multi-step form with sliding step content and round step indicators.",
+			"description": "A multi-step flow with a gliding step indicator, spring transitions and horizontal or vertical layouts.",
 			"type": "registry:component",
 			"dependencies": [
-				"motion"
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0"
 			],
 			"registryDependencies": [],
 			"files": [
@@ -1834,12 +2385,9 @@
 		{
 			"name": "tilted-card",
 			"title": "Tilted Card",
-			"description": "3D tilt-on-mouse card with spring physics and a cursor-following caption.",
+			"description": "A 3D card that tilts toward the cursor, with glare, a soft shadow, floating layers and a flip side.",
 			"type": "registry:component",
-			"dependencies": [
-				"motion",
-				"motion@^12.38.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -1966,10 +2514,11 @@
 		},
 		{
 			"name": "folder-float",
-			"title": "Folder Float",
-			"description": "Folder that opens on hover or press: the flap tilts toward you, a paper edge rises, and its notes spring out from behind the flap into a floating cloud to pick from, then sink back when the folder closes.",
+			"title": "FolderFloat",
+			"description": "Folder whose notes spring out into a floating cloud when it opens on hover or press.",
 			"type": "registry:component",
 			"dependencies": [
+				"matter-js",
 				"matter-js@^0.20.0"
 			],
 			"registryDependencies": [],
@@ -2060,10 +2609,11 @@
 		},
 		{
 			"name": "paper-crumple",
-			"title": "Paper Crumple",
-			"description": "An image that crumples into a textured 3D sheet while held and follows the grabbed point as you drag. Release it as a crumpled ball, unfold it flat, or leave the paper creased, with customizable folds, paper grain, lighting and shadows.",
+			"title": "PaperCrumple",
+			"description": "An image that crumples into a textured 3D sheet while you hold and drag it.",
 			"type": "registry:component",
 			"dependencies": [
+				"three",
 				"three@^0.184.0"
 			],
 			"registryDependencies": [],
@@ -2093,9 +2643,14 @@
 		{
 			"name": "prompt-bar",
 			"title": "Prompt Bar",
-			"description": "Chat composer with an @ sources menu, a / commands menu, a model picker, dictation and attachments, whose send tile charges to ink the moment there is something to send and morphs its arrow into a stop square while busy.",
+			"description": "Chat composer with @ sources, / commands, a model picker, dictation and attachments.",
 			"type": "registry:component",
 			"dependencies": [
+				"motion",
+				"@hugeicons/svelte",
+				"@hugeicons/core-free-icons",
+				"@hugeicons/svelte@^1.1.5",
+				"@hugeicons/core-free-icons@^4.4.0",
 				"motion@^12.38.0"
 			],
 			"registryDependencies": [],
@@ -2168,6 +2723,21 @@
 					"type": "registry:component",
 					"path": "ScrubField.svelte",
 					"target": "$lib/components/svelte-bits/ScrubField.svelte"
+				}
+			]
+		},
+		{
+			"name": "shredder",
+			"title": "Shredder",
+			"description": "A list with a paper shredder at the bottom that cuts dragged rows into curling strips.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "Shredder.svelte",
+					"target": "$lib/components/svelte-bits/Shredder.svelte"
 				}
 			]
 		},
@@ -2391,12 +2961,9 @@
 		{
 			"name": "ascii-text",
 			"title": "ASCII Text",
-			"description": "Renders text with an animated ASCII background for a retro feel.",
+			"description": "Waving ASCII text that tilts toward the pointer, scrambles on hover and ripples on click.",
 			"type": "registry:component",
-			"dependencies": [
-				"three",
-				"three@^0.184.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -2409,7 +2976,7 @@
 		{
 			"name": "blur-text",
 			"title": "Blur Text",
-			"description": "Per-word/letter blur-in animation triggered when scrolled into view, with configurable direction, easing and stepped keyframes.",
+			"description": "Text starts blurred then crisply resolves for a soft-focus reveal effect.",
 			"type": "registry:component",
 			"dependencies": [
 				"motion",
@@ -2445,7 +3012,7 @@
 		{
 			"name": "count-up",
 			"title": "Count Up",
-			"description": "Spring-animated number counter that counts up (or down) when scrolled into view, with configurable spring physics, delay, and number formatting.",
+			"description": "Animated number counter supporting formatting and decimals.",
 			"type": "registry:component",
 			"dependencies": [
 				"motion",
@@ -2463,7 +3030,7 @@
 		{
 			"name": "curved-loop",
 			"title": "Curved Loop",
-			"description": "Marquee text rendered along a curved SVG path that scrolls infinitely and can be dragged for interactive control.",
+			"description": "Flowing looping text path along a customizable curve with drag interaction.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -2478,7 +3045,7 @@
 		{
 			"name": "decrypted-text",
 			"title": "Decrypted Text",
-			"description": "Scrambled-character reveal effect that decrypts a string on hover, click, or scroll-into-view, with sequential or random iteration modes.",
+			"description": "Hacker-style decryption cycling random glyphs until resolving to real text.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -2491,9 +3058,39 @@
 			]
 		},
 		{
+			"name": "depth-text",
+			"title": "Depth Text",
+			"description": "Layered extruded type with parallax that shifts against the pointer.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "DepthText.svelte",
+					"target": "$lib/components/svelte-bits/DepthText.svelte"
+				}
+			]
+		},
+		{
+			"name": "echo-text",
+			"title": "Echo Text",
+			"description": "Ghosted copies trail behind the text and settle into a single word.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "EchoText.svelte",
+					"target": "$lib/components/svelte-bits/EchoText.svelte"
+				}
+			]
+		},
+		{
 			"name": "falling-text",
 			"title": "Falling Text",
-			"description": "Characters fall with gravity + bounce creating a playful entrance.",
+			"description": "Text that breaks apart and tumbles into a pile you can drag, throw and swipe, then flies back into place.",
 			"type": "registry:component",
 			"dependencies": [
 				"matter-js",
@@ -2509,9 +3106,27 @@
 			]
 		},
 		{
+			"name": "fold-text",
+			"title": "Fold Text",
+			"description": "Lines unfold into place like creased paper opening flat.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "FoldText.svelte",
+					"target": "$lib/components/svelte-bits/FoldText.svelte"
+				}
+			]
+		},
+		{
 			"name": "fuzzy-text",
 			"title": "Fuzzy Text",
-			"description": "Canvas-rendered text that displaces pixel rows or columns on every frame to create a fuzzy/static distortion, with hover, click, and glitch modes.",
+			"description": "Vibrating fuzzy text with controllable hover intensity.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -2526,7 +3141,7 @@
 		{
 			"name": "glitch-text",
 			"title": "Glitch Text",
-			"description": "RGB-split glitch effect on text using clip-path keyframe animation, with optional hover-only mode.",
+			"description": "RGB split and distortion glitch effect with jitter effects.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -2541,12 +3156,9 @@
 		{
 			"name": "gradient-text",
 			"title": "Gradient Text",
-			"description": "Animated multi-color gradient text with optional border, direction, yoyo and pause-on-hover.",
+			"description": "Living gradients inside your text: a sliding sweep, a drifting mesh or a swinging conic fan.",
 			"type": "registry:component",
-			"dependencies": [
-				"motion",
-				"motion@^12.38.0"
-			],
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -2559,9 +3171,10 @@
 		{
 			"name": "masked-heading",
 			"title": "Masked Heading",
-			"description": "Masked Heading component from svelte-bits.",
+			"description": "A headline with a drifting colour mesh or image showing through, revealed word by word.",
 			"type": "registry:component",
 			"dependencies": [
+				"gsap",
 				"gsap@^3.15.0"
 			],
 			"registryDependencies": [],
@@ -2574,9 +3187,24 @@
 			]
 		},
 		{
+			"name": "particle-text",
+			"title": "Particle Text",
+			"description": "Text assembles from drifting particles that scatter and reform on demand.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "ParticleText.svelte",
+					"target": "$lib/components/svelte-bits/ParticleText.svelte"
+				}
+			]
+		},
+		{
 			"name": "rotating-text",
 			"title": "Rotating Text",
-			"description": "Cycles through an array of phrases with per-character stagger animations on entry and exit, driven by motion springs.",
+			"description": "Cycles through multiple phrases with slide, flip, blur, scale or drop transitions and an optional highlight block that resizes to fit each word.",
 			"type": "registry:component",
 			"dependencies": [
 				"motion",
@@ -2612,7 +3240,7 @@
 		{
 			"name": "scroll-float",
 			"title": "Scroll Float",
-			"description": "Scroll-triggered floating text animation with per-character stagger.",
+			"description": "Text gently floats / parallax shifts on scroll.",
 			"type": "registry:component",
 			"dependencies": [
 				"gsap",
@@ -2630,7 +3258,7 @@
 		{
 			"name": "scroll-reveal",
 			"title": "Scroll Reveal",
-			"description": "Words reveal in sequence as the container scrolls into view, with optional rotation and blur tied to the scroll position.",
+			"description": "Text gently unblurs and reveals on scroll.",
 			"type": "registry:component",
 			"dependencies": [
 				"gsap",
@@ -2648,9 +3276,12 @@
 		{
 			"name": "scroll-velocity",
 			"title": "Scroll Velocity",
-			"description": "Multi-row marquee that scrolls horizontally at a base velocity and accelerates with spring-smoothed page-scroll movement.",
+			"description": "Text marquee animatio - speed and distortion scale with user's scroll velocity.",
 			"type": "registry:component",
-			"dependencies": [],
+			"dependencies": [
+				"motion",
+				"motion@^12.38.0"
+			],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -2663,7 +3294,7 @@
 		{
 			"name": "shiny-text",
 			"title": "Shiny Text",
-			"description": "Animated shiny gradient sweep across text, with yoyo + direction controls.",
+			"description": "A sheen of light that sweeps across text, from soft bands to chrome-like reflections.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -2678,7 +3309,7 @@
 		{
 			"name": "shuffle",
 			"title": "Shuffle",
-			"description": "Per-character shuffle animation: each letter slides through interim glyphs before settling on its final character, with hover replay and ScrollTrigger entrance.",
+			"description": "Animated text reveal where characters shuffle before settling.",
 			"type": "registry:component",
 			"dependencies": [
 				"gsap",
@@ -2690,6 +3321,21 @@
 					"type": "registry:component",
 					"path": "Shuffle.svelte",
 					"target": "$lib/components/svelte-bits/Shuffle.svelte"
+				}
+			]
+		},
+		{
+			"name": "split-flap-text",
+			"title": "Split Flap Text",
+			"description": "Mechanical split-flap departure board that clacks through to each new phrase.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "SplitFlapText.svelte",
+					"target": "$lib/components/svelte-bits/SplitFlapText.svelte"
 				}
 			]
 		},
@@ -2712,14 +3358,44 @@
 			]
 		},
 		{
-			"name": "text-cursor",
-			"title": "Text Cursor",
-			"description": "Trail of repeating text glyphs that follows the cursor, optionally rotating to match direction and floating with random keyframes.",
+			"name": "stroke-text",
+			"title": "Stroke Text",
+			"description": "Outlined letterforms draw themselves on, then flood with fill.",
 			"type": "registry:component",
 			"dependencies": [
-				"motion",
-				"motion@^12.38.0"
+				"gsap",
+				"gsap@^3.15.0"
 			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "StrokeText.svelte",
+					"target": "$lib/components/svelte-bits/StrokeText.svelte"
+				}
+			]
+		},
+		{
+			"name": "tech-text",
+			"title": "Tech Text",
+			"description": "A wordmark whose letters turn into dashed vector paths under the cursor.",
+			"type": "registry:component",
+			"dependencies": [],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "TechText.svelte",
+					"target": "$lib/components/svelte-bits/TechText.svelte"
+				}
+			]
+		},
+		{
+			"name": "text-cursor",
+			"title": "Text Cursor",
+			"description": "Text or emoji that trails your cursor as stamped copies, a following chain or a ribbon of letters.",
+			"type": "registry:component",
+			"dependencies": [],
 			"registryDependencies": [],
 			"files": [
 				{
@@ -2730,9 +3406,27 @@
 			]
 		},
 		{
+			"name": "text-loop",
+			"title": "Text Loop",
+			"description": "A seamless text marquee that flows along curved SVG paths.",
+			"type": "registry:component",
+			"dependencies": [
+				"gsap",
+				"gsap@^3.15.0"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "TextLoop.svelte",
+					"target": "$lib/components/svelte-bits/TextLoop.svelte"
+				}
+			]
+		},
+		{
 			"name": "text-pressure",
 			"title": "Text Pressure",
-			"description": "Variable-font heading where each character reacts to cursor proximity by morphing its width, weight, italic and opacity axes.",
+			"description": "Characters scale / warp interactively based on pointer pressure zone.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -2747,7 +3441,7 @@
 		{
 			"name": "text-type",
 			"title": "Text Type",
-			"description": "Typewriter effect that types and deletes through one or more sentences with a configurable cursor, blink rate, variable speed, and color rotation.",
+			"description": "Typewriter effect with blinking cursor and adjustable typing cadence.",
 			"type": "registry:component",
 			"dependencies": [
 				"gsap",
@@ -2783,7 +3477,7 @@
 		{
 			"name": "variable-proximity",
 			"title": "Variable Proximity",
-			"description": "Per-letter variable-font interpolation that responds to cursor proximity inside a container, with linear, exponential or gaussian falloff.",
+			"description": "Letter styling changes continuously with pointer distance mapping.",
 			"type": "registry:component",
 			"dependencies": [],
 			"registryDependencies": [],
@@ -2792,6 +3486,24 @@
 					"type": "registry:component",
 					"path": "VariableProximity.svelte",
 					"target": "$lib/components/svelte-bits/VariableProximity.svelte"
+				}
+			]
+		},
+		{
+			"name": "warp-text",
+			"title": "Warp Text",
+			"description": "WebGL warp that bends and refracts the text around the pointer.",
+			"type": "registry:component",
+			"dependencies": [
+				"ogl",
+				"ogl@^1.0.11"
+			],
+			"registryDependencies": [],
+			"files": [
+				{
+					"type": "registry:component",
+					"path": "WarpText.svelte",
+					"target": "$lib/components/svelte-bits/WarpText.svelte"
 				}
 			]
 		}

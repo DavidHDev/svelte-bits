@@ -1,10 +1,27 @@
 <script lang="ts">
-	import ComponentList from '$lib/components/docs/ComponentList.svelte';
-	import { COMPONENT_INDEX_ITEMS } from '$lib/constants/componentIndex';
+	import ComponentList, { listedEntries } from '$lib/components/docs/ComponentList.svelte';
+	import BackToTopButton from '$lib/components/docs/BackToTopButton.svelte';
+	import { INDEX_SEO } from '$lib/constants/docsNav';
+	import { readNewSinceLastVisit } from '$lib/hooks/docsMedia.svelte';
+
+	const list = listedEntries();
+	const newSinceLastVisit = readNewSinceLastVisit(list.map(([key]) => key));
 </script>
 
 <svelte:head>
-	<title>Svelte Bits - Component Index</title>
+	<title>{INDEX_SEO.title}</title>
+	<meta name="description" content={INDEX_SEO.description} />
 </svelte:head>
 
-<ComponentList title="Index" items={COMPONENT_INDEX_ITEMS} />
+<div>
+	<ComponentList
+		title={INDEX_SEO.heading}
+		{list}
+		hasFavoriteButton
+		sorting="newest"
+		showSortControl
+		{newSinceLastVisit}
+		showDirectory
+	/>
+	<BackToTopButton />
+</div>

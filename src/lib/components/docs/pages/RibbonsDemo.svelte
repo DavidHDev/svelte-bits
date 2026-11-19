@@ -2,62 +2,202 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
+	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorList from '$lib/components/docs/preview/PreviewColorList.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
 	import Ribbons from '$lib/components/library/Animations/Ribbons/Ribbons.svelte';
 	import source from '$lib/components/library/Animations/Ribbons/Ribbons.svelte?raw';
+	import { DEFAULT_PROPS, PRESET_OPTIONS, presetProps, type RibbonsLook } from './presets/Ribbons';
 
-	const DEFAULTS = { baseThickness: 30, color: '#FF8A4C', speedMultiplier: 0.5, maxAge: 500, enableFade: false, enableShaderEffect: false };
-	let baseThickness = $state(DEFAULTS.baseThickness);
-	let color = $state(DEFAULTS.color);
-	let speedMultiplier = $state(DEFAULTS.speedMultiplier);
-	let maxAge = $state(DEFAULTS.maxAge);
-	let enableFade = $state(DEFAULTS.enableFade);
-	let enableShaderEffect = $state(DEFAULTS.enableShaderEffect);
-
-	const hasChanges = $derived(baseThickness !== DEFAULTS.baseThickness || color !== DEFAULTS.color || speedMultiplier !== DEFAULTS.speedMultiplier || maxAge !== DEFAULTS.maxAge || enableFade !== DEFAULTS.enableFade || enableShaderEffect !== DEFAULTS.enableShaderEffect);
-	function reset() { baseThickness = DEFAULTS.baseThickness; color = DEFAULTS.color; speedMultiplier = DEFAULTS.speedMultiplier; maxAge = DEFAULTS.maxAge; enableFade = DEFAULTS.enableFade; enableShaderEffect = DEFAULTS.enableShaderEffect; }
-
-	const colors = $derived([color]);
-	const usage = $derived(`<Ribbons colors={['${color}']} baseThickness={${baseThickness}} speedMultiplier={${speedMultiplier}} maxAge={${maxAge}} enableFade={${enableFade}} enableShaderEffect={${enableShaderEffect}} />`);
-
-	const props: PropRow[] = [
-		{ name: 'colors', type: 'string[]', default: '["#ff9346", ...]', description: 'One color per ribbon.' },
-		{ name: 'baseSpring', type: 'number', default: '0.03', description: 'Spring stiffness baseline.' },
-		{ name: 'baseFriction', type: 'number', default: '0.9', description: 'Spring friction baseline.' },
-		{ name: 'baseThickness', type: 'number', default: '30', description: 'Ribbon thickness.' },
-		{ name: 'offsetFactor', type: 'number', default: '0.05', description: 'Vertical offset between ribbons.' },
-		{ name: 'maxAge', type: 'number', default: '500', description: 'Trail lifetime (ms).' },
-		{ name: 'pointCount', type: 'number', default: '50', description: 'Sample points along trail.' },
-		{ name: 'speedMultiplier', type: 'number', default: '0.6', description: 'Pointer-velocity multiplier.' },
-		{ name: 'enableFade', type: 'boolean', default: 'false', description: 'Fade ribbons by age.' },
-		{ name: 'enableShaderEffect', type: 'boolean', default: 'false', description: 'Apply iridescence shader.' },
-		{ name: 'effectAmplitude', type: 'number', default: '2', description: 'Shader displacement amplitude.' },
-		{ name: 'backgroundColor', type: 'number[]', default: '[0,0,0,0]', description: 'Clear color RGBA.' }
+	const SHAPE_OPTIONS = [
+		{ value: 'lens', label: 'Lens' },
+		{ value: 'comet', label: 'Comet' },
+		{ value: 'even', label: 'Even' }
 	];
+
+	const propData: PropRow[] = [
+		{
+			name: 'colors',
+			type: 'string[]',
+			default: "['#ff3e00', '#FF8A4C', '#FFB089']",
+			description: 'One ribbon is drawn for each color, in order from back to front.'
+		},
+		{
+			name: 'shape',
+			type: "'lens' | 'comet' | 'even'",
+			default: "'lens'",
+			description: 'Width along each ribbon. Lens swells in the middle, comet is widest at the cursor, even stays level.'
+		},
+		{ name: 'thickness', type: 'number', default: '30', description: 'Width of each ribbon at its widest, in pixels.' },
+		{
+			name: 'length',
+			type: 'number',
+			default: '1.4',
+			description: 'How far the ribbons trail behind the cursor. Higher values leave longer, lazier trails.'
+		},
+		{ name: 'spread', type: 'number', default: '18', description: 'Space between the ribbons, in pixels.' },
+		{
+			name: 'stiffness',
+			type: 'number',
+			default: '0.5',
+			description: 'How tightly the ribbons chase the cursor, from 0 to 1.'
+		},
+		{
+			name: 'bounce',
+			type: 'number',
+			default: '0.5',
+			description: 'How far the ribbons overshoot and swing back when the cursor stops or turns, from 0 to 1.'
+		},
+		{ name: 'wave', type: 'number', default: '0', description: 'A wave that rolls along each ribbon, from 0 to 1.' },
+		{
+			name: 'softness',
+			type: 'number',
+			default: '0',
+			description: 'Blurs the ribbon edges into soft light trails, from 0 to 1.'
+		},
+		{ name: 'opacity', type: 'number', default: '1', description: 'Opacity of the ribbons.' },
+		{ name: 'fade', type: 'boolean', default: 'false', description: 'Fades each ribbon out toward its tail.' },
+		{
+			name: 'backgroundColor',
+			type: 'string',
+			default: "'transparent'",
+			description: 'Color behind the ribbons. By default the canvas is transparent.'
+		},
+		{ name: 'dpr', type: 'number', default: 'auto', description: 'Maximum device pixel ratio, capped at 2.' },
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the container.' },
+		{ name: 'style', type: 'string', default: '-', description: 'Inline styles for the container.' }
+	];
+
+	const usage = `<script lang="ts">
+  import Ribbons from '$lib/components/Ribbons.svelte';
+</${'script'}>
+
+<div style="height: 500px; position: relative; overflow: hidden;">
+  <Ribbons
+    colors={['#ff3e00', '#FF8A4C', '#FFB089']}
+    thickness={30}
+    length={1.4}
+  />
+</div>`;
+
+	const demo = createComponentProps(DEFAULT_PROPS, { lightProps: null });
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, ...rest } = settings;
+		return rest;
+	});
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value, { defaults: demo.defaultProps }), preset: value });
+	};
 </script>
 
-<svelte:head><title>Ribbons - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Ribbons</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="Ribbons" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="demo-container" style="position:relative;height:500px;overflow:hidden;">
-			<Ribbons {colors} {baseThickness} {speedMultiplier} {maxAge} {enableFade} {enableShaderEffect} />
+<TabsLayout propsState={demo} componentName="Ribbons" {usage} {source} {propData} demoOnlyProps={['preset']}>
+	{#snippet previewTab()}
+		<div
+			class="demo-container h-[380px] md:h-[500px]"
+			style="position: relative; padding: 0; overflow: hidden;"
+		>
+			<p
+				class="demo-instruction"
+				style="position: absolute; margin: 0; font-size: clamp(2rem, 6vw, 6rem); font-weight: 600;"
+			>
+				Hover Me.
+			</p>
+			<Ribbons {...componentProps} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="ribbons" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewColorPicker title="Color" value={color} onChange={(v) => (color = v)} />
-			<PreviewSlider title="Base Thickness" min={5} max={100} step={1} value={baseThickness} onChange={(v) => (baseThickness = v)} />
-			<PreviewSlider title="Speed Multiplier" min={0.1} max={3} step={0.05} value={speedMultiplier} onChange={(v) => (speedMultiplier = v)} />
-			<PreviewSlider title="Max Age" min={100} max={3000} step={50} value={maxAge} valueUnit="ms" onChange={(v) => (maxAge = v)} />
-			<PreviewSwitch title="Enable Fade" checked={enableFade} onChange={(v) => (enableFade = v)} />
-			<PreviewSwitch title="Shader Effect" checked={enableShaderEffect} onChange={(v) => (enableShaderEffect = v)} />
+			<PreviewColorList
+				title="Colors"
+				colors={settings.colors}
+				min={1}
+				max={8}
+				onChange={(v) => demo.updateProp('colors', v)}
+			/>
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewSelect
+				title="Shape"
+				options={SHAPE_OPTIONS}
+				value={settings.shape}
+				onChange={(v) => demo.updateProp('shape', v as RibbonsLook['shape'])}
+			/>
+			<PreviewSlider
+				title="Thickness"
+				min={4}
+				max={80}
+				step={1}
+				value={settings.thickness}
+				valueUnit="px"
+				onChange={(v) => demo.updateProp('thickness', v)}
+			/>
+			<PreviewSlider
+				title="Length"
+				min={0.3}
+				max={3}
+				step={0.05}
+				value={settings.length}
+				onChange={(v) => demo.updateProp('length', v)}
+			/>
+			<PreviewSlider
+				title="Spread"
+				min={0}
+				max={60}
+				step={1}
+				value={settings.spread}
+				valueUnit="px"
+				isDisabled={settings.colors.length < 2}
+				onChange={(v) => demo.updateProp('spread', v)}
+			/>
+			<PreviewSlider
+				title="Stiffness"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.stiffness}
+				onChange={(v) => demo.updateProp('stiffness', v)}
+			/>
+			<PreviewSlider
+				title="Bounce"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.bounce}
+				onChange={(v) => demo.updateProp('bounce', v)}
+			/>
+			<PreviewSlider
+				title="Wave"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.wave}
+				onChange={(v) => demo.updateProp('wave', v)}
+			/>
+			<PreviewSlider
+				title="Softness"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.softness}
+				onChange={(v) => demo.updateProp('softness', v)}
+			/>
+			<PreviewSlider
+				title="Opacity"
+				min={0.1}
+				max={1}
+				step={0.05}
+				value={settings.opacity}
+				onChange={(v) => demo.updateProp('opacity', v)}
+			/>
+			<PreviewSwitch title="Fade" isChecked={settings.fade} onChange={(v) => demo.updateProp('fade', v)} />
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>

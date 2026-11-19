@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import WarmTooltip, {
@@ -240,8 +239,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedSurface = $derived(surfaceColor);
-	const renderedInk = $derived(inkColor);
+	const renderedSurface = $derived(theme.isLight ? (surfaceColor === DEFAULT_PROPS.surfaceColor ? '#18181b' : surfaceColor) : surfaceColor);
+	const renderedInk = $derived(theme.isLight ? (inkColor === DEFAULT_PROPS.inkColor ? '#ffffff' : inkColor) : inkColor);
 	const propData: PropRow[] = [
 		{
 			name: 'travel',
@@ -446,8 +445,6 @@
 		>{#each shapes as [tag, attrs]}<svelte:element this={tag} {...attrs} />{/each}</svg
 	>{/snippet}
 
-<svelte:head><title>Warm Tooltip - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Warm Tooltip</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -464,17 +461,17 @@
 					><div
 						class="inline-flex gap-1 rounded-2xl p-1.5"
 						class:flex-col={vertical}
-						style="background:#332B24"
+						style:background={theme.isLight ? '#f6f6f6' : '#332B24'}
 					>
 						{#each TOOLS as tool}<WarmTooltip
-								{...props}
+								{...props} surfaceColor={renderedSurface} inkColor={renderedInk}
 								lean={lean ? 5 : 0}
 								content={tool.label}
 								shortcut={tool.shortcut}
 								><button
 									type="button"
 									aria-label={tool.name}
-									class="grid size-10 place-items-center rounded-xl text-[#F5EFE9] transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6A46B]"
+									class="grid size-10 place-items-center rounded-xl text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-ghost)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6A46B]"
 									>{@render iconSvg(tool.icon, 18, 1.8)}</button
 								></WarmTooltip
 							>{/each}
@@ -483,16 +480,16 @@
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="warm-tooltip" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Surface"
-				value={renderedSurface}
+				color={renderedSurface}
 				onChange={(val) => updateProp('surfaceColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Ink"
-				value={renderedInk}
+				color={renderedInk}
 				onChange={(val) => updateProp('inkColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSelect
 				title="Side"
 				options={SIDE_OPTIONS}

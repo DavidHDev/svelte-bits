@@ -89,7 +89,7 @@ function assertSyncedWithCategories(discovered: DiscoveredItem[]): void {
 	const registryOnlySlugs = [...discoveredSlugs].filter((slug) => !IMPLEMENTED_DEMOS.has(slug));
 	const implementedWithoutRegistry = [...IMPLEMENTED_DEMOS].filter(
 		(slug) =>
-			!['introduction', 'installation', 'mcp-server', 'index'].includes(slug) &&
+			!['introduction', 'installation', 'mcp', 'mcp-server', 'changelog', 'index'].includes(slug) &&
 			!discoveredSlugs.has(slug)
 	);
 

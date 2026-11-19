@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import CometDial, {
@@ -76,8 +75,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedAccent = $derived(accent);
-	const renderedInk = $derived(ink);
+	const renderedAccent = $derived(theme.isLight ? (accent === DEFAULT_PROPS.accent ? '#18181b' : accent) : accent);
+	const renderedInk = $derived(theme.isLight ? (ink === DEFAULT_PROPS.ink ? '#18181b' : ink) : ink);
 	const propData: PropRow[] = [
 		{
 			name: 'value',
@@ -252,8 +251,6 @@
 	);
 </script>
 
-<svelte:head><title>Comet Dial - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Comet Dial</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -267,7 +264,7 @@
 				style="height:400px;"
 			>
 				<CometDial
-					{...props}
+					{...props} accent={renderedAccent} ink={renderedInk}
 					{value}
 					onChange={setValue}
 					unit={UNITS[unit as keyof typeof UNITS]}
@@ -275,13 +272,13 @@
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="comet-dial" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Accent"
-				value={renderedAccent}
+				color={renderedAccent}
 				onChange={(val) => updateProp('accent', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker title="Ink" value={renderedInk} onChange={(val) => updateProp('ink', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom title="Ink" color={renderedInk} onChange={(val) => updateProp('ink', val)}
+			></PreviewColorPickerCustom>
 			<PreviewSlider title="Value" min={0} max={100} step={1} {value} onChange={setValue}
 			></PreviewSlider>
 			<PreviewSelect

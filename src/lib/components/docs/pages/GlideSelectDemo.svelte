@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import GlideSelect, {
@@ -110,10 +109,10 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedAccent = $derived(accentColor);
-	const renderedSurface = $derived(surfaceColor);
-	const renderedHighlight = $derived(highlightColor);
-	const renderedText = $derived(textColor);
+	const renderedAccent = $derived(theme.isLight ? (accentColor === DEFAULT_PROPS.accentColor ? '#18181b' : accentColor) : accentColor);
+	const renderedSurface = $derived(theme.isLight ? (surfaceColor === DEFAULT_PROPS.surfaceColor ? '#f6f6f6' : surfaceColor) : surfaceColor);
+	const renderedHighlight = $derived(theme.isLight ? (highlightColor === DEFAULT_PROPS.highlightColor ? '#e4e4e7' : highlightColor) : highlightColor);
+	const renderedText = $derived(theme.isLight ? (textColor === DEFAULT_PROPS.textColor ? '#18181b' : textColor) : textColor);
 	const propData: PropRow[] = [
 		{
 			name: 'options',
@@ -289,8 +288,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Glide Select - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Glide Select</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -303,7 +300,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				<GlideSelect {...props} options={set} value={current} onChange={setValue} />
+				<GlideSelect {...props} accentColor={renderedAccent} surfaceColor={renderedSurface} highlightColor={renderedHighlight} textColor={renderedText} options={set} value={current} onChange={setValue} />
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="glide-select" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
@@ -322,26 +319,26 @@
 				value={size}
 				onChange={(val) => updateProp('size', val)}
 			></PreviewSelect>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Accent"
-				value={renderedAccent}
+				color={renderedAccent}
 				onChange={(val) => updateProp('accentColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Surface"
-				value={renderedSurface}
+				color={renderedSurface}
 				onChange={(val) => updateProp('surfaceColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Highlight"
-				value={renderedHighlight}
+				color={renderedHighlight}
 				onChange={(val) => updateProp('highlightColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Text"
-				value={renderedText}
+				color={renderedText}
 				onChange={(val) => updateProp('textColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Radius"
 				min={6}

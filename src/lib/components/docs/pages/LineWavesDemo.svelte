@@ -2,133 +2,231 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
+	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import BackgroundContent from '$lib/components/docs/preview/BackgroundContent.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
 	import LineWaves from '$lib/components/library/Backgrounds/LineWaves/LineWaves.svelte';
 	import source from '$lib/components/library/Backgrounds/LineWaves/LineWaves.svelte?raw';
+	import { DEFAULT_PROPS, PRESET_OPTIONS, presetProps } from './presets/LineWaves';
 
-	const D = {
-		speed: 0.3,
-		innerLineCount: 32,
-		outerLineCount: 36,
-		warpIntensity: 1,
-		rotation: -45,
-		edgeFadeWidth: 0,
-		colorCycleSpeed: 1,
-		brightness: 0.2,
-		color1: '#ffffff',
-		color2: '#ff8a3d',
-		color3: '#ffffff',
-		enableMouseInteraction: true,
-		mouseInfluence: 2
-	};
+	type ColorName = 'color1' | 'color2' | 'color3';
+	type SliderName =
+		| 'colorCycleSpeed'
+		| 'speed'
+		| 'lineCount'
+		| 'lineWidth'
+		| 'glow'
+		| 'brightness'
+		| 'highlight'
+		| 'highlightWidth'
+		| 'warpIntensity'
+		| 'warpScale'
+		| 'rotation'
+		| 'edgeFade'
+		| 'mouseInfluence'
+		| 'opacity';
 
-	let speed = $state(D.speed);
-	let innerLineCount = $state(D.innerLineCount);
-	let outerLineCount = $state(D.outerLineCount);
-	let warpIntensity = $state(D.warpIntensity);
-	let rotation = $state(D.rotation);
-	let edgeFadeWidth = $state(D.edgeFadeWidth);
-	let colorCycleSpeed = $state(D.colorCycleSpeed);
-	let brightness = $state(D.brightness);
-	let color1 = $state(D.color1);
-	let color2 = $state(D.color2);
-	let color3 = $state(D.color3);
-	let enableMouseInteraction = $state(D.enableMouseInteraction);
-	let mouseInfluence = $state(D.mouseInfluence);
-	let showContent = $state(true);
+	const COLORS: { name: ColorName; title: string }[] = [
+		{ name: 'color1', title: 'Color 1' },
+		{ name: 'color2', title: 'Color 2' },
+		{ name: 'color3', title: 'Color 3' }
+	];
 
-	const sO = '<' + 'script lang="ts">';
-	const sC = '</' + 'script>';
+	const SLIDERS: { name: SliderName; title: string; min: number; max: number; step: number; unit?: string }[] = [
+		{ name: 'colorCycleSpeed', title: 'Color Cycle Speed', min: 0, max: 5, step: 0.1 },
+		{ name: 'speed', title: 'Speed', min: 0, max: 1.5, step: 0.01 },
+		{ name: 'lineCount', title: 'Line Count', min: 12, max: 160, step: 1 },
+		{ name: 'lineWidth', title: 'Line Width', min: 0.5, max: 4, step: 0.05, unit: 'px' },
+		{ name: 'glow', title: 'Glow', min: 0, max: 2, step: 0.05 },
+		{ name: 'brightness', title: 'Brightness', min: 0.2, max: 2, step: 0.05 },
+		{ name: 'highlight', title: 'Highlight', min: 0, max: 1, step: 0.01 },
+		{ name: 'highlightWidth', title: 'Highlight Width', min: 0.4, max: 3, step: 0.05 },
+		{ name: 'warpIntensity', title: 'Warp Intensity', min: 0, max: 2.5, step: 0.05 },
+		{ name: 'warpScale', title: 'Warp Scale', min: 0.4, max: 2.5, step: 0.05 },
+		{ name: 'rotation', title: 'Rotation', min: -180, max: 180, step: 1, unit: '°' },
+		{ name: 'edgeFade', title: 'Edge Fade', min: 0, max: 1, step: 0.01 },
+		{ name: 'mouseInfluence', title: 'Mouse Influence', min: 0, max: 3, step: 0.05 },
+		{ name: 'opacity', title: 'Opacity', min: 0, max: 1, step: 0.01 }
+	];
 
-	const hasChanges = $derived(
-		speed !== D.speed ||
-			innerLineCount !== D.innerLineCount ||
-			outerLineCount !== D.outerLineCount ||
-			warpIntensity !== D.warpIntensity ||
-			rotation !== D.rotation ||
-			edgeFadeWidth !== D.edgeFadeWidth ||
-			colorCycleSpeed !== D.colorCycleSpeed ||
-			brightness !== D.brightness ||
-			color1 !== D.color1 ||
-			color2 !== D.color2 ||
-			color3 !== D.color3 ||
-			enableMouseInteraction !== D.enableMouseInteraction ||
-			mouseInfluence !== D.mouseInfluence
-	);
+	const propData: PropRow[] = [
+		{ name: 'color1', type: 'string', default: "'#ffffff'", description: 'First color the lines blend through.' },
+		{ name: 'color2', type: 'string', default: "'#ffffff'", description: 'Second color the lines blend through.' },
+		{ name: 'color3', type: 'string', default: "'#ffffff'", description: 'Third color the lines blend through.' },
+		{
+			name: 'colorCycleSpeed',
+			type: 'number',
+			default: '1',
+			description: 'How fast the colors drift across the lines. 0 keeps them in place.'
+		},
+		{ name: 'speed', type: 'number', default: '0.3', description: 'How fast the waves flow. 0 freezes them.' },
+		{
+			name: 'lineCount',
+			type: 'number',
+			default: '72',
+			description: 'Number of lines across the height of the container.'
+		},
+		{ name: 'lineWidth', type: 'number', default: '1.3', description: 'Thickness of the lines, in px.' },
+		{ name: 'glow', type: 'number', default: '0.6', description: 'Strength of the soft glow around each line.' },
+		{ name: 'brightness', type: 'number', default: '1', description: 'Overall brightness of the lines.' },
+		{
+			name: 'highlight',
+			type: 'number',
+			default: '1',
+			description:
+				'Strength of the band of light that drifts through the lines, from 0 to 1. At 0 every line is lit evenly.'
+		},
+		{
+			name: 'highlightWidth',
+			type: 'number',
+			default: '1',
+			description: 'Width of the band of light. Higher values light more lines at once.'
+		},
+		{ name: 'warpIntensity', type: 'number', default: '1', description: 'How strongly the lines bend into waves.' },
+		{
+			name: 'warpScale',
+			type: 'number',
+			default: '1',
+			description: 'Size of the waves. Higher values give broad, sweeping curves.'
+		},
+		{ name: 'rotation', type: 'number', default: '-33', description: 'Angle of the lines, in degrees.' },
+		{
+			name: 'edgeFade',
+			type: 'number',
+			default: '0',
+			description: 'Fades the lines out toward the edges of the container, from 0 to 1.'
+		},
+		{
+			name: 'enableMouseInteraction',
+			type: 'boolean',
+			default: 'true',
+			description: 'The lines spread apart and light up around the cursor.'
+		},
+		{
+			name: 'mouseInfluence',
+			type: 'number',
+			default: '2',
+			description: 'How strongly the lines react to the cursor.'
+		},
+		{
+			name: 'clickRipple',
+			type: 'boolean',
+			default: 'true',
+			description: 'Clicking sends a smooth wave rolling out through the lines.'
+		},
+		{ name: 'intro', type: 'boolean', default: 'true', description: 'The lines draw in across the container on mount.' },
+		{
+			name: 'lightMode',
+			type: 'boolean',
+			default: 'false',
+			description: 'Draws the lines as ink for light backgrounds. Colors turn into deeper inks of the same hue.'
+		},
+		{ name: 'opacity', type: 'number', default: '1', description: 'Overall opacity, from 0 to 1.' },
+		{
+			name: 'maxDevicePixelRatio',
+			type: 'number',
+			default: '2',
+			description: 'Highest pixel ratio the canvas renders at.'
+		},
+		{ name: 'className', type: 'string', default: "''", description: 'Extra class names for the container.' },
+		{ name: 'style', type: 'string', default: '-', description: 'Inline styles for the container.' }
+	];
 
-	function reset() {
-		speed = D.speed;
-		innerLineCount = D.innerLineCount;
-		outerLineCount = D.outerLineCount;
-		warpIntensity = D.warpIntensity;
-		rotation = D.rotation;
-		edgeFadeWidth = D.edgeFadeWidth;
-		colorCycleSpeed = D.colorCycleSpeed;
-		brightness = D.brightness;
-		color1 = D.color1;
-		color2 = D.color2;
-		color3 = D.color3;
-		enableMouseInteraction = D.enableMouseInteraction;
-		mouseInfluence = D.mouseInfluence;
-	}
-
-	const usage = $derived(`${sO}
+	const usage = `<script lang="ts">
   import LineWaves from '$lib/components/LineWaves.svelte';
-${sC}
+</${'script'}>
 
 <div style="width: 100%; height: 600px; position: relative;">
-  <LineWaves color1="${color1}" color2="${color2}" color3="${color3}" />
-</div>`);
+  <LineWaves
+    color1="#ffffff"
+    color2="#ffffff"
+    color3="#ffffff"
+    speed={0.3}
+    lineCount={72}
+    lineWidth={1.3}
+    highlight={1}
+    warpIntensity={1}
+    rotation={-33}
+    enableMouseInteraction={true}
+  />
+</div>`;
 
-	const props: PropRow[] = [
-		{ name: 'speed', type: 'number', default: '0.3', description: 'Animation speed.' },
-		{ name: 'innerLineCount', type: 'number', default: '32', description: 'Inner area line count.' },
-		{ name: 'outerLineCount', type: 'number', default: '36', description: 'Outer area line count.' },
-		{ name: 'warpIntensity', type: 'number', default: '1', description: 'Warp intensity.' },
-		{ name: 'rotation', type: 'number', default: '-45', description: 'Rotation in degrees.' },
-		{ name: 'edgeFadeWidth', type: 'number', default: '0', description: 'Edge fade width.' },
-		{ name: 'colorCycleSpeed', type: 'number', default: '1', description: 'Color cycle speed.' },
-		{ name: 'brightness', type: 'number', default: '0.2', description: 'Overall brightness.' },
-		{ name: 'color1', type: 'string', default: '"#ffffff"', description: 'First color.' },
-		{ name: 'color2', type: 'string', default: '"#ffffff"', description: 'Second color.' },
-		{ name: 'color3', type: 'string', default: '"#ffffff"', description: 'Third color.' },
-		{ name: 'enableMouseInteraction', type: 'boolean', default: 'true', description: 'Mouse interaction.' },
-		{ name: 'mouseInfluence', type: 'number', default: '2', description: 'Mouse influence amount.' }
-	];
+	const demo = createComponentProps(DEFAULT_PROPS);
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, ...rest } = settings;
+		return rest;
+	});
+	let key = $state(0);
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value, { defaults: demo.defaultProps }), preset: value });
+	};
 </script>
 
-<svelte:head><title>Line Waves - svelte-bits</title></svelte:head>
-
-<h1 class="sub-category">Line Waves</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="LineWaves" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="relative h-[500px] w-full overflow-hidden rounded-[14px]">
-			<LineWaves {speed} {innerLineCount} {outerLineCount} {warpIntensity} {rotation} {edgeFadeWidth} {colorCycleSpeed} {brightness} {color1} {color2} {color3} {enableMouseInteraction} {mouseInfluence} />
-			<BackgroundContentToggle {showContent} onToggle={(v) => (showContent = v)} />
+<TabsLayout propsState={demo} componentName="LineWaves" {usage} {source} {propData} demoOnlyProps={['preset']}>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 500px; padding: 0; overflow: hidden;">
+			{#key key}
+				<LineWaves {...componentProps} />
+			{/key}
+			<BackgroundContent headline="Lines that flow like silk." />
+			<RefreshButton onClick={() => key++} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="line-waves" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewColorPicker title="Color 1" value={color1} onChange={(v) => (color1 = v)} />
-			<PreviewColorPicker title="Color 2" value={color2} onChange={(v) => (color2 = v)} />
-			<PreviewColorPicker title="Color 3" value={color3} onChange={(v) => (color3 = v)} />
-			<PreviewSlider title="Speed" min={0} max={2} step={0.05} value={speed} onChange={(v) => (speed = v)} />
-			<PreviewSlider title="Inner Lines" min={4} max={128} step={1} value={innerLineCount} onChange={(v) => (innerLineCount = v)} />
-			<PreviewSlider title="Outer Lines" min={4} max={128} step={1} value={outerLineCount} onChange={(v) => (outerLineCount = v)} />
-			<PreviewSlider title="Warp Intensity" min={0} max={3} step={0.05} value={warpIntensity} onChange={(v) => (warpIntensity = v)} />
-			<PreviewSlider title="Rotation" min={-180} max={180} step={1} value={rotation} onChange={(v) => (rotation = v)} />
-			<PreviewSlider title="Edge Fade Width" min={-1} max={1} step={0.05} value={edgeFadeWidth} onChange={(v) => (edgeFadeWidth = v)} />
-			<PreviewSlider title="Color Cycle Speed" min={0} max={3} step={0.05} value={colorCycleSpeed} onChange={(v) => (colorCycleSpeed = v)} />
-			<PreviewSlider title="Brightness" min={0} max={2} step={0.05} value={brightness} onChange={(v) => (brightness = v)} />
-			<PreviewSlider title="Mouse Influence" min={0} max={5} step={0.1} value={mouseInfluence} onChange={(v) => (mouseInfluence = v)} />
-			<PreviewSwitch title="Mouse Interaction" checked={enableMouseInteraction} onChange={(v) => (enableMouseInteraction = v)} />
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			{#each COLORS as color (color.name)}
+				<PreviewColorPickerCustom
+					title={color.title}
+					color={settings[color.name]}
+					onChange={(value) => demo.updateProp(color.name, value)}
+				/>
+			{/each}
+			{#each SLIDERS as slider (slider.name)}
+				<PreviewSlider
+					title={slider.title}
+					min={slider.min}
+					max={slider.max}
+					step={slider.step}
+					valueUnit={slider.unit}
+					value={settings[slider.name]}
+					onChange={(value) => demo.updateProp(slider.name, value)}
+				/>
+			{/each}
+			<PreviewSwitch
+				title="Mouse Interaction"
+				isChecked={settings.enableMouseInteraction}
+				onChange={(value) => demo.updateProp('enableMouseInteraction', value)}
+			/>
+			<PreviewSwitch
+				title="Click Ripple"
+				isChecked={settings.clickRipple}
+				onChange={(value) => demo.updateProp('clickRipple', value)}
+			/>
+			<PreviewSwitch
+				title="Intro"
+				isChecked={settings.intro}
+				onChange={(value) => {
+					demo.updateProp('intro', value);
+					key++;
+				}}
+			/>
+			<PreviewSwitch
+				title="Light Mode"
+				isChecked={settings.lightMode}
+				onChange={(value) => demo.updateProp('lightMode', value)}
+			/>
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>

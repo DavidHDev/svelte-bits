@@ -1,258 +1,760 @@
 <!-- @svelte-bits
 {
-  "title": "Elastic Slider",
-  "description": "Slider that stretches with overshoot decay and bounce-back spring (motion).",
-  "dependencies": ["motion"]
+  "title": "ElasticSlider",
+  "description": "A slider that grows under your cursor and stretches like rubber when pulled past either end, then springs back.",
+  "dependencies": ["@hugeicons/svelte", "@hugeicons/core-free-icons"]
 }
 -->
-<script lang="ts">
-	import { type Snippet, onMount } from 'svelte';
-	import { motionValue, animate } from 'motion';
+<script module lang="ts">
+	import type { Snippet } from 'svelte';
 
-	type Props = {
+	export interface ElasticSliderProps {
+		value?: number;
 		defaultValue?: number;
 		startingValue?: number;
 		maxValue?: number;
-		class?: string;
 		isStepped?: boolean;
 		stepSize?: number;
-		leftIcon?: Snippet;
-		rightIcon?: Snippet;
+		onChange?: (value: number) => void;
+		onChangeEnd?: (value: number) => void;
+		orientation?: 'horizontal' | 'vertical';
+		leftIcon?: Snippet | null;
+		rightIcon?: Snippet | null;
+		iconPlacement?: 'outside' | 'inside';
+		valuePosition?: 'top' | 'bubble' | 'inside' | 'none';
+		formatValue?: (value: number) => string;
+		ticks?: boolean | number[];
+		thumb?: boolean;
+		fillFrom?: number;
+		thickness?: number;
+		activeThickness?: number;
+		radius?: number;
+		restOpacity?: number;
+		growOnHover?: boolean;
+		maxStretch?: number;
+		bounce?: number;
+		jumpToClick?: boolean;
+		wheel?: boolean;
+		trackColor?: string;
+		rangeColor?: string;
+		iconColor?: string;
+		contentColor?: string;
+		fillContentColor?: string;
+		thumbColor?: string;
+		disabled?: boolean;
+		ariaLabel?: string;
+		class?: string;
+		style?: string;
+	}
+
+	interface Motion {
+		p: number;
+		vp: number;
+		target: number;
+		s: number;
+		vs: number;
+		side: number;
+		held: boolean;
+		a: number;
+		va: number;
+		goal: number;
+		length: number;
+		dragging: boolean;
+		hovered: boolean;
+		focused: boolean;
+		raf: number;
+		last: number;
+		ready: boolean;
+	}
+
+	interface Drag {
+		id: number;
+		origin: number;
+		from: number | null;
+	}
+
+	const ROOT =
+		'group/es flex w-48 touch-none flex-col items-center gap-2 text-inherit select-none [-webkit-tap-highlight-color:transparent] data-[disabled]:pointer-events-none data-[disabled]:opacity-45 data-[orientation=vertical]:h-48 data-[orientation=vertical]:w-auto';
+	const VALUE = 'text-xs leading-none font-medium tabular-nums opacity-60';
+	const BODY =
+		'flex min-h-0 w-full flex-1 items-center gap-3 group-data-[orientation=vertical]/es:h-full group-data-[orientation=vertical]/es:w-auto group-data-[orientation=vertical]/es:flex-col-reverse';
+	const ICON =
+		'grid shrink-0 place-items-center text-[color:var(--elastic-slider-icon,currentColor)] will-change-transform';
+	const ICON_INNER = 'grid place-items-center';
+	const HIT =
+		'group/hit relative flex h-[var(--elastic-slider-hit,34px)] min-w-0 flex-1 cursor-grab touch-none items-center outline-none data-[dragging]:cursor-grabbing group-data-[orientation=vertical]/es:h-auto group-data-[orientation=vertical]/es:min-h-0 group-data-[orientation=vertical]/es:w-[var(--elastic-slider-hit,34px)] group-data-[orientation=vertical]/es:flex-col group-data-[orientation=vertical]/es:justify-end';
+	const TRACK =
+		'relative h-1.5 w-full shrink-0 overflow-hidden rounded-[var(--elastic-slider-radius,999px)] [background:var(--elastic-slider-track)] will-change-transform group-focus-visible/hit:outline-2 group-focus-visible/hit:outline-offset-3 group-focus-visible/hit:outline-current group-data-[orientation=vertical]/es:h-full group-data-[orientation=vertical]/es:w-1.5';
+	const RANGE = 'absolute inset-0 [background:var(--elastic-slider-range)] [clip-path:inset(0_100%_0_0)]';
+	const CONTENT =
+		'pointer-events-none absolute inset-0 flex items-center justify-between px-[var(--elastic-slider-pad,12px)] text-[13px] leading-none font-semibold tabular-nums opacity-[var(--elastic-slider-reveal,1)] *:grid *:place-items-center *:[transform:var(--elastic-slider-unscale,none)] group-data-[orientation=vertical]/es:flex-col-reverse group-data-[orientation=vertical]/es:px-0 group-data-[orientation=vertical]/es:py-[var(--elastic-slider-pad,12px)] text-[color:var(--elastic-slider-content)]';
+	const FILL_CONTENT =
+		'pointer-events-none absolute inset-0 flex items-center justify-between px-[var(--elastic-slider-pad,12px)] text-[13px] leading-none font-semibold tabular-nums opacity-[var(--elastic-slider-reveal,1)] *:grid *:place-items-center *:[transform:var(--elastic-slider-unscale,none)] group-data-[orientation=vertical]/es:flex-col-reverse group-data-[orientation=vertical]/es:px-0 group-data-[orientation=vertical]/es:py-[var(--elastic-slider-pad,12px)] text-[color:var(--elastic-slider-fill-content)]';
+	const TICK =
+		'absolute top-1/2 -mt-[1.5px] -ml-[1.5px] size-[3px] rounded-full group-data-[orientation=vertical]/es:top-auto group-data-[orientation=vertical]/es:left-1/2 group-data-[orientation=vertical]/es:mt-0 group-data-[orientation=vertical]/es:-mb-[1.5px] [background:var(--elastic-slider-content)] opacity-40';
+	const FILL_TICK =
+		'absolute top-1/2 -mt-[1.5px] -ml-[1.5px] size-[3px] rounded-full group-data-[orientation=vertical]/es:top-auto group-data-[orientation=vertical]/es:left-1/2 group-data-[orientation=vertical]/es:mt-0 group-data-[orientation=vertical]/es:-mb-[1.5px] [background:var(--elastic-slider-fill-content)] opacity-50';
+	const THUMB =
+		'pointer-events-none absolute top-1/2 left-0 mt-[calc(var(--elastic-slider-thumb-size,18px)/-2)] ml-[calc(var(--elastic-slider-thumb-size,18px)/-2)] size-[var(--elastic-slider-thumb-size,18px)] rounded-full [background:var(--elastic-slider-thumb,#ffffff)] shadow-[0_1px_4px_rgba(0,0,0,0.28),0_0_0_0.5px_rgba(0,0,0,0.12)] will-change-transform group-data-[orientation=vertical]/es:top-auto group-data-[orientation=vertical]/es:bottom-0 group-data-[orientation=vertical]/es:left-1/2 group-data-[orientation=vertical]/es:mt-0 group-data-[orientation=vertical]/es:mb-[calc(var(--elastic-slider-thumb-size,18px)/-2)]';
+	const BUBBLE =
+		'pointer-events-none absolute bottom-[calc(50%+var(--elastic-slider-bubble-offset,14px))] left-0 origin-bottom rounded-lg px-2 py-[5px] text-xs leading-[1.2] font-semibold whitespace-nowrap tabular-nums opacity-0 [background:var(--elastic-slider-range)] will-change-[transform,opacity] group-data-[orientation=vertical]/es:bottom-0 group-data-[orientation=vertical]/es:left-[calc(50%+var(--elastic-slider-bubble-offset,14px))] group-data-[orientation=vertical]/es:origin-left';
+	const BUBBLE_TEXT = 'text-[color:var(--elastic-slider-fill-content)]';
+
+	const TAU = Math.PI * 2;
+	const VALUE_POSITIONS = ['top', 'bubble', 'inside', 'none'];
+	const DARK_INK = 'rgba(20, 17, 14, 0.86)';
+	const LIGHT_INK = 'rgba(255, 255, 255, 0.94)';
+
+	const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+	const decimalsOf = (step: number) => {
+		const text = String(step);
+		return text.includes('.') ? text.split('.')[1].length : 0;
 	};
 
+	const rubber = (distance: number, limit: number) =>
+		limit > 0 ? 2 * (1 / (1 + Math.exp(-distance / limit)) - 0.5) * limit : 0;
+
+	const prefersReduced = () =>
+		typeof window !== 'undefined' && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
+
+	let probe: CanvasRenderingContext2D | null = null;
+
+	const readColor = (text: string): number[] | null => {
+		const match = /^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)$/.exec(text);
+		if (match)
+			return [Number(match[1]), Number(match[2]), Number(match[3]), match[4] === undefined ? 1 : Number(match[4])];
+		if (typeof document === 'undefined') return null;
+		if (!probe) {
+			const canvas = document.createElement('canvas');
+			canvas.width = 1;
+			canvas.height = 1;
+			probe = canvas.getContext('2d', { willReadFrequently: true });
+		}
+		if (!probe) return null;
+		probe.clearRect(0, 0, 1, 1);
+		probe.fillStyle = '#000000';
+		probe.fillStyle = text;
+		probe.fillRect(0, 0, 1, 1);
+		const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data;
+		return [r, g, b, a / 255];
+	};
+</script>
+
+<script lang="ts">
+	import { untrack } from 'svelte';
+	import { HugeiconsIcon } from '@hugeicons/svelte';
+	import { VolumeHighIcon, VolumeLowIcon } from '@hugeicons/core-free-icons';
+
 	let {
+		value,
 		defaultValue = 50,
 		startingValue = 0,
 		maxValue = 100,
-		class: className = '',
 		isStepped = false,
 		stepSize = 1,
+		onChange,
+		onChangeEnd,
+		orientation = 'horizontal',
 		leftIcon,
-		rightIcon
-	}: Props = $props();
+		rightIcon,
+		iconPlacement = 'outside',
+		valuePosition = 'top',
+		formatValue,
+		ticks = false,
+		thumb = false,
+		fillFrom,
+		thickness = 6,
+		activeThickness = 12,
+		radius,
+		restOpacity = 0.7,
+		growOnHover = true,
+		maxStretch = 50,
+		bounce = 0.5,
+		jumpToClick = true,
+		wheel = false,
+		trackColor = 'color-mix(in srgb, currentColor 18%, transparent)',
+		rangeColor = 'currentColor',
+		iconColor = 'currentColor',
+		contentColor = 'currentColor',
+		fillContentColor = 'auto',
+		thumbColor = '#ffffff',
+		disabled = false,
+		ariaLabel = 'Slider',
+		class: className = '',
+		style = ''
+	}: ElasticSliderProps = $props();
 
-	const MAX_OVERFLOW = 50;
-	let value = $state(defaultValue);
-	$effect(() => { value = defaultValue; });
+	let rootEl: HTMLDivElement | null = $state(null);
+	let hitEl: HTMLDivElement | null = $state(null);
+	let bodyEl: HTMLDivElement | null = $state(null);
+	let trackEl: HTMLDivElement | null = $state(null);
+	let rangeEl: HTMLDivElement | null = $state(null);
+	let thumbEl: HTMLSpanElement | null = $state(null);
+	let bubbleEl: HTMLSpanElement | null = $state(null);
+	let startIconEl: HTMLSpanElement | null = $state(null);
+	let endIconEl: HTMLSpanElement | null = $state(null);
 
-	let region: 'left' | 'middle' | 'right' = 'middle';
-	let sliderRef: HTMLDivElement;
-	let trackWrapperEl: HTMLDivElement;
-	let leftIconEl: HTMLDivElement;
-	let rightIconEl: HTMLDivElement;
-	let leftIconInner: HTMLDivElement;
-	let rightIconInner: HTMLDivElement;
-	let outerEl: HTMLDivElement;
+	const motion: Motion = {
+		p: 0,
+		vp: 0,
+		target: 0,
+		s: 0,
+		vs: 0,
+		side: 1,
+		held: false,
+		a: 0,
+		va: 0,
+		goal: 0,
+		length: 0,
+		dragging: false,
+		hovered: false,
+		focused: false,
+		raf: 0,
+		last: 0,
+		ready: false
+	};
+	let drag: Drag | null = null;
 
-	const clientX = motionValue(0);
-	const overflow = motionValue(0);
-	const scale = motionValue(1);
+	const lo = $derived(Math.min(startingValue, maxValue));
+	const hi = $derived(Math.max(startingValue, maxValue));
+	const span = $derived(hi - lo || 1);
+	const step = $derived(isStepped && stepSize > 0 ? stepSize : 0);
+	const vertical = $derived(orientation === 'vertical');
+	const controlled = $derived(value !== undefined);
+	let inner = $state(untrack(() => defaultValue));
+	const current = $derived(clamp(controlled ? (value as number) : inner, lo, hi));
+	let currentValue = untrack(() => current);
 
-	function decay(v: number, max: number): number {
-		if (max === 0) return 0;
-		const entry = v / max;
-		const sigmoid = 2 * (1 / (1 + Math.exp(-entry)) - 0.5);
-		return sigmoid * max;
-	}
-
-	function applyTransforms() {
-		if (!sliderRef || !trackWrapperEl || !outerEl) return;
-		const o = overflow.get();
-		const s = scale.get();
-		const cx = clientX.get();
-		const { left, width } = sliderRef.getBoundingClientRect();
-
-		const opacity = 0.7 + ((s - 1) / 0.2) * 0.3;
-		outerEl.style.transform = `scale(${s})`;
-		outerEl.style.opacity = String(opacity);
-
-		const sx = 1 + o / Math.max(width, 1);
-		const sy = 1 + (Math.min(o, MAX_OVERFLOW) / MAX_OVERFLOW) * (0.8 - 1);
-		const origin = cx < left + width / 2 ? 'right' : 'left';
-		const height = 6 + ((s - 1) / 0.2) * 6;
-		const margin = ((s - 1) / 0.2) * -3;
-		trackWrapperEl.style.transform = `scaleX(${sx}) scaleY(${sy})`;
-		trackWrapperEl.style.transformOrigin = origin;
-		trackWrapperEl.style.height = `${height}px`;
-		trackWrapperEl.style.marginTop = `${margin}px`;
-		trackWrapperEl.style.marginBottom = `${margin}px`;
-
-		const leftX = region === 'left' ? -o / Math.max(s, 0.0001) : 0;
-		const rightX = region === 'right' ? o / Math.max(s, 0.0001) : 0;
-		if (leftIconEl) leftIconEl.style.transform = `translateX(${leftX}px)`;
-		if (rightIconEl) rightIconEl.style.transform = `translateX(${rightX}px)`;
-	}
-
-	function pulseIcon(el: HTMLElement) {
-		el.animate(
-			[{ transform: 'scale(1)' }, { transform: 'scale(1.4)' }, { transform: 'scale(1)' }],
-			{ duration: 250, easing: 'ease-out' }
-		);
-	}
-
-	onMount(() => {
-		const unsubs = [
-			overflow.on('change', applyTransforms),
-			scale.on('change', applyTransforms),
-			clientX.on('change', (latest: number) => {
-				if (!sliderRef) return;
-				const { left, right } = sliderRef.getBoundingClientRect();
-				let newOverflow: number;
-				if (latest < left) {
-					if (region !== 'left' && leftIconInner) pulseIcon(leftIconInner);
-					region = 'left';
-					newOverflow = left - latest;
-				} else if (latest > right) {
-					if (region !== 'right' && rightIconInner) pulseIcon(rightIconInner);
-					region = 'right';
-					newOverflow = latest - right;
-				} else {
-					region = 'middle';
-					newOverflow = 0;
-				}
-				overflow.jump(decay(newOverflow, MAX_OVERFLOW));
-				applyTransforms();
-			})
-		];
-		applyTransforms();
-		return () => unsubs.forEach((u) => u());
+	const settings = $derived({
+		lo,
+		hi,
+		span,
+		step,
+		vertical,
+		origin: clamp(((fillFrom ?? lo) - lo) / span, 0, 1),
+		thickness: Math.max(1, thickness),
+		activeThickness: Math.max(1, activeThickness),
+		radius,
+		restOpacity: clamp(restOpacity, 0, 1),
+		growOnHover,
+		maxStretch: Math.max(0, maxStretch),
+		bounce: clamp(bounce, 0, 0.95),
+		jumpToClick,
+		controlled,
+		onChange,
+		onChangeEnd
 	});
 
-	function onPointerMove(e: PointerEvent) {
-		if (e.buttons > 0 && sliderRef) {
-			const { left, width } = sliderRef.getBoundingClientRect();
-			let newValue = startingValue + ((e.clientX - left) / width) * (maxValue - startingValue);
-			if (isStepped) newValue = Math.round(newValue / stepSize) * stepSize;
-			newValue = Math.min(Math.max(newValue, startingValue), maxValue);
-			value = newValue;
-			clientX.jump(e.clientX);
-		}
-	}
-	function onPointerDown(e: PointerEvent) {
-		onPointerMove(e);
-		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-	}
-	function onPointerUp() {
-		animate(overflow, 0, { type: 'spring', bounce: 0.5 });
-	}
-	function onEnter() { animate(scale, 1.2); }
-	function onLeave() { animate(scale, 1); }
+	const snap = (raw: number) => {
+		const s = settings;
+		let next = clamp(raw, s.lo, s.hi);
+		if (s.step) next = clamp(s.lo + Math.round((next - s.lo) / s.step) * s.step, s.lo, s.hi);
+		return Number(next.toFixed(10));
+	};
 
-	const rangePercentage = $derived(((value - startingValue) / Math.max(1e-6, maxValue - startingValue)) * 100);
+	const paint = () => {
+		const m = motion;
+		const s = settings;
+		const track = trackEl;
+		const range = rangeEl;
+		if (!track || !range) return;
+		const thick = s.thickness + (s.activeThickness - s.thickness) * m.a;
+		track.style.width = s.vertical ? `${thick.toFixed(2)}px` : '';
+		track.style.height = s.vertical ? '' : `${thick.toFixed(2)}px`;
+		track.style.setProperty('--elastic-slider-reveal', clamp((thick - 14) / 10, 0, 1).toFixed(3));
+		const length = Math.max(1, m.length);
+		const along = 1 + m.s / length;
+		const across = 1 - 0.22 * clamp(m.s / Math.max(1, s.maxStretch), -1, 1);
+		const atEnd = m.side > 0;
+		track.style.transformOrigin = s.vertical ? (atEnd ? '50% 100%' : '50% 0%') : atEnd ? '0% 50%' : '100% 50%';
+		const scaleX = s.vertical ? across : along;
+		const scaleY = s.vertical ? along : across;
+		track.style.transform = `scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
+		track.style.setProperty(
+			'--elastic-slider-unscale',
+			`scale(${(1 / scaleX).toFixed(4)}, ${(1 / scaleY).toFixed(4)})`
+		);
+		const p = clamp(m.p, 0, 1);
+		const from = (Math.min(s.origin, p) * 100).toFixed(3);
+		const to = ((1 - Math.max(s.origin, p)) * 100).toFixed(3);
+		const round = (s.radius ?? thick / 2).toFixed(2);
+		range.style.clipPath = s.vertical
+			? `inset(${to}% 0 ${from}% 0 round ${round}px)`
+			: `inset(0 ${to}% 0 ${from}% round ${round}px)`;
+		const position = atEnd ? p * length * along : length - (1 - p) * length * along;
+		const shift = s.vertical
+			? `translate3d(0, ${(-position).toFixed(2)}px, 0)`
+			: `translate3d(${position.toFixed(2)}px, 0, 0)`;
+		if (thumbEl) thumbEl.style.transform = `${shift} scale(${(1 + 0.12 * m.a).toFixed(3)})`;
+		if (bubbleEl) {
+			const center = s.vertical ? 'translate(0, 50%)' : 'translate(-50%, 0)';
+			bubbleEl.style.transform = `${shift} ${center} scale(${(0.7 + 0.3 * m.a).toFixed(3)})`;
+			bubbleEl.style.opacity = clamp(m.a * 1.4 - 0.2, 0, 1).toFixed(3);
+		}
+		const startShift = atEnd ? 0 : m.s;
+		const endShift = atEnd ? m.s : 0;
+		const iconScale = (1 + 0.08 * m.a).toFixed(3);
+		if (startIconEl) {
+			startIconEl.style.transform = s.vertical
+				? `translate3d(0, ${startShift.toFixed(2)}px, 0) scale(${iconScale})`
+				: `translate3d(${(-startShift).toFixed(2)}px, 0, 0) scale(${iconScale})`;
+		}
+		if (endIconEl) {
+			endIconEl.style.transform = s.vertical
+				? `translate3d(0, ${(-endShift).toFixed(2)}px, 0) scale(${iconScale})`
+				: `translate3d(${endShift.toFixed(2)}px, 0, 0) scale(${iconScale})`;
+		}
+		if (bodyEl) {
+			bodyEl.style.opacity = s.restOpacity < 1 ? (s.restOpacity + (1 - s.restOpacity) * m.a).toFixed(3) : '';
+		}
+	};
+
+	const frame = (now: number) => {
+		const m = motion;
+		m.raf = 0;
+		const s = settings;
+		const elapsed = clamp((now - m.last) / 1000, 0, 1 / 20);
+		m.last = now;
+		if (prefersReduced()) {
+			m.p = m.target;
+			m.vp = 0;
+			if (!m.held) {
+				m.s = 0;
+				m.vs = 0;
+			}
+			m.a = m.goal;
+			m.va = 0;
+		} else {
+			const steps = Math.max(1, Math.ceil(elapsed / (1 / 240)));
+			const dt = elapsed / steps;
+			const fillOmega = TAU / (m.dragging ? 0.09 : 0.3);
+			const fillZeta = m.dragging ? 1 : 0.86;
+			const stretchOmega = TAU / 0.42;
+			const stretchZeta = 1 - 0.9 * s.bounce;
+			const activeOmega = TAU / 0.32;
+			for (let i = 0; i < steps; i++) {
+				m.vp += (-fillOmega * fillOmega * (m.p - m.target) - 2 * fillZeta * fillOmega * m.vp) * dt;
+				m.p += m.vp * dt;
+				if (!m.held) {
+					m.vs += (-stretchOmega * stretchOmega * m.s - 2 * stretchZeta * stretchOmega * m.vs) * dt;
+					m.s += m.vs * dt;
+				}
+				m.va += (-activeOmega * activeOmega * (m.a - m.goal) - 2 * 0.9 * activeOmega * m.va) * dt;
+				m.a += m.va * dt;
+			}
+		}
+		const settled =
+			Math.abs(m.p - m.target) < 0.0004 &&
+			Math.abs(m.vp) < 0.002 &&
+			(m.held || (Math.abs(m.s) < 0.05 && Math.abs(m.vs) < 0.5)) &&
+			Math.abs(m.a - m.goal) < 0.002 &&
+			Math.abs(m.va) < 0.005;
+		if (settled) {
+			m.p = m.target;
+			m.vp = 0;
+			m.a = m.goal;
+			m.va = 0;
+			if (!m.held) {
+				m.s = 0;
+				m.vs = 0;
+			}
+		}
+		paint();
+		if (!settled || m.dragging) m.raf = requestAnimationFrame(frame);
+	};
+
+	const kick = () => {
+		const m = motion;
+		if (m.raf || typeof window === 'undefined') return;
+		m.last = performance.now();
+		m.raf = requestAnimationFrame(frame);
+	};
+
+	const autoInk = () => {
+		const root = rootEl;
+		const range = rangeEl;
+		if (!root || !range || fillContentColor !== 'auto') return;
+		const color = readColor(getComputedStyle(range).backgroundColor);
+		const ink =
+			!color || color[3] < 0.5
+				? 'var(--elastic-slider-content)'
+				: (0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2]) / 255 > 0.55
+					? DARK_INK
+					: LIGHT_INK;
+		root.style.setProperty('--elastic-slider-fill-content', ink);
+	};
+
+	const refreshGoal = () => {
+		const m = motion;
+		m.goal = (m.hovered && settings.growOnHover) || m.dragging || m.focused ? 1 : 0;
+		kick();
+	};
+
+	const pulse = (side: number) => {
+		const icon = (side > 0 ? endIconEl : startIconEl)?.firstElementChild;
+		if (!icon || prefersReduced()) return;
+		icon.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1)' }], {
+			duration: 280,
+			easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
+		});
+	};
+
+	const bump = (side: number) => {
+		const m = motion;
+		const s = settings;
+		if (!s.maxStretch || m.held || Math.abs(m.vs) > 40 || Math.abs(m.s) > 2) return;
+		m.side = side;
+		m.vs = s.maxStretch * 5.5;
+		pulse(side);
+		kick();
+	};
+
+	const commit = (next: number) => {
+		const s = settings;
+		motion.target = (next - s.lo) / s.span;
+		kick();
+		if (next === currentValue) return;
+		currentValue = next;
+		if (!s.controlled) inner = next;
+		s.onChange?.(next);
+	};
+
+	$effect(() => {
+		const now = current;
+		const low = lo;
+		const range = span;
+		if (!trackEl || !rangeEl) return;
+		untrack(() => {
+			const m = motion;
+			currentValue = now;
+			const fraction = (now - low) / range;
+			if (!m.dragging) m.target = fraction;
+			if (!m.ready) {
+				m.ready = true;
+				m.p = fraction;
+				paint();
+				return;
+			}
+			kick();
+		});
+	});
+
+	$effect(() => {
+		const hit = hitEl;
+		const isVertical = vertical;
+		if (!hit) return;
+		const measure = () => {
+			motion.length = isVertical ? hit.clientHeight : hit.clientWidth;
+			paint();
+		};
+		untrack(measure);
+		if (typeof ResizeObserver === 'undefined') return;
+		const observer = new ResizeObserver(measure);
+		observer.observe(hit);
+		return () => observer.disconnect();
+	});
+
+	$effect(() => {
+		void settings;
+		void rangeColor;
+		void trackColor;
+		void contentColor;
+		void fillContentColor;
+		void style;
+		void thumb;
+		void valuePosition;
+		void ticks;
+		void iconPlacement;
+		void leftIcon;
+		void rightIcon;
+		void current;
+		void thumbEl;
+		void bubbleEl;
+		untrack(() => {
+			autoInk();
+			paint();
+		});
+	});
+
+	$effect(() => {
+		void growOnHover;
+		untrack(refreshGoal);
+	});
+
+	$effect(() => {
+		const hit = hitEl;
+		if (!hit || !wheel || disabled) return;
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const onWheel = (event: WheelEvent) => {
+			event.preventDefault();
+			const s = settings;
+			const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? -event.deltaY : event.deltaX;
+			if (!delta) return;
+			const amount = s.step ? Math.sign(delta) * s.step : (delta * s.span) / 800;
+			const next = snap(currentValue + amount);
+			if (next === currentValue) {
+				bump(Math.sign(delta));
+				return;
+			}
+			commit(next);
+			clearTimeout(timer);
+			timer = setTimeout(() => settings.onChangeEnd?.(currentValue), 200);
+		};
+		hit.addEventListener('wheel', onWheel, { passive: false });
+		return () => {
+			clearTimeout(timer);
+			hit.removeEventListener('wheel', onWheel);
+		};
+	});
+
+	$effect(() => {
+		return () => cancelAnimationFrame(motion.raf);
+	});
+
+	const along = (event: PointerEvent) => {
+		const rect = hitEl?.getBoundingClientRect();
+		if (!rect) return 0;
+		return settings.vertical ? rect.bottom - event.clientY : event.clientX - rect.left;
+	};
+
+	const follow = (event: PointerEvent) => {
+		const d = drag;
+		if (!d) return;
+		const m = motion;
+		const s = settings;
+		const length = Math.max(1, m.length);
+		const position = along(event);
+		const fraction = d.from === null ? position / length : d.from + (position - d.origin) / length;
+		const over = fraction < 0 ? -fraction * length : fraction > 1 ? (fraction - 1) * length : 0;
+		if (over > 0 && s.maxStretch > 0) {
+			const side = fraction < 0 ? -1 : 1;
+			if (!m.held || m.side !== side) pulse(side);
+			m.held = true;
+			m.side = side;
+			m.s = rubber(over, s.maxStretch);
+			m.vs = 0;
+		} else if (m.held) {
+			m.held = false;
+		}
+		commit(snap(s.lo + clamp(fraction, 0, 1) * s.span));
+	};
+
+	const onPointerDown = (event: PointerEvent) => {
+		const hit = hitEl;
+		if (disabled || event.button !== 0 || !hit) return;
+		hit.setPointerCapture(event.pointerId);
+		const m = motion;
+		const s = settings;
+		drag = {
+			id: event.pointerId,
+			origin: along(event),
+			from: s.jumpToClick ? null : m.target
+		};
+		m.dragging = true;
+		hit.setAttribute('data-dragging', '');
+		refreshGoal();
+		if (s.jumpToClick) commit(snap(s.lo + clamp(along(event) / Math.max(1, m.length), 0, 1) * s.span));
+	};
+
+	const onPointerMove = (event: PointerEvent) => {
+		if (!drag || drag.id !== event.pointerId) return;
+		follow(event);
+	};
+
+	const release = () => {
+		if (!drag) return;
+		const m = motion;
+		drag = null;
+		m.dragging = false;
+		m.held = false;
+		hitEl?.removeAttribute('data-dragging');
+		refreshGoal();
+		settings.onChangeEnd?.(currentValue);
+	};
+
+	const onKeyDown = (event: KeyboardEvent) => {
+		if (disabled) return;
+		const s = settings;
+		const unit = s.step || s.span / 100;
+		const large = Math.max(unit, s.span / 10);
+		const now = currentValue;
+		const keys: Record<string, number> = {
+			ArrowRight: now + unit,
+			ArrowUp: now + unit,
+			ArrowLeft: now - unit,
+			ArrowDown: now - unit,
+			PageUp: now + large,
+			PageDown: now - large,
+			Home: s.lo,
+			End: s.hi
+		};
+		if (!(event.key in keys)) return;
+		event.preventDefault();
+		const wanted = keys[event.key];
+		const next = snap(wanted);
+		if (next === now) {
+			if (wanted !== now) bump(wanted > now ? 1 : -1);
+			return;
+		}
+		commit(next);
+		s.onChangeEnd?.(next);
+	};
+
+	const label = $derived(
+		formatValue ? formatValue(current) : step ? current.toFixed(decimalsOf(step)) : String(Math.round(current))
+	);
+	const place = $derived(VALUE_POSITIONS.includes(valuePosition) ? valuePosition : 'top');
+	const inside = $derived(iconPlacement === 'inside');
+	const hasLeft = $derived(leftIcon !== null);
+	const hasRight = $derived(rightIcon !== null);
+	const insideStart = $derived(inside && hasLeft);
+	const insideEndLabel = $derived(place === 'inside');
+	const insideEndIcon = $derived(!insideEndLabel && inside && hasRight);
+	const hasContent = $derived(insideStart || insideEndLabel || insideEndIcon);
+	const marks = $derived.by(() => {
+		const count = step ? Math.round((hi - lo) / step) : 0;
+		const tickValues = Array.isArray(ticks)
+			? ticks
+			: ticks
+				? count > 0 && count <= 40
+					? Array.from({ length: count + 1 }, (_, index) => lo + index * step)
+					: Array.from({ length: 11 }, (_, index) => lo + (index / 10) * (hi - lo))
+				: [];
+		return tickValues.map((tick) => (tick - lo) / span).filter((fraction) => fraction > 0.001 && fraction < 0.999);
+	});
+	const markStyle = (fraction: number) =>
+		vertical ? `bottom: ${fraction * 100}%` : `left: ${fraction * 100}%`;
+	const thumbSize = $derived(clamp(activeThickness + 6, 16, 28));
+
+	const rootStyle = $derived(
+		[
+			`--elastic-slider-track: ${trackColor}`,
+			`--elastic-slider-range: ${rangeColor}`,
+			`--elastic-slider-icon: ${iconColor}`,
+			`--elastic-slider-content: ${contentColor}`,
+			...(fillContentColor !== 'auto' ? [`--elastic-slider-fill-content: ${fillContentColor}`] : []),
+			`--elastic-slider-thumb: ${thumbColor}`,
+			`--elastic-slider-thumb-size: ${thumbSize}px`,
+			`--elastic-slider-hit: ${Math.max(34, thickness, activeThickness)}px`,
+			`--elastic-slider-pad: ${Math.max(8, Math.round(thickness * 0.32))}px`,
+			`--elastic-slider-bubble-offset: ${(thumb ? thumbSize * 1.12 : activeThickness) / 2 + 8}px`,
+			...(radius !== undefined ? [`--elastic-slider-radius: ${radius}px`] : [])
+		].join('; ') + (style ? `; ${style}` : '')
+	);
 </script>
 
-<div class="slider-container {className}">
-	<div
-		bind:this={outerEl}
-		class="slider-wrapper"
-		onmouseenter={onEnter}
-		onmouseleave={onLeave}
-		ontouchstart={onEnter}
-		ontouchend={onLeave}
-		role="presentation"
-	>
-		<div bind:this={leftIconEl} class="slider-icon">
-			<div bind:this={leftIconInner} class="slider-icon-inner">
-				{#if leftIcon}{@render leftIcon()}{:else}<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M5 9v6h4l5 5V4L9 9H5zm11.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12z"/></svg>{/if}
-			</div>
-		</div>
+{#snippet startIcon()}
+	{#if leftIcon}
+		{@render leftIcon()}
+	{:else}
+		<HugeiconsIcon icon={VolumeLowIcon} size={20} strokeWidth={1.75} />
+	{/if}
+{/snippet}
+
+{#snippet endIcon()}
+	{#if rightIcon}
+		{@render rightIcon()}
+	{:else}
+		<HugeiconsIcon icon={VolumeHighIcon} size={20} strokeWidth={1.75} />
+	{/if}
+{/snippet}
+
+{#snippet content(name: string)}
+	{#if hasContent}
+		<span class={name}>
+			<span>
+				{#if insideStart}{@render startIcon()}{/if}
+			</span>
+			<span>
+				{#if insideEndLabel}
+					<span>{label}</span>
+				{:else if insideEndIcon}
+					{@render endIcon()}
+				{/if}
+			</span>
+		</span>
+	{/if}
+{/snippet}
+
+<div
+	bind:this={rootEl}
+	class={[ROOT, className].filter(Boolean).join(' ')}
+	style={rootStyle}
+	data-orientation={vertical ? 'vertical' : 'horizontal'}
+	data-disabled={disabled ? '' : undefined}
+	role="presentation"
+	onpointerenter={() => {
+		motion.hovered = true;
+		autoInk();
+		refreshGoal();
+	}}
+	onpointerleave={() => {
+		motion.hovered = false;
+		refreshGoal();
+	}}
+>
+	{#if place === 'top'}
+		<span class={VALUE} aria-hidden="true">{label}</span>
+	{/if}
+	<div class={BODY} bind:this={bodyEl}>
+		{#if !inside && hasLeft}
+			<span class={ICON} bind:this={startIconEl} aria-hidden="true">
+				<span class={ICON_INNER}>{@render startIcon()}</span>
+			</span>
+		{/if}
 		<div
-			bind:this={sliderRef}
-			class="slider-root"
-			onpointermove={onPointerMove}
-			onpointerdown={onPointerDown}
-			onpointerup={onPointerUp}
-			onpointercancel={onPointerUp}
-			onlostpointercapture={onPointerUp}
+			bind:this={hitEl}
+			class={HIT}
 			role="slider"
-			aria-valuemin={startingValue}
-			aria-valuemax={maxValue}
-			aria-valuenow={value}
-			tabindex="0"
+			tabindex={disabled ? -1 : 0}
+			aria-label={ariaLabel}
+			aria-valuemin={lo}
+			aria-valuemax={hi}
+			aria-valuenow={current}
+			aria-valuetext={label}
+			aria-orientation={vertical ? 'vertical' : 'horizontal'}
+			aria-disabled={disabled || undefined}
+			onpointerdown={onPointerDown}
+			onpointermove={onPointerMove}
+			onpointerup={release}
+			onpointercancel={release}
+			onlostpointercapture={release}
+			onkeydown={onKeyDown}
+			onfocus={(event) => {
+				motion.focused = event.currentTarget.matches(':focus-visible');
+				refreshGoal();
+			}}
+			onblur={() => {
+				motion.focused = false;
+				refreshGoal();
+			}}
 		>
-			<div bind:this={trackWrapperEl} class="slider-track-wrapper">
-				<div class="slider-track">
-					<div class="slider-range" style="width:{rangePercentage}%;"></div>
+			<div class={TRACK} bind:this={trackEl}>
+				{#each marks as fraction (fraction)}
+					<span class={TICK} style={markStyle(fraction)}></span>
+				{/each}
+				{@render content(CONTENT)}
+				<div class={RANGE} bind:this={rangeEl}>
+					{#each marks as fraction (fraction)}
+						<span class={FILL_TICK} style={markStyle(fraction)}></span>
+					{/each}
+					{@render content(FILL_CONTENT)}
 				</div>
 			</div>
+			{#if thumb}
+				<span class={THUMB} bind:this={thumbEl} aria-hidden="true"></span>
+			{/if}
+			{#if place === 'bubble'}
+				<span class={BUBBLE} bind:this={bubbleEl} aria-hidden="true">
+					<span class={BUBBLE_TEXT}>{label}</span>
+				</span>
+			{/if}
 		</div>
-		<div bind:this={rightIconEl} class="slider-icon">
-			<div bind:this={rightIconInner} class="slider-icon-inner">
-				{#if rightIcon}{@render rightIcon()}{:else}<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05a4.5 4.5 0 0 0 2.5-4.02zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg>{/if}
-			</div>
-		</div>
+		{#if !inside && hasRight}
+			<span class={ICON} bind:this={endIconEl} aria-hidden="true">
+				<span class={ICON_INNER}>{@render endIcon()}</span>
+			</span>
+		{/if}
 	</div>
-	<p class="value-indicator">{Math.round(value)}</p>
 </div>
-
-<style>
-	.slider-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		width: 12rem;
-	}
-	.slider-wrapper {
-		display: flex;
-		width: 100%;
-		touch-action: none;
-		user-select: none;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		opacity: 0.7;
-	}
-	.slider-icon {
-		color: #888;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-	.slider-icon-inner {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-	.slider-root {
-		position: relative;
-		display: flex;
-		width: 100%;
-		max-width: 200px;
-		flex-grow: 1;
-		cursor: grab;
-		touch-action: none;
-		user-select: none;
-		align-items: center;
-		padding: 1rem 0;
-	}
-	.slider-root:active { cursor: grabbing; }
-	.slider-track-wrapper {
-		display: flex;
-		flex-grow: 1;
-		height: 6px;
-	}
-	.slider-track {
-		position: relative;
-		height: 100%;
-		flex-grow: 1;
-		overflow: hidden;
-		border-radius: 9999px;
-		background-color: rgba(128, 128, 128, 0.4);
-	}
-	.slider-range {
-		position: absolute;
-		height: 100%;
-		background-color: #888;
-		border-radius: 9999px;
-	}
-	.value-indicator {
-		color: #808080;
-		position: absolute;
-		transform: translateY(-1rem);
-		font-size: 0.75rem;
-		font-weight: 500;
-		letter-spacing: 0.05em;
-	}
-</style>

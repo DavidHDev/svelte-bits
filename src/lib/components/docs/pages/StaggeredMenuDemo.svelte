@@ -4,11 +4,13 @@
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import StaggeredMenu from '$lib/components/library/Components/StaggeredMenu/StaggeredMenu.svelte';
 	import source from '$lib/components/library/Components/StaggeredMenu/StaggeredMenu.svelte?raw';
-	import logo from '$lib/assets/logo/svelte-bits-logo.svg';
+	import logoDark from '$lib/assets/logo/svelte-bits-logo.svg';
+	import logoLight from '$lib/assets/logo/svelte-bits-logo-black.svg';
+	import { theme } from '$lib/theme.svelte';
 
 	const DEFAULTS = { displaySocials: true, accentColor: '#FF8A4C', menuButtonColor: '#ffffff', position: 'right' as 'left' | 'right' };
 	let displaySocials = $state(DEFAULTS.displaySocials);
@@ -55,23 +57,24 @@
 		{ name: 'onMenuOpen', type: '() => void', default: '-', description: 'Open callback.' },
 		{ name: 'onMenuClose', type: '() => void', default: '-', description: 'Close callback.' }
 	];
+	const logo = $derived(theme.isLight ? logoLight : logoDark);
+	const renderedMenuButtonColor = $derived(
+		theme.isLight && menuButtonColor === DEFAULTS.menuButtonColor ? '#18181b' : menuButtonColor
+	);
 </script>
-
-<svelte:head><title>Staggered Menu - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Staggered Menu</h1>
 
 <TabsLayout onreset={reset} {hasChanges} componentName="StaggeredMenu" {usage} {source} {props}>
 	{#snippet preview()}
-		<div class="demo-container demo-container-dots" style="position:relative;height:800px;overflow:hidden;padding:0;background:#1a1a1a;">
+		<div class="demo-container demo-container-dots" style="position:relative;height:800px;overflow:hidden;padding:0;">
 			{#key menuKey}
 				<StaggeredMenu
 					logoUrl={logo}
 					{items}
 					{socialItems}
-					openMenuButtonColor={position === 'left' ? '#fff' : '#000'}
+					openMenuButtonColor="#18181b"
 					{displaySocials}
 					{accentColor}
-					{menuButtonColor}
+					menuButtonColor={renderedMenuButtonColor}
 					{position}
 				/>
 			{/key}
@@ -81,8 +84,8 @@
 	{#snippet customize()}
 		<Customize>
 			<PreviewSelect title="Position" value={position} options={[{ value: 'right', label: 'Right' }, { value: 'left', label: 'Left' }]} onChange={(v) => { position = v as 'left' | 'right'; menuKey++; }} />
-			<PreviewColorPicker title="Accent Color" color={accentColor} onChange={(v) => (accentColor = v)} />
-			<PreviewColorPicker title="Menu Button Color" color={menuButtonColor} onChange={(v) => (menuButtonColor = v)} />
+			<PreviewColorPickerCustom title="Accent Color" color={accentColor} onChange={(v) => (accentColor = v)} />
+			<PreviewColorPickerCustom title="Menu Button Color" color={renderedMenuButtonColor} onChange={(v) => (menuButtonColor = v)} />
 			<PreviewSwitch title="Display Socials" checked={displaySocials} onChange={(v) => (displaySocials = v)} />
 		</Customize>
 	{/snippet}

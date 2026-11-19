@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { theme } from '$lib/theme.svelte';
 	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import CallChip, {
@@ -82,9 +82,9 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedColor = $derived(color);
-	const renderedSurface = $derived(surfaceColor);
-	const renderedProgress = $derived(progressColor);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
+	const renderedSurface = $derived(theme.isLight ? (surfaceColor === DEFAULT_PROPS.surfaceColor ? '#f6f6f6' : surfaceColor) : surfaceColor);
+	const renderedProgress = $derived(theme.isLight ? (progressColor === DEFAULT_PROPS.progressColor ? '#18181b' : progressColor) : progressColor);
 	const propData: PropRow[] = [
 		{
 			name: 'icon',
@@ -247,14 +247,12 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Call Chip - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Call Chip</h1>
 <TabsLayout onreset={reset} {hasChanges} componentName="CallChip" {usage} {source} props={propData}>
 	{#snippet preview()}{#key epoch}<div
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				<ReplayButton onClick={replay} /><CallChip {...props} onRetry={replay} />
+				<ReplayButton onClick={replay} /><CallChip {...props} color={renderedColor} surfaceColor={renderedSurface} progressColor={renderedProgress} onRetry={replay} />
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="call-chip" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
@@ -273,31 +271,31 @@
 				value={String(icon)}
 				onChange={(val) => updateProp('icon', val)}
 			></PreviewSelect>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Ink"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Surface"
-				value={renderedSurface}
+				color={renderedSurface}
 				onChange={(val) => updateProp('surfaceColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Progress"
-				value={renderedProgress}
+				color={renderedProgress}
 				onChange={(val) => updateProp('progressColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Done"
-				value={doneColor}
+				color={doneColor}
 				onChange={(val) => updateProp('doneColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Error"
-				value={errorColor}
+				color={errorColor}
 				onChange={(val) => updateProp('errorColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Size"
 				min={24}

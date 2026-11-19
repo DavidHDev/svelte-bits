@@ -1,12 +1,10 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import SloshGauge, {
@@ -74,8 +72,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedLiquid = $derived(liquidColor);
-	const renderedGlass = $derived(glassColor);
+	const renderedLiquid = $derived(theme.isLight ? (liquidColor === DEFAULT_PROPS.liquidColor ? '#18181b' : liquidColor) : liquidColor);
+	const renderedGlass = $derived(theme.isLight ? (glassColor === DEFAULT_PROPS.glassColor ? '#f6f6f6' : glassColor) : glassColor);
 	const propData: PropRow[] = [
 		{
 			name: 'value',
@@ -212,8 +210,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Slosh Gauge - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Slosh Gauge</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -226,7 +222,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				<div class="mb-9"><SloshGauge {...props} onChange={(v) => updateProp('value', v)} /></div>
+				<div class="mb-9"><SloshGauge {...props} liquidColor={renderedLiquid} glassColor={renderedGlass} onChange={(v) => updateProp('value', v)} /></div>
 				<div class="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-1.5">
 					{#each PRESETS as preset}<button
 							type="button"
@@ -260,16 +256,16 @@
 				checked={disabled}
 				onChange={(val) => updateProp('disabled', val)}
 			></PreviewSwitch>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Liquid"
-				value={renderedLiquid}
+				color={renderedLiquid}
 				onChange={(val) => updateProp('liquidColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Glass"
-				value={renderedGlass}
+				color={renderedGlass}
 				onChange={(val) => updateProp('glassColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Width"
 				min={56}

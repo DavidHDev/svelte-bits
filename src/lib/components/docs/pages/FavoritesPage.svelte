@@ -1,26 +1,29 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import ComponentList from '$lib/components/docs/ComponentList.svelte';
-	import { COMPONENT_INDEX_ITEMS } from '$lib/constants/componentIndex';
+	import { componentMetadata } from '$lib/constants/information';
+	import ComponentList, { type ComponentListEntry } from '$lib/components/docs/ComponentList.svelte';
+	import BackToTopButton from '$lib/components/docs/BackToTopButton.svelte';
+	import { PAGE_METADATA } from '$lib/constants/docsNav';
 	import { getSavedComponents } from '$lib/utils/favorites';
 
-	let savedKeys = $state<string[]>([]);
+	const meta = PAGE_METADATA['/favorites'];
 
-	const savedItems = $derived(
+	let savedKeys = $state<string[]>([]);
+	let mounted = $state(false);
+
+	const savedList = $derived(
 		savedKeys
-			.map((key) => COMPONENT_INDEX_ITEMS.find((item) => item.key === key))
-			.filter((item): item is (typeof COMPONENT_INDEX_ITEMS)[number] => Boolean(item))
+			.filter((key) => typeof key === 'string' && key.includes('/') && componentMetadata[key])
+			.map((key) => [key, componentMetadata[key]] as ComponentListEntry)
 	);
 
-	function update() {
-		savedKeys = getSavedComponents();
-	}
-
 	onMount(() => {
-		update();
-		const onStorage = (e: StorageEvent) => {
-			if (!e.key || e.key === 'savedComponents') update();
+		const update = () => (savedKeys = getSavedComponents());
+		const onStorage = (event: StorageEvent) => {
+			if (!event || event.key === 'savedComponents') update();
 		};
+		update();
+		mounted = true;
 		window.addEventListener('favorites:updated', update);
 		window.addEventListener('storage', onStorage);
 		return () => {
@@ -31,13 +34,12 @@
 </script>
 
 <svelte:head>
-	<title>Svelte Bits - Favorites</title>
+	<title>{meta.title}</title>
+	<meta name="description" content={meta.description} />
+	<meta name="robots" content="noindex, follow" />
 </svelte:head>
 
-<ComponentList
-	title="Favorites"
-	items={savedItems}
-	hasDeleteButton
-	emptyTitle="Nothing here yet..."
-	emptyDescription="Tap the heart on any component to save it"
-/>
+<div style:visibility={mounted ? 'visible' : 'hidden'}>
+	<ComponentList title="Favorites" list={savedList} hasDeleteButton sorting="none" />
+	<BackToTopButton />
+</div>

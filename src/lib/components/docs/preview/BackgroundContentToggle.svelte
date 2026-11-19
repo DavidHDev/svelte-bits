@@ -102,7 +102,7 @@
 		padding: 8px 10px 8px 12px;
 		border-radius: 10px;
 		border: 1px solid rgba(255, 255, 255, 0.08);
-		background: rgba(18, 15, 23, 0.5);
+		background: rgba(20, 17, 14, 0.5);
 		color: rgba(255, 255, 255, 0.7);
 		font-size: 13px;
 		font-weight: 500;
@@ -229,7 +229,7 @@
 		padding: 5px 14px 5px 5px;
 		border-radius: 50px;
 		border: 1px solid rgba(255, 255, 255, 0.08);
-		background: rgba(18, 15, 23, 0.5);
+		background: rgba(20, 17, 14, 0.5);
 	}
 
 	.bg-content-tag-new {

@@ -85,9 +85,7 @@ ${sC}
 	];
 </script>
 
-<svelte:head><title>Evil Eye - svelte-bits</title></svelte:head>
 
-<h1 class="sub-category">Evil Eye</h1>
 
 <TabsLayout onreset={reset} {hasChanges} componentName="EvilEye" {usage} {source} {props}>
 	{#snippet preview()}

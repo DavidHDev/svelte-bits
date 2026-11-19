@@ -1,21 +1,19 @@
 <script lang="ts">
 	type Props = {
 		title?: string;
+		isChecked?: boolean;
 		checked?: boolean;
+		value?: boolean;
 		isDisabled?: boolean;
 		onChange?: (v: boolean) => void;
 	};
-	let { title = '', checked = false, isDisabled = false, onChange }: Props = $props();
 
-	function toggle() {
-		if (isDisabled) return;
-		onChange?.(!checked);
-	}
-	function onKey(e: KeyboardEvent) {
-		if (e.key === ' ' || e.key === 'Enter') {
-			e.preventDefault();
-			toggle();
-		}
+	let { title = '', isChecked, checked, value, isDisabled = false, onChange }: Props = $props();
+
+	const on = $derived(Boolean(isChecked ?? checked ?? value));
+
+	function handleChange() {
+		if (!isDisabled) onChange?.(!on);
 	}
 </script>
 
@@ -24,17 +22,23 @@
 		type="button"
 		class="scrubber-track scrubber-track--switch"
 		role="switch"
-		aria-checked={checked}
+		aria-checked={on}
 		aria-label={title}
 		aria-disabled={isDisabled}
 		data-disabled={isDisabled}
-		data-checked={checked}
-		onclick={toggle}
-		onkeydown={onKey}
+		data-checked={on}
+		tabindex={isDisabled ? -1 : 0}
+		onclick={handleChange}
+		onkeydown={(e) => {
+			if (e.key === ' ' || e.key === 'Enter') {
+				e.preventDefault();
+				handleChange();
+			}
+		}}
 	>
-		<div class="scrubber-label">{title}</div>
-		<div class="scrubber-switch-toggle">
-			<div class="scrubber-switch-knob"></div>
-		</div>
+		<span class="scrubber-label">{title}</span>
+		<span class="scrubber-switch-toggle">
+			<span class="scrubber-switch-knob"></span>
+		</span>
 	</button>
 </div>

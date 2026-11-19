@@ -1,45 +1,52 @@
 <script lang="ts">
-	type Props = {
-		dependencyList?: string[];
-	};
+	import { page } from '$app/state';
+	import Icon from './Icon.svelte';
+	import { dependenciesForSlug } from '$lib/constants/componentDependencies';
+	import { generateDependencyCommands, getTypeDependencies, installation } from './lib/installation.svelte';
 
-	let { dependencyList = [] }: Props = $props();
+	type Props = { dependencyList?: string[] };
+
+	let { dependencyList }: Props = $props();
+
+	const dependencies = $derived([
+		...new Set(
+			(dependencyList ?? dependenciesForSlug(page.params.subcategory)).map((dependency) => dependency.trim()).filter(Boolean)
+		)
+	]);
+	const commands = $derived(generateDependencyCommands(dependencies));
+	const command = $derived(commands?.[installation.packageManager] || commands?.npm || '');
+	const packageCount = $derived(dependencies.length + getTypeDependencies(dependencies).length);
+
+	let copied = $state(false);
+
+	$effect(() => {
+		if (!copied) return;
+		const timeout = window.setTimeout(() => (copied = false), 1800);
+		return () => window.clearTimeout(timeout);
+	});
+
+	async function copyCommand() {
+		try {
+			await navigator.clipboard.writeText(command);
+			copied = true;
+		} catch {
+			copied = false;
+		}
+	}
 </script>
 
-{#if dependencyList.length > 0}
-	<div class="dependencies-section">
-		<h2 class="demo-title-extra">Dependencies</h2>
-		<div class="demo-details">
-			{#each dependencyList as dependency (dependency)}
-				<span>{dependency}</span>
-			{/each}
+{#if dependencies.length > 0}
+	<section class="dependencies-panel" aria-labelledby="dependencies-title">
+		<div class="dependencies-summary">
+			<h2 id="dependencies-title">Dependencies</h2>
+			<p>{packageCount} required {packageCount === 1 ? 'package' : 'packages'}</p>
 		</div>
-	</div>
+		<div class="dependencies-command">
+			<code title={command}>{command}</code>
+			<button type="button" onclick={copyCommand} aria-label={copied ? 'Install command copied' : 'Copy install command'}>
+				<Icon name={copied ? 'Check' : 'Copy'} size={15} />
+				<span aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
+			</button>
+		</div>
+	</section>
 {/if}
-
-<style>
-	.dependencies-section {
-		margin-top: 3rem;
-	}
-
-	.demo-details {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-	}
-
-	.demo-details span {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 25px;
-		padding: .4rem .8rem;
-		border-radius: 8px;
-		border: 1px solid rgba(255, 138, 76, 0.16);
-		background: rgba(255, 138, 76, 0.06);
-		color: var(--color-accent-muted);
-		font-size: 14px;
-		font-family: 'Geist Mono', ui-monospace, monospace;
-		font-weight: 500;
-	}
-</style>

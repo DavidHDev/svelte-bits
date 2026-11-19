@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { theme } from '$lib/theme.svelte';
 	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
@@ -6,7 +7,7 @@
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import ThoughtLine, {
@@ -93,7 +94,7 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedColor = $derived(color);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
 	const renderedGlyph = $derived(glyphColor || renderedColor);
 	const propData: PropRow[] = [
 		{
@@ -304,8 +305,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Thought Line - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Thought Line</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -321,7 +320,7 @@
 				<ReplayButton onClick={replay} />
 				<div class="absolute top-[188px]">
 					<ThoughtLine
-						{...props}
+						{...props} color={renderedColor}
 						steps={trace ? steps : []}
 						glyphColor={renderedGlyph}
 						working={loop ? loopWorking : working}
@@ -356,16 +355,16 @@
 				value={String(glyph)}
 				onChange={(val) => updateProp('glyph', val)}
 			></PreviewSelect>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Ink"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Glyph Color"
-				value={renderedGlyph}
+				color={renderedGlyph}
 				onChange={(val) => updateProp('glyphColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Font Size"
 				min={12}

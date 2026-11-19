@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import PulseHeart, {
@@ -82,9 +81,9 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedIdle = $derived(idleColor);
-	const renderedPill = $derived(pillColor);
-	const renderedText = $derived(textColor);
+	const renderedIdle = $derived(theme.isLight ? (idleColor === DEFAULT_PROPS.idleColor ? '#71717a' : idleColor) : idleColor);
+	const renderedPill = $derived(theme.isLight ? (pillColor === DEFAULT_PROPS.pillColor ? '#f0f0f2' : pillColor) : pillColor);
+	const renderedText = $derived(theme.isLight ? (textColor === DEFAULT_PROPS.textColor ? '#18181b' : textColor) : textColor);
 	const propData: PropRow[] = [
 		{
 			name: 'liked',
@@ -250,8 +249,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Pulse Heart - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Pulse Heart</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -264,7 +261,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				{#key epoch}<PulseHeart {...props} />{/key}
+				{#key epoch}<PulseHeart {...props} idleColor={renderedIdle} pillColor={renderedPill} textColor={renderedText} />{/key}
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="pulse-heart" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
@@ -292,26 +289,26 @@
 				checked={idleOutline}
 				onChange={(val) => updateProp('idleOutline', val)}
 			></PreviewSwitch>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Liked"
-				value={likedColor}
+				color={likedColor}
 				onChange={(val) => updateProp('likedColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Idle"
-				value={renderedIdle}
+				color={renderedIdle}
 				onChange={(val) => updateProp('idleColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Pill"
-				value={renderedPill}
+				color={renderedPill}
 				onChange={(val) => updateProp('pillColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Text"
-				value={renderedText}
+				color={renderedText}
 				onChange={(val) => updateProp('textColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Size"
 				min={24}

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import BellToggle, {
@@ -96,10 +96,10 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedColor = $derived(color);
-	const renderedBackground = $derived(background);
-	const renderedOnColor = $derived(onColor);
-	const renderedOnBackground = $derived(onBackground);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
+	const renderedBackground = $derived(theme.isLight ? (background === DEFAULT_PROPS.background ? '#f6f6f6' : background) : background);
+	const renderedOnColor = $derived(theme.isLight ? (onColor === DEFAULT_PROPS.onColor ? '#ffffff' : onColor) : onColor);
+	const renderedOnBackground = $derived(theme.isLight ? (onBackground === DEFAULT_PROPS.onBackground ? '#18181b' : onBackground) : onBackground);
 	const propData: PropRow[] = [
 		{
 			name: 'offLabel',
@@ -329,8 +329,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS) || on);
 </script>
 
-<svelte:head><title>Bell Toggle - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Bell Toggle</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -343,30 +341,30 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				<BellToggle {...props} pressed={on} {count} onChange={setOn} />
+				<BellToggle {...props} color={renderedColor} background={renderedBackground} onColor={renderedOnColor} onBackground={renderedOnBackground} pressed={on} {count} onChange={setOn} />
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="bell-toggle" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Text"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Background"
-				value={renderedBackground}
+				color={renderedBackground}
 				onChange={(val) => updateProp('background', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Pressed Text"
-				value={renderedOnColor}
+				color={renderedOnColor}
 				onChange={(val) => updateProp('onColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Pressed Background"
-				value={renderedOnBackground}
+				color={renderedOnBackground}
 				onChange={(val) => updateProp('onBackground', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSelect
 				title="Size"
 				options={SIZE_OPTIONS}
@@ -444,11 +442,11 @@
 			></PreviewSlider>
 			<PreviewSwitch title="Badge" checked={badge} onChange={(val) => updateProp('badge', val)}
 			></PreviewSwitch>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Badge Color"
-				value={badgeColor}
+				color={badgeColor}
 				onChange={(val) => updateProp('badgeColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSwitch title="Waves" checked={waves} onChange={(val) => updateProp('waves', val)}
 			></PreviewSwitch>
 			<PreviewSwitch

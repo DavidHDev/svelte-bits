@@ -1,40 +1,92 @@
-// Mirrors shadcn-svelte-extras `ui/code/shiki.ts` + Shiki best-performance guidance:
-// https://shiki.style/guide/best-performance
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
 import { createHighlighterCore } from 'shiki/core';
 import type { ThemeRegistration } from 'shiki/core';
 
-/** Custom dark theme for docs code blocks */
-export const svelteBitsTheme: ThemeRegistration = {
-	name: 'svelte-bits',
-	type: 'dark',
-	colors: {
-		'editor.background': '#0a0a0a',
-		'editor.foreground': '#e6e6e6'
-	},
-	tokenColors: [
-		{ scope: ['comment', 'punctuation.definition.comment'], settings: { foreground: '#5c5c5c', fontStyle: 'italic' } },
-		{ scope: ['string', 'string.quoted', 'string.template'], settings: { foreground: '#FFB089' } },
-		{ scope: ['constant.numeric', 'constant.language'], settings: { foreground: '#FF8A4C' } },
-		{ scope: ['constant.character', 'constant.other'], settings: { foreground: '#FF8A4C' } },
-		{ scope: ['variable', 'variable.other.readwrite', 'variable.parameter'], settings: { foreground: '#e6e6e6' } },
-		{ scope: ['variable.other.constant', 'variable.other.enummember'], settings: { foreground: '#FFB089' } },
-		{ scope: ['keyword', 'storage.type', 'storage.modifier'], settings: { foreground: '#FF3E00' } },
-		{ scope: ['keyword.control', 'keyword.operator.new'], settings: { foreground: '#FF3E00' } },
-		{ scope: ['keyword.operator'], settings: { foreground: '#a8a8a8' } },
-		{ scope: ['entity.name.function', 'support.function', 'meta.function-call'], settings: { foreground: '#FFC9A8' } },
-		{ scope: ['entity.name.type', 'entity.name.class', 'support.class', 'support.type'], settings: { foreground: '#FFD8BD' } },
-		{ scope: ['entity.name.tag', 'meta.tag'], settings: { foreground: '#FF3E00' } },
-		{ scope: ['entity.other.attribute-name'], settings: { foreground: '#FF8A4C' } },
-		{ scope: ['punctuation', 'meta.brace', 'meta.delimiter'], settings: { foreground: '#888' } },
-		{ scope: ['punctuation.definition.tag', 'punctuation.section.embedded'], settings: { foreground: '#666' } },
-		{ scope: ['meta.embedded', 'source.svelte'], settings: { foreground: '#e6e6e6' } },
-		{ scope: ['markup.bold'], settings: { fontStyle: 'bold' } },
-		{ scope: ['markup.italic'], settings: { fontStyle: 'italic' } },
-		{ scope: ['markup.heading'], settings: { foreground: '#FF8A4C', fontStyle: 'bold' } },
-		{ scope: ['invalid'], settings: { foreground: '#ff6b6b' } }
-	]
+const sharedScopes = {
+	comments: ['comment', 'punctuation.definition.comment'],
+	accent: [
+		'keyword',
+		'storage',
+		'entity.name.tag',
+		'entity.name.function',
+		'support.function',
+		'support.type',
+		'constant.language'
+	],
+	soft: [
+		'entity.other.attribute-name',
+		'variable.other.property',
+		'meta.object-literal.key',
+		'support.variable.property'
+	],
+	strings: ['string', 'string.quoted', 'string.template', 'constant.character.escape'],
+	numbers: ['constant.numeric', 'constant.character', 'constant.other'],
+	punctuation: ['punctuation', 'meta.brace', 'meta.delimiter']
 };
+
+type ThemeInput = {
+	name: string;
+	type: 'dark' | 'light';
+	background: string;
+	foreground: string;
+	muted: string;
+	accent: string;
+	soft: string;
+	string: string;
+	number: string;
+};
+
+const createTheme = ({
+	name,
+	type,
+	background,
+	foreground,
+	muted,
+	accent,
+	soft,
+	string,
+	number
+}: ThemeInput): ThemeRegistration => ({
+	name,
+	type,
+	colors: {
+		'editor.background': background,
+		'editor.foreground': foreground
+	},
+	settings: [
+		{ settings: { background, foreground } },
+		{ scope: sharedScopes.comments, settings: { foreground: muted, fontStyle: 'italic' } },
+		{ scope: sharedScopes.accent, settings: { foreground: accent } },
+		{ scope: sharedScopes.soft, settings: { foreground: soft, fontStyle: 'italic' } },
+		{ scope: sharedScopes.strings, settings: { foreground: string } },
+		{ scope: sharedScopes.numbers, settings: { foreground: number } },
+		{ scope: sharedScopes.punctuation, settings: { foreground: muted } }
+	]
+});
+
+export const svelteBitsDarkTheme = createTheme({
+	name: 'svelte-bits-dark',
+	type: 'dark',
+	background: '#14110e',
+	foreground: '#e2d8d0',
+	muted: '#887a6d',
+	accent: '#fb923c',
+	soft: '#fdba74',
+	string: '#d9b8a3',
+	number: '#fcc8a5'
+});
+
+export const svelteBitsLightTheme = createTheme({
+	name: 'svelte-bits-light',
+	type: 'light',
+	background: '#ffffff',
+	foreground: '#47403a',
+	muted: '#8d8279',
+	accent: '#c2410c',
+	soft: '#b45a2a',
+	string: '#74584a',
+	number: '#b4532a'
+});
 
 const bundledLanguages = {
 	bash: () => import('@shikijs/langs/bash'),
@@ -49,19 +101,45 @@ const bundledLanguages = {
 	tsx: () => import('@shikijs/langs/tsx')
 } as const;
 
-/** Languages bundled into the docs highlighter (`text` is built into Shiki). */
 export type BundledDocsCodeLang = keyof typeof bundledLanguages | 'text';
 
-/** Map `language` prop to a bundled grammar (extras only loads a fixed set; unknown → svelte). */
+const ALIASES: Record<string, BundledDocsCodeLang> = {
+	js: 'javascript',
+	ts: 'typescript',
+	sh: 'bash',
+	zsh: 'bash',
+	shellscript: 'bash'
+};
+
 export function resolveDocsCodeLang(lang: string): BundledDocsCodeLang {
 	if (lang === 'text') return 'text';
+	if (ALIASES[lang]) return ALIASES[lang];
 	if (Object.hasOwn(bundledLanguages, lang)) return lang as keyof typeof bundledLanguages;
 	return 'svelte';
 }
 
-/** Preloaded highlighter (same initialization pattern as shadcn-svelte-extras Code). */
 export const highlighter = createHighlighterCore({
-	themes: [svelteBitsTheme],
+	themes: [svelteBitsLightTheme, svelteBitsDarkTheme],
 	langs: Object.values(bundledLanguages),
 	engine: createJavaScriptRegexEngine()
 });
+
+const cache = new Map<string, string>();
+const LIMIT = 40;
+
+export const peekHighlight = (code: string, language: string) => cache.get(`${language}\u0000${code}`) ?? '';
+
+export async function highlightCode(code: string, language = 'svelte'): Promise<string> {
+	const key = `${language}\u0000${code}`;
+	const known = cache.get(key);
+	if (known) return known;
+	const hl = await highlighter;
+	const html = hl.codeToHtml(code, {
+		lang: resolveDocsCodeLang(language),
+		themes: { light: 'svelte-bits-light', dark: 'svelte-bits-dark' },
+		defaultColor: false
+	});
+	cache.set(key, html);
+	if (cache.size > LIMIT) cache.delete(cache.keys().next().value as string);
+	return html;
+}

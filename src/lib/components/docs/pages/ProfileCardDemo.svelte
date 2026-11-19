@@ -1,89 +1,278 @@
 <script lang="ts">
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
-	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
+	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
+	import PropTable from '$lib/components/docs/preview/PropTable.svelte';
+	import Dependencies from '$lib/components/docs/preview/Dependencies.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
+	import { theme as colorTheme } from '$lib/theme.svelte';
 	import ProfileCard from '$lib/components/library/Components/ProfileCard/ProfileCard.svelte';
 	import source from '$lib/components/library/Components/ProfileCard/ProfileCard.svelte?raw';
 
-	const DEFAULTS = {
-		showIcon: true,
-		showUserInfo: false,
-		enableMobileTilt: false,
-		showBehindGlow: true
+	const DEFAULT_PROPS = {
+		iconPattern: true,
+		backdropColor: '',
+		holo: 0.8,
+		glare: 0.5,
+		tiltStrength: 12,
+		parallax: 8,
+		radius: 16,
+		enableTilt: true,
+		intro: true,
+		showUserInfo: true,
+		enableMobileTilt: false
 	};
-	let showIcon = $state(DEFAULTS.showIcon);
-	let showUserInfo = $state(DEFAULTS.showUserInfo);
-	let enableMobileTilt = $state(DEFAULTS.enableMobileTilt);
-	let showBehindGlow = $state(DEFAULTS.showBehindGlow);
-	let key = $state(0);
 
-	const hasChanges = $derived(
-		showIcon !== DEFAULTS.showIcon || showUserInfo !== DEFAULTS.showUserInfo ||
-		enableMobileTilt !== DEFAULTS.enableMobileTilt || showBehindGlow !== DEFAULTS.showBehindGlow
-	);
-	function reset() {
-		showIcon = DEFAULTS.showIcon; showUserInfo = DEFAULTS.showUserInfo;
-		enableMobileTilt = DEFAULTS.enableMobileTilt; showBehindGlow = DEFAULTS.showBehindGlow;
-		key++;
-	}
-	function bump() { key++; }
-
-	const usage = `<ProfileCard name="Jane" title="Engineer" handle="jane" avatarUrl="/avatar.png" />`;
-	const props: PropRow[] = [
-		{ name: 'avatarUrl', type: 'string', default: '""', description: 'Main avatar image URL.' },
-		{ name: 'iconUrl', type: 'string', default: '""', description: 'Icon pattern overlay URL.' },
-		{ name: 'grainUrl', type: 'string', default: '""', description: 'Grain texture URL.' },
-		{ name: 'innerGradient', type: 'string', default: 'preset', description: 'Custom inner gradient CSS.' },
-		{ name: 'behindGlowEnabled', type: 'boolean', default: 'true', description: 'Pointer-following glow.' },
-		{ name: 'behindGlowColor', type: 'string', default: 'rgba blue', description: 'Glow color.' },
-		{ name: 'behindGlowSize', type: 'string', default: '"50%"', description: 'Glow size.' },
-		{ name: 'enableTilt', type: 'boolean', default: 'true', description: '3D tilt on hover.' },
-		{ name: 'enableMobileTilt', type: 'boolean', default: 'false', description: 'Device-orientation tilt.' },
-		{ name: 'mobileTiltSensitivity', type: 'number', default: '5', description: 'Mobile tilt sensitivity.' },
-		{ name: 'miniAvatarUrl', type: 'string', default: '-', description: 'Mini avatar URL.' },
-		{ name: 'name', type: 'string', default: '"Javi A. Torres"', description: 'Display name.' },
-		{ name: 'title', type: 'string', default: '"Software Engineer"', description: 'Role.' },
-		{ name: 'handle', type: 'string', default: '"javicodes"', description: 'Handle (without @).' },
-		{ name: 'status', type: 'string', default: '"Online"', description: 'Status text.' },
-		{ name: 'contactText', type: 'string', default: '"Contact"', description: 'Button label.' },
-		{ name: 'showUserInfo', type: 'boolean', default: 'true', description: 'Show user info bar.' },
-		{ name: 'onContactClick', type: '() => void', default: '-', description: 'Contact button callback.' }
+	const propData = [
+		{ name: 'avatarUrl', type: 'string', default: "''", description: 'Portrait shown on the card.' },
+		{
+			name: 'iconUrl',
+			type: 'string',
+			default: '-',
+			description: 'Tileable pattern, like a logo pattern. The holo foil shows only through it.'
+		},
+		{
+			name: 'miniAvatarUrl',
+			type: 'string',
+			default: '-',
+			description: 'Small round image next to the handle. Hidden when not set.'
+		},
+		{ name: 'name', type: 'string', default: "'Javi A. Torres'", description: 'Name shown over the portrait.' },
+		{ name: 'title', type: 'string', default: "'Software Engineer'", description: 'Role shown under the name.' },
+		{ name: 'handle', type: 'string', default: "'javicodes'", description: 'Handle shown in the footer, without the @.' },
+		{ name: 'status', type: 'string', default: "'Online'", description: 'Status text shown under the handle.' },
+		{ name: 'statusColor', type: 'string', default: "'#22c55e'", description: 'Color of the status dot.' },
+		{ name: 'contactText', type: 'string', default: "'Contact'", description: 'Label of the contact button.' },
+		{
+			name: 'showUserInfo',
+			type: 'boolean',
+			default: 'true',
+			description: 'Shows the footer with the handle, status and contact button.'
+		},
+		{
+			name: 'onContactClick',
+			type: '() => void',
+			default: '-',
+			description: 'Called when the contact button is clicked.'
+		},
+		{ name: 'theme', type: "'dark' | 'light'", default: "'dark'", description: 'Color theme of the frame and footer.' },
+		{
+			name: 'backdropColor',
+			type: 'string',
+			default: '-',
+			description: 'Color behind the portrait. Shows around cut-out photos. Uses the theme color when not set.'
+		},
+		{ name: 'radius', type: 'number', default: '16', description: 'Corner radius of the photo, in px.' },
+		{
+			name: 'holo',
+			type: 'number',
+			default: '0.8',
+			description: 'Strength of the holographic foil, from 0 to 1. It lights up where the cursor catches it.'
+		},
+		{
+			name: 'glare',
+			type: 'number',
+			default: '0.5',
+			description: 'Strength of the light that follows the cursor, from 0 to 1.'
+		},
+		{ name: 'enableTilt', type: 'boolean', default: 'true', description: 'Tilts the card toward the cursor.' },
+		{ name: 'tiltStrength', type: 'number', default: '12', description: 'Largest tilt angle, in degrees.' },
+		{
+			name: 'parallax',
+			type: 'number',
+			default: '8',
+			description: 'How far the portrait shifts as the card tilts, in px.'
+		},
+		{
+			name: 'enableMobileTilt',
+			type: 'boolean',
+			default: 'false',
+			description: 'Tilts the card with the motion of the phone after a tap. Needs HTTPS.'
+		},
+		{
+			name: 'mobileTiltSensitivity',
+			type: 'number',
+			default: '5',
+			description: 'How strongly phone motion tilts the card.'
+		},
+		{
+			name: 'intro',
+			type: 'boolean',
+			default: 'true',
+			description: 'Catches the light once as the card appears, then settles.'
+		},
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the card.' }
 	];
+
+	const scriptOpen = '<' + 'script lang="ts">';
+	const scriptClose = '</' + 'script>';
+	const usage = `${scriptOpen}
+  import ProfileCard from '$lib/components/ProfileCard.svelte';
+${scriptClose}
+
+<ProfileCard
+  name="Javi A. Torres"
+  title="Software Engineer"
+  handle="javicodes"
+  status="Online"
+  contactText="Contact"
+  avatarUrl="/path/to/portrait.png"
+  iconUrl="/path/to/pattern.png"
+  holo={0.8}
+  glare={0.5}
+  tiltStrength={12}
+  parallax={8}
+  radius={16}
+  enableTilt={true}
+  intro={true}
+  showUserInfo={true}
+  enableMobileTilt={false}
+  theme="dark"
+  onContactClick={() => console.log('Contact clicked')}
+/>`;
+
+	const demo = createComponentProps(DEFAULT_PROPS, { lightProps: null });
+	const settings = $derived(demo.props);
+	const cardProps = $derived.by(() => {
+		const { iconPattern: _iconPattern, backdropColor: _backdropColor, ...rest } = settings;
+		return rest;
+	});
+	const cardTheme = $derived<'light' | 'dark'>(colorTheme.isLight ? 'light' : 'dark');
+	const iconUrl = $derived(settings.iconPattern ? '/assets/demo/iconpattern.png' : undefined);
+	const computedProps = $derived({
+		...(iconUrl ? { iconUrl } : {}),
+		...(settings.backdropColor ? { backdropColor: settings.backdropColor } : {}),
+		...(cardTheme === 'light' ? { theme: 'light' } : {})
+	});
+	let key = $state(0);
 </script>
 
-<svelte:head><title>Profile Card - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Profile Card</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="ProfileCard" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="demo-container" style="position:relative;height:700px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+<TabsLayout
+	propsState={demo}
+	componentName="ProfileCard"
+	{usage}
+	{source}
+	{propData}
+	demoOnlyProps={['iconPattern', 'backdropColor']}
+	{computedProps}
+	dependencies={['@hugeicons/svelte', '@hugeicons/core-free-icons']}
+>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 640px; overflow: hidden;">
 			{#key key}
 				<ProfileCard
 					name="Javi A. Torres"
 					title="Software Engineer"
 					handle="javicodes"
 					status="Online"
-					contactText="Contact Me"
+					contactText="Contact"
 					avatarUrl="/assets/demo/person.webp"
-					iconUrl={showIcon ? '/assets/demo/iconpattern.png' : ''}
-					grainUrl="/assets/demo/grain.webp"
-					{showUserInfo}
-					behindGlowEnabled={showBehindGlow}
-					{enableMobileTilt}
+					{iconUrl}
+					backdropColor={settings.backdropColor || undefined}
+					theme={cardTheme}
+					{...cardProps}
 				/>
 			{/key}
+			<RefreshButton onClick={() => key++} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="profile-card" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewSwitch title="Behind Glow" checked={showBehindGlow} onChange={(v) => { showBehindGlow = v; bump(); }} />
-			<PreviewSwitch title="Show Icon Pattern" checked={showIcon} onChange={(v) => { showIcon = v; bump(); }} />
-			<PreviewSwitch title="Show User Info" checked={showUserInfo} onChange={(v) => { showUserInfo = v; bump(); }} />
-			<PreviewSwitch title="Enable Mobile Tilt" checked={enableMobileTilt} onChange={(v) => { enableMobileTilt = v; bump(); }} />
+			<PreviewColorPickerCustom
+				title="Backdrop Color"
+				color={settings.backdropColor || (cardTheme === 'light' ? '#f8f7f5' : '#332d28')}
+				onChange={(value) => demo.updateProp('backdropColor', value)}
+			/>
+
+			<PreviewSlider
+				title="Holo"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.holo}
+				onChange={(value) => demo.updateProp('holo', value)}
+			/>
+
+			<PreviewSlider
+				title="Glare"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.glare}
+				onChange={(value) => demo.updateProp('glare', value)}
+			/>
+
+			<PreviewSlider
+				title="Tilt Strength"
+				min={0}
+				max={25}
+				step={1}
+				value={settings.tiltStrength}
+				valueUnit="°"
+				onChange={(value) => demo.updateProp('tiltStrength', value)}
+			/>
+
+			<PreviewSlider
+				title="Parallax"
+				min={0}
+				max={20}
+				step={1}
+				value={settings.parallax}
+				valueUnit="px"
+				onChange={(value) => demo.updateProp('parallax', value)}
+			/>
+
+			<PreviewSlider
+				title="Radius"
+				min={0}
+				max={28}
+				step={1}
+				value={settings.radius}
+				valueUnit="px"
+				onChange={(value) => demo.updateProp('radius', value)}
+			/>
+
+			<PreviewSwitch
+				title="Icon Pattern"
+				isChecked={settings.iconPattern}
+				onChange={(value) => demo.updateProp('iconPattern', value)}
+			/>
+
+			<PreviewSwitch
+				title="Tilt"
+				isChecked={settings.enableTilt}
+				onChange={(value) => demo.updateProp('enableTilt', value)}
+			/>
+
+			<PreviewSwitch
+				title="Intro"
+				isChecked={settings.intro}
+				onChange={(value) => {
+					demo.updateProp('intro', value);
+					key++;
+				}}
+			/>
+
+			<PreviewSwitch
+				title="User Info"
+				isChecked={settings.showUserInfo}
+				onChange={(value) => demo.updateProp('showUserInfo', value)}
+			/>
+
+			<PreviewSwitch
+				title="Mobile Tilt"
+				isChecked={settings.enableMobileTilt}
+				onChange={(value) => demo.updateProp('enableMobileTilt', value)}
+			/>
 		</Customize>
+
+		<PropTable data={propData} />
+		<Dependencies dependencyList={['@hugeicons/svelte', '@hugeicons/core-free-icons']} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>

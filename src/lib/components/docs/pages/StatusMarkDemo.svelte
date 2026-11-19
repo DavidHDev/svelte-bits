@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import StatusMark, {
@@ -100,9 +101,9 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedColor = $derived(color);
-	const renderedDone = $derived(doneColor);
-	const renderedError = $derived(errorColor);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
+	const renderedDone = $derived(theme.isLight ? (doneColor === DEFAULT_PROPS.doneColor ? '#16a34a' : doneColor) : doneColor);
+	const renderedError = $derived(theme.isLight ? (errorColor === DEFAULT_PROPS.errorColor ? '#dc2626' : errorColor) : errorColor);
 	const propData: PropRow[] = [
 		{
 			name: 'status',
@@ -277,8 +278,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS) || !play);
 </script>
 
-<svelte:head><title>Status Mark - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Status Mark</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -292,7 +291,7 @@
 				style="height:400px;"
 			>
 				<StatusMark
-					{...props}
+					{...props} color={renderedColor} doneColor={renderedDone} errorColor={renderedError}
 					status={shownStatus}
 					progress={shownProgress}
 					label={label || undefined}
@@ -327,21 +326,21 @@
 				maxlength={32}
 				onChange={(val) => updateProp('label', val)}
 			></PreviewInput>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Ink"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Done"
-				value={renderedDone}
+				color={renderedDone}
 				onChange={(val) => updateProp('doneColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Error"
-				value={renderedError}
+				color={renderedError}
 				onChange={(val) => updateProp('errorColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Size"
 				min={16}

@@ -1,182 +1,692 @@
 <!-- @svelte-bits
 {
   "title": "Animated List",
-  "description": "Scroll-aware list with item-by-item scale + fade transitions and keyboard navigation.",
-  "dependencies": []
+  "description": "A scrolling list whose rows spring into view, with a gliding selection and arrow keys.",
+  "dependencies": ["@hugeicons/svelte", "@hugeicons/core-free-icons"]
 }
 -->
-<script lang="ts">
-	import { onMount, untrack } from 'svelte';
+<script module lang="ts">
+	import type { Snippet } from 'svelte';
+	import type { IconSvgElement } from '@hugeicons/svelte';
+	import {
+		CodeIcon,
+		FigmaIcon,
+		File01Icon,
+		FileZipIcon,
+		Folder01Icon,
+		Image01Icon,
+		MusicNote01Icon,
+		Note01Icon,
+		Pdf01Icon,
+		Presentation01Icon,
+		Table01Icon,
+		Video01Icon
+	} from '@hugeicons/core-free-icons';
 
-	type Props = {
-		items?: string[];
-		onItemSelect?: (item: string, index: number) => void;
-		showGradients?: boolean;
-		enableArrowNavigation?: boolean;
-		class?: string;
-		itemClass?: string;
-		displayScrollbar?: boolean;
+	export type AnimatedListContent = string | number | Snippet;
+
+	export interface AnimatedListEntry {
+		id?: string | number;
+		icon?: Snippet | IconSvgElement;
+		image?: string;
+		title: AnimatedListContent;
+		description?: AnimatedListContent;
+		meta?: AnimatedListContent;
+	}
+
+	export type AnimatedListItem = string | AnimatedListEntry;
+
+	export type AnimatedListAnimation = 'pop' | 'slide' | 'fade';
+	type State = 'in' | 'above' | 'below';
+
+	export interface AnimatedListProps {
+		items?: AnimatedListItem[];
+		onItemSelect?: (item: AnimatedListItem, index: number) => void;
+		renderItem?: Snippet<[AnimatedListItem, number, boolean]>;
 		initialSelectedIndex?: number;
+		selectOnHover?: boolean;
+		enableArrowNavigation?: boolean;
+		loop?: boolean;
+		animation?: AnimatedListAnimation | 'none';
+		animateOnce?: boolean;
+		stagger?: number;
+		showGradients?: boolean;
+		fadeSize?: number;
+		displayScrollbar?: boolean;
+		frame?: boolean;
+		theme?: 'dark' | 'light';
+		accentColor?: string;
+		radius?: number;
+		gap?: number;
+		width?: number | string;
+		maxHeight?: number | string;
+		class?: string;
+		itemClassName?: string;
+		style?: string;
+	}
+
+	interface Engine {
+		place: (snap: boolean) => void;
+		syncRing: () => void;
+		updateFades: () => void;
+		sync: () => void;
+	}
+
+	const THEMES: Record<'dark' | 'light', Record<string, string>> = {
+		dark: {
+			'--al-frame': 'rgba(40, 35, 31, 0.66)',
+			'--al-frame-edge': 'rgba(255, 255, 255, 0.08)',
+			'--al-frame-highlight': 'rgba(255, 255, 255, 0.07)',
+			'--al-frame-shadow': '0 22px 44px -20px rgba(0, 0, 0, 0.8), 0 6px 16px -8px rgba(0, 0, 0, 0.5)',
+			'--al-tile': 'linear-gradient(180deg, #3c3631 0%, #28231f 100%)',
+			'--al-tile-edge': 'rgba(255, 255, 255, 0.07)',
+			'--al-tile-highlight': 'rgba(255, 255, 255, 0.12)',
+			'--al-tile-shadow': '0 4px 10px -4px rgba(0, 0, 0, 0.7)',
+			'--al-well': 'rgba(255, 255, 255, 0.08)',
+			'--al-ink': '#f5f4f2',
+			'--al-muted': 'rgba(245, 244, 242, 0.55)',
+			'--al-thumb': 'rgba(255, 255, 255, 0.16)',
+			'--al-ring': 'rgba(245, 244, 242, 0.3)',
+			'--al-ring-fill': 'rgba(245, 244, 242, 0.05)',
+			'--al-hover': 'brightness(1.12)',
+			'--al-press': 'brightness(0.85)',
+			'--al-active': 'brightness(1.16)'
+		},
+		light: {
+			'--al-frame': 'rgba(243, 242, 240, 0.8)',
+			'--al-frame-edge': 'rgba(28, 25, 23, 0.07)',
+			'--al-frame-highlight': 'rgba(255, 255, 255, 0.95)',
+			'--al-frame-shadow': '0 22px 44px -22px rgba(28, 25, 23, 0.3), 0 6px 16px -10px rgba(28, 25, 23, 0.16)',
+			'--al-tile': 'linear-gradient(180deg, #ffffff 0%, #f8f7f5 100%)',
+			'--al-tile-edge': 'rgba(28, 25, 23, 0.08)',
+			'--al-tile-highlight': 'rgba(255, 255, 255, 1)',
+			'--al-tile-shadow': '0 4px 10px -5px rgba(28, 25, 23, 0.25)',
+			'--al-well': 'rgba(28, 25, 23, 0.05)',
+			'--al-ink': '#292524',
+			'--al-muted': 'rgba(41, 37, 36, 0.55)',
+			'--al-thumb': 'rgba(28, 25, 23, 0.16)',
+			'--al-ring': 'rgba(28, 25, 23, 0.28)',
+			'--al-ring-fill': 'transparent',
+			'--al-hover': 'brightness(0.97)',
+			'--al-press': 'brightness(0.92)',
+			'--al-active': 'none'
+		}
 	};
 
-	let {
-		items = [
-			'Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5',
-			'Item 6', 'Item 7', 'Item 8', 'Item 9', 'Item 10',
-			'Item 11', 'Item 12', 'Item 13', 'Item 14', 'Item 15'
-		],
-		onItemSelect,
-		showGradients = true,
-		enableArrowNavigation = true,
-		class: className = '',
-		itemClass = '',
-		displayScrollbar = true,
-		initialSelectedIndex = -1
-	}: Props = $props();
+	export const DEFAULT_ITEMS: AnimatedListEntry[] = [
+		{ icon: Folder01Icon, title: 'Brand assets', description: '24 files', meta: '2m' },
+		{ icon: Image01Icon, title: 'Launch hero.png', description: '2.4 MB', meta: '18m' },
+		{ icon: Video01Icon, title: 'Product tour.mp4', description: '148 MB', meta: '1h' },
+		{ icon: Note01Icon, title: 'Pricing notes', description: '1,240 words', meta: '3h' },
+		{ icon: CodeIcon, title: 'landing-page.tsx', description: '12 KB', meta: '5h' },
+		{ icon: FigmaIcon, title: 'Onboarding flow', description: '38 frames', meta: '8h' },
+		{ icon: MusicNote01Icon, title: 'Ambient loop.wav', description: '9.1 MB', meta: '1d' },
+		{ icon: Table01Icon, title: 'Q3 forecast', description: '4 sheets', meta: '1d' },
+		{ icon: Pdf01Icon, title: 'Brand guidelines.pdf', description: '6.8 MB', meta: '2d' },
+		{ icon: Presentation01Icon, title: 'Investor update', description: '22 slides', meta: '3d' },
+		{ icon: FileZipIcon, title: 'Icon set.zip', description: '1.2 MB', meta: '4d' },
+		{ icon: Image01Icon, title: 'Moodboard.jpg', description: '3.6 MB', meta: '5d' },
+		{ icon: File01Icon, title: 'Release notes', description: 'Version 2.4', meta: '1w' },
+		{ icon: Folder01Icon, title: 'Archive', description: '118 files', meta: '2w' },
+		{ icon: Video01Icon, title: 'Teaser cut.mov', description: '86 MB', meta: '3w' }
+	];
 
-	let listRef: HTMLDivElement;
-	let selectedIndex = $state(initialSelectedIndex);
-	let keyboardNav = $state(false);
-	let topGradientOpacity = $state(0);
-	let bottomGradientOpacity = $state(1);
-	let inView = $state<boolean[]>([]);
+	const HIDDEN: Record<AnimatedListAnimation, Record<'above' | 'below', string>> = {
+		pop: { above: 'translate3d(0, -12px, 0) scale(0.8)', below: 'translate3d(0, 12px, 0) scale(0.8)' },
+		slide: { above: 'translate3d(0, -28px, 0) scale(0.98)', below: 'translate3d(0, 28px, 0) scale(0.98)' },
+		fade: { above: 'translate3d(0, -4px, 0)', below: 'translate3d(0, 4px, 0)' }
+	};
 
-	$effect(() => {
-		if (inView.length !== items.length) {
-			untrack(() => (inView = items.map(() => false)));
-		}
-	});
+	const SPRING =
+		'linear(0, 0.0603, 0.2033, 0.3821, 0.5633, 0.7258, 0.8584, 0.9574, 1.0242, 1.0634, 1.0809, 1.0828, 1.0747, 1.0613, 1.046, 1.0313, 1.0186, 1.0085, 1.0012, 0.9965, 0.994, 0.9931, 0.9933, 0.9941, 0.9953, 0.9966, 0.9978, 0.9988, 1)';
 
-	function handleScroll(e: Event) {
-		const t = e.currentTarget as HTMLDivElement;
-		topGradientOpacity = Math.min(t.scrollTop / 50, 1);
-		const bottomDistance = t.scrollHeight - (t.scrollTop + t.clientHeight);
-		bottomGradientOpacity = t.scrollHeight <= t.clientHeight ? 0 : Math.min(bottomDistance / 50, 1);
-	}
+	const smootherstep = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
 
-	function inViewAction(node: HTMLElement, index: number) {
-		const io = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					inView[index] = entry.intersectionRatio >= 0.5;
-				}
-			},
-			{ root: listRef, threshold: [0, 0.5, 1] }
-		);
-		io.observe(node);
-		return { destroy: () => io.disconnect() };
-	}
+	const FADE_MASK = (() => {
+		const steps = [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1];
+		const top = steps.map((t) => `rgba(0, 0, 0, ${smootherstep(t).toFixed(3)}) calc(var(--al-fade-top) * ${t})`);
+		const bottom = [...steps]
+			.reverse()
+			.map((t) => `rgba(0, 0, 0, ${smootherstep(t).toFixed(3)}) calc(100% - var(--al-fade-bottom) * ${t})`);
+		return `linear-gradient(to bottom, ${[...top, ...bottom].join(', ')})`;
+	})();
 
-	onMount(() => {
-		if (!enableArrowNavigation) return;
-		const handler = (e: KeyboardEvent) => {
-			if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
-				e.preventDefault();
-				keyboardNav = true;
-				selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-			} else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
-				e.preventDefault();
-				keyboardNav = true;
-				selectedIndex = Math.max(selectedIndex - 1, 0);
-			} else if (e.key === 'Enter') {
-				if (selectedIndex >= 0 && selectedIndex < items.length) {
-					e.preventDefault();
-					onItemSelect?.(items[selectedIndex], selectedIndex);
-				}
-			}
-		};
-		window.addEventListener('keydown', handler);
-		return () => window.removeEventListener('keydown', handler);
-	});
+	const size = (value: number | string) => (typeof value === 'number' ? `${value}px` : value);
 
-	$effect(() => {
-		if (!keyboardNav || selectedIndex < 0 || !listRef) return;
-		const container = listRef;
-		const selectedItem = container.querySelector(
-			`[data-index="${selectedIndex}"]`
-		) as HTMLElement | null;
-		if (selectedItem) {
-			const extraMargin = 50;
-			const itemTop = selectedItem.offsetTop;
-			const itemBottom = itemTop + selectedItem.offsetHeight;
-			if (itemTop < container.scrollTop + extraMargin) {
-				container.scrollTo({ top: itemTop - extraMargin, behavior: 'smooth' });
-			} else if (itemBottom > container.scrollTop + container.clientHeight - extraMargin) {
-				container.scrollTo({
-					top: itemBottom - container.clientHeight + extraMargin,
-					behavior: 'smooth'
-				});
-			}
-		}
-		untrack(() => (keyboardNav = false));
-	});
+	const toEntry = (item: AnimatedListItem): AnimatedListEntry =>
+		item !== null && typeof item === 'object' ? item : { title: item };
+
+	const ROOT_CLASS =
+		'relative box-border w-[min(100%,var(--al-width))] min-w-0 max-w-full rounded-[calc(var(--al-radius)+12px)] text-[color:var(--al-ink)] [-webkit-tap-highlight-color:transparent] has-[>[role=listbox]:focus-visible]:outline-2 has-[>[role=listbox]:focus-visible]:outline-offset-[3px] has-[>[role=listbox]:focus-visible]:outline-[color:var(--al-accent)]';
+	const FRAMED_CLASS =
+		'p-[6px] [background:var(--al-frame)] [box-shadow:var(--al-frame-shadow)] backdrop-blur-[20px] backdrop-saturate-[1.6]';
+	const FRAME_RIM_CLASS =
+		'pointer-events-none absolute inset-0 z-[3] rounded-[inherit] [box-shadow:inset_0_0_0_1px_var(--al-frame-edge),inset_0_1px_0_var(--al-frame-highlight)]';
+	const VIEWPORT_CLASS =
+		'relative box-border overflow-x-hidden overflow-y-auto overscroll-contain rounded-[calc(var(--al-radius)+6px)] p-[6px] outline-none [--al-fade-bottom:0px] [--al-fade-top:0px]';
+	const SCROLLBAR_CLASS =
+		'[scrollbar-width:thin] [scrollbar-color:var(--al-thumb)_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-[3px] [&::-webkit-scrollbar-thumb]:bg-[color:var(--al-thumb)]';
+	const BARE_CLASS = '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
+	const ITEM_CLASS =
+		'relative box-border flex min-w-0 cursor-pointer items-center gap-3 rounded-[var(--al-radius)] py-[10px] pr-[14px] pl-[10px] text-[color:var(--al-ink)] select-none [background:var(--al-tile)] [box-shadow:var(--al-tile-shadow)] [[data-animated]_&:not([data-state])]:opacity-0 hover:[filter:var(--al-hover)] active:[filter:var(--al-press)] data-[selected]:not-active:[filter:var(--al-active)]';
+	const LEAD_CLASS =
+		'grid h-9 w-9 flex-none place-items-center overflow-hidden rounded-[max(8px,calc(var(--al-radius)-4px))] bg-[color:var(--al-well)] text-[color:var(--al-ink)]';
+	const RIM_CLASS =
+		'pointer-events-none absolute inset-0 rounded-[inherit] [box-shadow:inset_0_0_0_1px_var(--al-tile-edge),inset_0_1px_0_var(--al-tile-highlight)]';
+	const INDICATOR_CLASS =
+		'pointer-events-none absolute top-0 right-0 left-0 z-[2] h-0 opacity-0 transition-opacity duration-200 ease-[ease]';
+	const RING_CLASS =
+		'absolute inset-0 rounded-[var(--al-radius)] [background:var(--al-ring-fill)] [box-shadow:inset_0_0_0_1px_var(--al-ring)]';
 </script>
 
-<div class="relative w-[500px] {className}">
+<script lang="ts">
+	import { onMount, untrack } from 'svelte';
+	import { HugeiconsIcon } from '@hugeicons/svelte';
+
+	let {
+		items = DEFAULT_ITEMS,
+		onItemSelect,
+		renderItem,
+		initialSelectedIndex = -1,
+		selectOnHover = true,
+		enableArrowNavigation = true,
+		loop = false,
+		animation = 'pop',
+		animateOnce = false,
+		stagger = 0.05,
+		showGradients = true,
+		fadeSize = 56,
+		displayScrollbar = true,
+		frame = true,
+		theme = 'dark',
+		accentColor,
+		radius = 14,
+		gap = 8,
+		width = 420,
+		maxHeight = 440,
+		class: className = '',
+		itemClassName = '',
+		style = ''
+	}: AnimatedListProps = $props();
+
+	const baseId = $props.id();
+
+	let rootEl: HTMLDivElement | null = $state(null);
+	let viewportEl: HTMLDivElement | null = $state(null);
+	let trackEl: HTMLDivElement | null = $state(null);
+	let indicatorEl: HTMLSpanElement | null = $state(null);
+	let ringEl: HTMLSpanElement | null = $state(null);
+	const itemEls: (HTMLDivElement | null)[] = [];
+	let engine: Engine | null = null;
+	let keyboard = false;
+	let navigating = false;
+	let selected = $state(untrack(() => initialSelectedIndex));
+
+	const settings = {
+		get items() {
+			return items;
+		},
+		get onItemSelect() {
+			return onItemSelect;
+		},
+		get selected() {
+			return selected;
+		},
+		get selectOnHover() {
+			return selectOnHover;
+		},
+		get enableArrowNavigation() {
+			return enableArrowNavigation;
+		},
+		get loop() {
+			return loop;
+		},
+		get animation() {
+			return animation;
+		},
+		get animateOnce() {
+			return animateOnce;
+		},
+		get stagger() {
+			return stagger;
+		},
+		get showGradients() {
+			return showGradients;
+		},
+		get fadeSize() {
+			return fadeSize;
+		}
+	};
+
+	const keep = (index: number) => (element: HTMLDivElement) => {
+		itemEls[index] = element;
+		return () => {
+			if (itemEls[index] === element) itemEls[index] = null;
+		};
+	};
+
+	const rootClass = $derived(`${ROOT_CLASS} ${frame ? FRAMED_CLASS : ''} ${className}`.replace(/\s+/g, ' ').trim());
+
+	const rootStyle = $derived(
+		[
+			...Object.entries(THEMES[theme] ?? THEMES.dark).map(([name, value]) => `${name}: ${value}`),
+			`--al-radius: ${Math.max(0, radius)}px`,
+			`--al-gap: ${Math.max(0, gap)}px`,
+			`--al-width: ${size(width)}`,
+			`--al-accent: ${accentColor || 'var(--al-ink)'}`,
+			accentColor ? `--al-ring: ${accentColor}` : '',
+			accentColor ? `--al-ring-fill: color-mix(in srgb, ${accentColor} 8%, transparent)` : '',
+			style
+		]
+			.filter(Boolean)
+			.join('; ')
+	);
+
+	const entries = $derived(items.map((item) => toEntry(item)));
+
+	onMount(() => {
+		const root = rootEl;
+		const viewport = viewportEl;
+		const track = trackEl;
+		const indicator = indicatorEl;
+		const ring = ringEl;
+		if (!root || !viewport || !track || !indicator || !ring) return;
+
+		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const springEase = CSS.supports?.('transition-timing-function', 'linear(0, 1)')
+			? SPRING
+			: 'cubic-bezier(0.34, 1.4, 0.64, 1)';
+		const transition = `transform 620ms ${springEase}, opacity 300ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms ease`;
+		const motion = { y: 0, h: 0, vy: 0, vh: 0, ty: 0, th: 0, ready: false };
+		const fades = { top: '', bottom: '' };
+		let boxes: (number[] | null)[] = [];
+		let current: AnimatedListAnimation | 'none' | null = null;
+		let entered = false;
+		let engaged = false;
+		let pointer = [0, 0];
+		let raf = 0;
+		let last = 0;
+
+		const mode = (): AnimatedListAnimation | 'none' => {
+			const chosen = settings.animation;
+			if (chosen === 'none' || !HIDDEN[chosen]) return 'none';
+			return reduced ? 'fade' : chosen;
+		};
+
+		const apply = (element: HTMLElement, state: State) => {
+			element.dataset.state = state;
+			const pose = current && current !== 'none' && state !== 'in' ? HIDDEN[current][state] : '';
+			element.style.transform = pose;
+			element.style.opacity = pose ? '0' : '';
+		};
+
+		const syncRing = () => {
+			const item = itemEls[settings.selected];
+			if (!item) return;
+			const state = (item.dataset.state as State | undefined) || 'in';
+			if (state === ring.dataset.state) return;
+			ring.style.transitionDelay = item.style.transitionDelay;
+			apply(ring, state);
+		};
+
+		const write = () => {
+			indicator.style.transform = `translate3d(0, ${motion.y.toFixed(2)}px, 0)`;
+			indicator.style.height = `${motion.h.toFixed(2)}px`;
+		};
+
+		const step = (now: number) => {
+			raf = 0;
+			const dt = Math.min(0.05, (now - last) / 1000 || 0);
+			last = now;
+			const omega = 30;
+			const zeta = 0.78;
+			const steps = Math.max(1, Math.ceil(dt / (1 / 240)));
+			const h = dt / steps;
+			for (let i = 0; i < steps; i++) {
+				motion.vy += (omega * omega * (motion.ty - motion.y) - 2 * zeta * omega * motion.vy) * h;
+				motion.vh += (omega * omega * (motion.th - motion.h) - 2 * zeta * omega * motion.vh) * h;
+				motion.y += motion.vy * h;
+				motion.h += motion.vh * h;
+			}
+			const moving =
+				Math.abs(motion.ty - motion.y) > 0.05 ||
+				Math.abs(motion.th - motion.h) > 0.05 ||
+				Math.abs(motion.vy) + Math.abs(motion.vh) > 0.5;
+			if (!moving) {
+				motion.y = motion.ty;
+				motion.h = motion.th;
+				motion.vy = motion.vh = 0;
+			}
+			write();
+			if (moving) raf = requestAnimationFrame(step);
+		};
+
+		const place = (snap: boolean) => {
+			const item = itemEls[settings.selected];
+			if (!item) {
+				indicator.style.opacity = '0';
+				motion.ready = false;
+				return;
+			}
+			indicator.style.opacity = '1';
+			motion.ty = item.offsetTop;
+			motion.th = item.offsetHeight;
+			if (snap || reduced || !motion.ready) {
+				motion.y = motion.ty;
+				motion.h = motion.th;
+				motion.vy = motion.vh = 0;
+				motion.ready = true;
+				write();
+				return;
+			}
+			if (!raf) {
+				last = performance.now();
+				raf = requestAnimationFrame(step);
+			}
+		};
+
+		const updateFades = () => {
+			const span = Math.max(1, settings.fadeSize);
+			const { scrollTop, scrollHeight, clientHeight } = viewport;
+			const top = settings.showGradients ? Math.min(span, Math.max(0, scrollTop)) : 0;
+			const bottom = settings.showGradients
+				? Math.min(span, Math.max(0, scrollHeight - clientHeight - scrollTop))
+				: 0;
+			const nextTop = `${top.toFixed(1)}px`;
+			const nextBottom = `${bottom.toFixed(1)}px`;
+			if (nextTop !== fades.top) {
+				fades.top = nextTop;
+				viewport.style.setProperty('--al-fade-top', nextTop);
+			}
+			if (nextBottom !== fades.bottom) {
+				fades.bottom = nextBottom;
+				viewport.style.setProperty('--al-fade-bottom', nextBottom);
+			}
+		};
+
+		const measure = () => {
+			const offset = track.offsetTop;
+			boxes = itemEls.map((item) => (item ? [offset + item.offsetTop, item.offsetHeight] : null));
+		};
+
+		const reveal = (entrance: boolean) => {
+			if (!entered) return;
+			const top = viewport.scrollTop;
+			const view = viewport.clientHeight;
+			let order = 0;
+			itemEls.forEach((item, index) => {
+				const box = boxes[index];
+				if (!item || !box) return;
+				const start = box[0] - top;
+				const overlap = Math.min(view, start + box[1]) - Math.max(0, start);
+				const hidden =
+					current !== 'none' &&
+					overlap < Math.min(box[1], view) * 0.5 &&
+					!(settings.animateOnce && item.dataset.seen);
+				const state: State = hidden ? (start + box[1] / 2 < view / 2 ? 'above' : 'below') : 'in';
+				if (state === item.dataset.state) return;
+				const delay = entrance && !hidden ? (order++ * Math.max(0, settings.stagger)).toFixed(3) : 0;
+				item.style.transitionDelay = delay ? `${delay}s, ${delay}s, 0s` : '';
+				if (!hidden) item.dataset.seen = 'true';
+				apply(item, state);
+			});
+			syncRing();
+		};
+
+		const sync = () => {
+			itemEls.length = settings.items.length;
+			const present = itemEls.filter((item): item is HTMLDivElement => Boolean(item));
+			const next = mode();
+			const changed = next !== current;
+			const restyle = changed ? present : present.filter((item) => !item.dataset.state);
+			current = next;
+			if (current === 'none') entered = true;
+			if (restyle.length) {
+				const elements: HTMLElement[] = changed ? [...restyle, ring] : restyle;
+				for (const element of elements) element.style.transition = 'none';
+				for (const item of restyle)
+					apply(item, current === 'none' ? 'in' : (item.dataset.state as State | undefined) || 'below');
+				if (changed) apply(ring, (itemEls[settings.selected]?.dataset.state as State | undefined) || 'in');
+				void root.offsetHeight;
+				for (const element of elements) element.style.transition = transition;
+			}
+			measure();
+			reveal(restyle.length > 0);
+		};
+
+		sync();
+
+		const gate =
+			typeof IntersectionObserver === 'undefined'
+				? null
+				: new IntersectionObserver(
+						(observed, observer) => {
+							if (!observed.some((entry) => entry.isIntersecting)) return;
+							observer.disconnect();
+							if (entered) return;
+							entered = true;
+							measure();
+							reveal(true);
+						},
+						{ rootMargin: '0px 0px -10% 0px' }
+					);
+		if (!entered) {
+			if (gate) gate.observe(root);
+			else {
+				entered = true;
+				reveal(true);
+			}
+		}
+
+		const resizeObserver = new ResizeObserver(() => {
+			place(true);
+			updateFades();
+			measure();
+			reveal(false);
+		});
+		resizeObserver.observe(viewport);
+		resizeObserver.observe(track);
+
+		const onScroll = () => {
+			updateFades();
+			reveal(false);
+		};
+
+		const onKey = (event: KeyboardEvent) => {
+			if (!settings.enableArrowNavigation || event.defaultPrevented) return;
+			if (event.altKey || event.ctrlKey || event.metaKey) return;
+			const active = document.activeElement;
+			const focused = active === viewport;
+			const idle = !active || active === document.body || active === document.documentElement;
+			if (!focused && !(engaged && idle)) return;
+			const count = settings.items.length;
+			if (!count) return;
+			const index = settings.selected;
+			let next: number | null = null;
+			if (event.key === 'ArrowDown') next = index < 0 ? 0 : index + 1;
+			else if (event.key === 'ArrowUp') next = index < 0 ? count - 1 : index - 1;
+			else if (event.key === 'Home') next = 0;
+			else if (event.key === 'End') next = count - 1;
+			else if ((event.key === 'Enter' || (focused && event.key === ' ')) && index >= 0 && index < count) {
+				event.preventDefault();
+				settings.onItemSelect?.(settings.items[index], index);
+				return;
+			}
+			if (next === null) return;
+			event.preventDefault();
+			next = settings.loop ? (next + count) % count : Math.min(count - 1, Math.max(0, next));
+			keyboard = true;
+			navigating = true;
+			selected = next;
+		};
+
+		const onPointerMove = (event: PointerEvent) => {
+			const moved = event.clientX !== pointer[0] || event.clientY !== pointer[1];
+			pointer = [event.clientX, event.clientY];
+			if (!navigating || !moved) return;
+			navigating = false;
+			const item = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-index]') : null;
+			if (item && root.contains(item) && settings.selectOnHover) selected = Number(item.dataset.index);
+		};
+
+		const onEnter = () => {
+			engaged = true;
+		};
+		const onLeave = () => {
+			engaged = false;
+		};
+
+		viewport.addEventListener('scroll', onScroll, { passive: true });
+		window.addEventListener('keydown', onKey);
+		root.addEventListener('pointerenter', onEnter);
+		root.addEventListener('pointerleave', onLeave);
+		root.addEventListener('pointermove', onPointerMove);
+
+		updateFades();
+		place(true);
+		syncRing();
+
+		engine = { place, syncRing, updateFades, sync };
+
+		return () => {
+			cancelAnimationFrame(raf);
+			gate?.disconnect();
+			resizeObserver.disconnect();
+			viewport.removeEventListener('scroll', onScroll);
+			window.removeEventListener('keydown', onKey);
+			root.removeEventListener('pointerenter', onEnter);
+			root.removeEventListener('pointerleave', onLeave);
+			root.removeEventListener('pointermove', onPointerMove);
+			engine = null;
+		};
+	});
+
+	$effect(() => {
+		void items;
+		void animation;
+		untrack(() => engine?.sync());
+	});
+
+	$effect(() => {
+		const index = selected;
+		const fade = fadeSize;
+		const gradients = showGradients;
+		untrack(() => {
+			if (!engine) return;
+			engine.place(false);
+			engine.syncRing();
+			if (!keyboard) return;
+			keyboard = false;
+			const viewport = viewportEl;
+			const track = trackEl;
+			const item = itemEls[index];
+			if (!viewport || !track || !item) return;
+			const top = track.offsetTop + item.offsetTop;
+			const bottom = top + item.offsetHeight;
+			const room = Math.max(0, (viewport.clientHeight - item.offsetHeight) / 2);
+			const margin = Math.min(gradients ? Math.max(12, fade) : 12, room);
+			if (top < viewport.scrollTop + margin) {
+				viewport.scrollTo({ top: Math.max(0, top - margin), behavior: 'smooth' });
+			} else if (bottom > viewport.scrollTop + viewport.clientHeight - margin) {
+				viewport.scrollTo({ top: bottom - viewport.clientHeight + margin, behavior: 'smooth' });
+			}
+		});
+	});
+
+	$effect(() => {
+		void showGradients;
+		void fadeSize;
+		void maxHeight;
+		void gap;
+		untrack(() => engine?.updateFades());
+	});
+
+	const hover = (index: number) => {
+		if (!navigating) selected = index;
+	};
+
+	const choose = (item: AnimatedListItem, index: number) => {
+		selected = index;
+		onItemSelect?.(item, index);
+	};
+</script>
+
+{#snippet content(value: AnimatedListContent)}
+	{#if typeof value === 'function'}
+		{@render value()}
+	{:else}
+		{value}
+	{/if}
+{/snippet}
+
+<div bind:this={rootEl} class={rootClass} data-animated={animation !== 'none' ? '' : undefined} style={rootStyle}>
 	<div
-		bind:this={listRef}
-		class="al-scroll max-h-[400px] overflow-y-auto p-4 {displayScrollbar ? 'al-scrollbar' : 'al-scrollbar-hide'}"
-		onscroll={handleScroll}
+		bind:this={viewportEl}
+		class="{VIEWPORT_CLASS} {displayScrollbar ? SCROLLBAR_CLASS : BARE_CLASS}"
+		role="listbox"
+		tabindex="0"
+		aria-activedescendant={selected >= 0 && selected < items.length ? `${baseId}-${selected}` : undefined}
+		style:max-height={size(maxHeight)}
+		style:mask-image={showGradients ? FADE_MASK : undefined}
+		style:-webkit-mask-image={showGradients ? FADE_MASK : undefined}
 	>
-		{#each items as item, index (index)}
-			<div
-				use:inViewAction={index}
-				data-index={index}
-				class="mb-4 cursor-pointer al-item"
-				style:transform={inView[index] ? 'scale(1)' : 'scale(0.7)'}
-				style:opacity={inView[index] ? 1 : 0}
-				style:transition="transform 0.2s ease 0.1s, opacity 0.2s ease 0.1s"
-				onmouseenter={() => (selectedIndex = index)}
-				onclick={() => {
-					selectedIndex = index;
-					onItemSelect?.(item, index);
-				}}
-				role="option"
-				aria-selected={selectedIndex === index}
-				tabindex="-1"
-			>
+		<div bind:this={trackEl} class="relative flex flex-col gap-[var(--al-gap)]">
+			{#each entries as entry, index (entry.id ?? index)}
+				{@const isSelected = index === selected}
 				<div
-					class="p-4 bg-[#222] rounded-lg {selectedIndex === index ? 'al-selected' : ''} {itemClass}"
+					{@attach keep(index)}
+					id="{baseId}-{index}"
+					class={itemClassName ? `${ITEM_CLASS} ${itemClassName}` : ITEM_CLASS}
+					role="option"
+					aria-selected={isSelected}
+					data-index={index}
+					data-selected={isSelected ? '' : undefined}
+					onpointerenter={selectOnHover ? () => hover(index) : undefined}
+					onclick={() => choose(items[index], index)}
 				>
-					<p class="text-white m-0">{item}</p>
+					{#if renderItem}
+						{@render renderItem(items[index], index, isSelected)}
+					{:else}
+						{#if entry.image || entry.icon}
+							<span class={LEAD_CLASS}>
+								{#if entry.image}
+									<img class="block h-full w-full object-cover" src={entry.image} alt="" draggable="false" />
+								{:else if typeof entry.icon === 'function'}
+									{@render entry.icon()}
+								{:else if entry.icon}
+									<HugeiconsIcon icon={entry.icon} size={18} strokeWidth={1.8} />
+								{/if}
+							</span>
+						{/if}
+						<span class="flex min-w-0 flex-1 flex-col gap-[2px]">
+							<span
+								class="overflow-hidden text-[14.5px] leading-[1.3] font-semibold tracking-[-0.01em] text-ellipsis whitespace-nowrap"
+							>
+								{@render content(entry.title)}
+							</span>
+							{#if entry.description}
+								<span
+									class="overflow-hidden text-[13px] leading-[1.35] text-ellipsis whitespace-nowrap text-[color:var(--al-muted)]"
+								>
+									{@render content(entry.description)}
+								</span>
+							{/if}
+						</span>
+						{#if entry.meta}
+							<span class="flex-none text-[12.5px] tabular-nums text-[color:var(--al-muted)]">
+								{@render content(entry.meta)}
+							</span>
+						{/if}
+					{/if}
+					<span class={RIM_CLASS} aria-hidden="true"></span>
 				</div>
-			</div>
-		{/each}
+			{/each}
+			<span bind:this={indicatorEl} class={INDICATOR_CLASS} aria-hidden="true">
+				<span bind:this={ringEl} class={RING_CLASS}></span>
+			</span>
+		</div>
 	</div>
-	{#if showGradients}
-		<div
-			class="absolute top-0 left-0 right-0 h-[50px] pointer-events-none"
-			style="background: linear-gradient(to bottom, #14110E, transparent); opacity: {topGradientOpacity}; transition: opacity 0.3s ease;"
-		></div>
-		<div
-			class="absolute bottom-0 left-0 right-0 h-[100px] pointer-events-none"
-			style="background: linear-gradient(to top, #14110E, transparent); opacity: {bottomGradientOpacity}; transition: opacity 0.3s ease;"
-		></div>
+	{#if frame}
+		<span class={FRAME_RIM_CLASS} aria-hidden="true"></span>
 	{/if}
 </div>
-
-<style>
-	.al-scrollbar {
-		scrollbar-width: thin;
-		scrollbar-color: #222 #14110e;
-	}
-	.al-scrollbar::-webkit-scrollbar {
-		width: 8px;
-	}
-	.al-scrollbar::-webkit-scrollbar-track {
-		background: #14110e;
-	}
-	.al-scrollbar::-webkit-scrollbar-thumb {
-		background: #222;
-		border-radius: 4px;
-	}
-	.al-scrollbar-hide {
-		scrollbar-width: none;
-	}
-	.al-scrollbar-hide::-webkit-scrollbar {
-		display: none;
-	}
-	.al-selected {
-		background: #222 !important;
-	}
-</style>

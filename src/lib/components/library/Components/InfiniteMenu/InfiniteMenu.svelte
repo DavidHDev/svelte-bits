@@ -1,680 +1,968 @@
 <!-- @svelte-bits
 {
   "title": "Infinite Menu",
-  "description": "Spherical icosahedron menu rendered with WebGL2 + instanced disc atlas, dragged via arcball physics.",
-  "dependencies": ["gl-matrix"]
+  "description": "A draggable sphere of image tiles that snaps the nearest one forward and shows its title.",
+  "dependencies": []
 }
 -->
 <script module lang="ts">
+	import type { Snippet } from 'svelte';
+
 	export interface InfiniteMenuItem {
 		image: string;
-		link: string;
-		title: string;
-		description: string;
+		title?: string;
+		description?: string;
+		link?: string;
 	}
+
+	export interface InfiniteMenuProps {
+		items?: InfiniteMenuItem[];
+		count?: number;
+		tileSize?: number;
+		roundness?: number;
+		zoom?: number;
+		pullBack?: number;
+		stretch?: number;
+		inertia?: number;
+		autoplay?: number;
+		grayscale?: boolean;
+		dim?: number;
+		intro?: boolean;
+		showInfo?: boolean;
+		renderInfo?: Snippet<[InfiniteMenuItem, number, boolean]>;
+		theme?: 'dark' | 'light';
+		accentColor?: string;
+		backgroundColor?: string;
+		onActiveChange?: (item: InfiniteMenuItem, index: number) => void;
+		onItemClick?: (item: InfiniteMenuItem, index: number) => void;
+		class?: string;
+		style?: string;
+	}
+
+	type Engine = { loadItems: (list: InfiniteMenuItem[]) => void; wake: () => void };
+
+	const ROOT =
+		'relative h-full w-full overflow-hidden outline-none @container text-[var(--infinite-menu-text)] [-webkit-tap-highlight-color:transparent] focus-visible:shadow-[inset_0_0_0_2px_var(--infinite-menu-text)]';
+	const CANVAS = 'absolute inset-0 block h-full w-full cursor-grab touch-none active:cursor-grabbing';
+	const LAYER = 'group pointer-events-none absolute inset-0';
+	const CUSTOM = 'pointer-events-none absolute inset-0';
+	const MOTION =
+		'transition-[opacity,translate,scale] duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[moving=true]:opacity-0 group-data-[moving=true]:duration-[180ms]';
+	const TITLE =
+		MOTION +
+		' absolute top-1/2 right-[calc(50%_+_var(--infinite-menu-tile,160px)_+_28px)] m-0 max-w-[calc(50%_-_var(--infinite-menu-tile,160px)_-_48px)] -translate-y-1/2 text-right text-[clamp(1.2rem,calc((50cqw_-_var(--infinite-menu-tile,160px))_*_0.2),3.4rem)] leading-[1.05] font-semibold tracking-[-0.03em] text-balance [text-shadow:var(--infinite-menu-shadow)] group-data-[moving=true]:translate-x-4 group-data-[layout=stacked]:top-auto group-data-[layout=stacked]:right-[88px] group-data-[layout=stacked]:bottom-[52px] group-data-[layout=stacked]:left-5 group-data-[layout=stacked]:max-w-none group-data-[layout=stacked]:translate-y-0 group-data-[layout=stacked]:text-left group-data-[layout=stacked]:text-[clamp(1.3rem,6cqw,1.8rem)] group-data-[layout=stacked]:group-data-[moving=true]:translate-x-0 group-data-[layout=stacked]:group-data-[moving=true]:translate-y-3';
+	const DESCRIPTION =
+		MOTION +
+		' absolute top-1/2 left-[calc(50%_+_var(--infinite-menu-tile,160px)_+_28px)] m-0 max-w-[min(22ch,calc(50%_-_var(--infinite-menu-tile,160px)_-_48px))] -translate-y-1/2 text-[clamp(0.85rem,1.5cqw,1.05rem)] leading-[1.55] opacity-[0.72] [text-shadow:var(--infinite-menu-shadow)] group-data-[moving=true]:-translate-x-4 group-data-[layout=stacked]:top-auto group-data-[layout=stacked]:right-[88px] group-data-[layout=stacked]:bottom-[22px] group-data-[layout=stacked]:left-5 group-data-[layout=stacked]:max-w-[36ch] group-data-[layout=stacked]:translate-y-0 group-data-[layout=stacked]:truncate group-data-[layout=stacked]:group-data-[moving=true]:translate-x-0 group-data-[layout=stacked]:group-data-[moving=true]:translate-y-3';
+	const ACTION =
+		'absolute bottom-[7%] left-1/2 grid h-[52px] w-[52px] -translate-x-1/2 cursor-pointer place-items-center rounded-full border-0 bg-[var(--infinite-menu-accent)] p-0 text-[var(--infinite-menu-on-accent)] pointer-events-auto transition-[opacity,translate,scale] duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.06] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[var(--infinite-menu-accent)] group-data-[moving=true]:pointer-events-none group-data-[moving=true]:translate-y-4 group-data-[moving=true]:scale-[0.6] group-data-[moving=true]:opacity-0 group-data-[moving=true]:duration-[180ms] group-data-[layout=stacked]:right-5 group-data-[layout=stacked]:bottom-[22px] group-data-[layout=stacked]:left-auto group-data-[layout=stacked]:translate-x-0 group-data-[layout=stacked]:group-data-[moving=true]:translate-y-3';
+
+	const VERTEX = `#version 300 es
+in vec2 aCorner;
+in vec4 aTile;
+uniform vec4 uOrientation;
+uniform mat4 uProjection;
+uniform float uCamera;
+uniform float uRadius;
+uniform float uTileRadius;
+uniform vec4 uSpin;
+uniform float uStretch;
+uniform float uShift;
+out vec2 vUv;
+out float vFront;
+out float vItem;
+
+vec3 rotate(vec4 q, vec3 v) {
+  vec3 t = 2.0 * cross(q.xyz, v);
+  return v + q.w * t + cross(q.xyz, t);
+}
+
+void main() {
+  vec3 center = normalize(rotate(uOrientation, aTile.xyz));
+  vec3 reference = abs(center.y) > 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
+  vec3 tangent = normalize(cross(reference, center));
+  vec3 bitangent = cross(center, tangent);
+  float front = max(center.z, 0.0);
+  vec3 offset = (tangent * aCorner.x + bitangent * aCorner.y) * uTileRadius * mix(0.5, 1.0, front);
+  vec3 motion = cross(uSpin.xyz, center);
+  float sweep = length(motion);
+  if (sweep > 0.0001) {
+    vec3 direction = motion / sweep;
+    float amount = min(0.9, uSpin.w * uStretch * 0.12) * sweep;
+    offset += direction * dot(offset, direction) * amount;
+  }
+  vec3 world = normalize(center * uRadius + offset) * uRadius * (1.0 + 0.003 * center.z);
+  gl_Position = uProjection * vec4(world.xy, world.z - uCamera, 1.0);
+  gl_Position.y += uShift * gl_Position.w;
+  vUv = aCorner;
+  vFront = center.z;
+  vItem = aTile.w;
+}`;
+
+	const FRAGMENT = `#version 300 es
+precision highp float;
+uniform sampler2D uAtlas;
+uniform float uCells;
+uniform float uInset;
+uniform float uRoundness;
+uniform float uGrayscale;
+uniform float uDim;
+uniform float uReveal;
+uniform vec3 uPlaceholder;
+uniform vec3 uTone;
+in vec2 vUv;
+in float vFront;
+in float vItem;
+out vec4 outColor;
+
+void main() {
+  float corner = clamp(uRoundness, 0.0, 1.0);
+  vec2 q = abs(vUv) - (1.0 - corner);
+  float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - corner;
+  float aa = max(fwidth(d), 0.0001);
+  float mask = 1.0 - smoothstep(-aa, aa, d);
+  float alpha = mask * smoothstep(0.02, 0.4, vFront) * uReveal;
+  if (alpha < 0.002) discard;
+  vec2 cell = vec2(mod(vItem, uCells), floor(vItem / uCells));
+  vec2 local = vec2(vUv.x, -vUv.y) * 0.5 + 0.5;
+  vec4 sampled = texture(uAtlas, (cell + uInset + local * (1.0 - 2.0 * uInset)) / uCells);
+  vec3 color = mix(uPlaceholder, sampled.rgb, sampled.a);
+  float focus = smoothstep(0.93, 0.997, vFront);
+  float gray = dot(color, vec3(0.2126, 0.7152, 0.0722));
+  color = mix(color, vec3(gray), uGrayscale * (1.0 - focus));
+  color = mix(color, uTone, uDim * (1.0 - focus));
+  outColor = vec4(color * alpha, alpha);
+}`;
+
+	const GRID = 12;
+	const RADIUS = 2;
+	const FOV = (30 * Math.PI) / 180;
+	const FRONT = [0, 0, 1];
+
+	const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+	const dot = (a: number[], b: number[]) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+	const cross = (a: number[], b: number[]) => [
+		a[1] * b[2] - a[2] * b[1],
+		a[2] * b[0] - a[0] * b[2],
+		a[0] * b[1] - a[1] * b[0]
+	];
+	const normalize = (v: number[]) => {
+		const length = Math.hypot(v[0], v[1], v[2]) || 1;
+		return [v[0] / length, v[1] / length, v[2] / length];
+	};
+	const quatMultiply = (a: number[], b: number[]) => [
+		a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
+		a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
+		a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3],
+		a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]
+	];
+	const quatAxisAngle = (axis: number[], angle: number) => {
+		const s = Math.sin(angle / 2);
+		return [axis[0] * s, axis[1] * s, axis[2] * s, Math.cos(angle / 2)];
+	};
+	const quatNormalize = (q: number[]) => {
+		const length = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+		return [q[0] / length, q[1] / length, q[2] / length, q[3] / length];
+	};
+	const rotate = (q: number[], v: number[]) => {
+		const t = cross(q, v).map(value => value * 2);
+		const u = cross(q, t);
+		return [v[0] + q[3] * t[0] + u[0], v[1] + q[3] * t[1] + u[1], v[2] + q[3] * t[2] + u[2]];
+	};
+
+	const sphere = (count: number) => {
+		const golden = Math.PI * (3 - Math.sqrt(5));
+		return Array.from({ length: count }, (_, i) => {
+			const y = 1 - (2 * (i + 0.5)) / count;
+			const ring = Math.sqrt(1 - y * y);
+			return [Math.cos(golden * i) * ring, y, Math.sin(golden * i) * ring];
+		});
+	};
+
+	const luminance = (hex: string) => {
+		const value = hex.replace('#', '');
+		const full = value.length === 3 ? value.replace(/./g, c => c + c) : value.slice(0, 6);
+		const n = parseInt(full, 16);
+		if (Number.isNaN(n)) return 0;
+		return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+	};
+
+	const compile = (gl: WebGL2RenderingContext, type: number, source: string) => {
+		const shader = gl.createShader(type);
+		if (!shader) return null;
+		gl.shaderSource(shader, source);
+		gl.compileShader(shader);
+		if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
+		gl.deleteShader(shader);
+		return null;
+	};
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { mat4, quat, vec2, vec3 } from 'gl-matrix';
+	import { onMount, untrack } from 'svelte';
 
-	type Props = {
-		items?: InfiniteMenuItem[];
-		scale?: number;
-	};
-	let { items = [], scale = 1.0 }: Props = $props();
+	let {
+		items = [],
+		count = 160,
+		tileSize = 0.63,
+		roundness = 0.2,
+		zoom = 1.65,
+		pullBack = 1,
+		stretch = 0.6,
+		inertia = 0.6,
+		autoplay = 3,
+		grayscale = true,
+		dim = 0.5,
+		intro = true,
+		showInfo = true,
+		renderInfo,
+		theme = 'dark',
+		accentColor,
+		backgroundColor,
+		onActiveChange,
+		onItemClick,
+		class: className = '',
+		style = ''
+	}: InfiniteMenuProps = $props();
 
-	let canvasEl: HTMLCanvasElement;
-	let activeItem = $state<InfiniteMenuItem | null>(null);
-	let isMoving = $state(false);
+	let rootEl: HTMLDivElement | null = $state(null);
+	let canvasEl: HTMLCanvasElement | null = $state(null);
+	let engine: Engine | null = null;
+	let loaded: InfiniteMenuItem[] | null = null;
+	let active = $state(0);
+	let moving = $state(true);
+	let layoutMode = $state<'side' | 'stacked'>('side');
 
-	const defaultItems: InfiniteMenuItem[] = [
-		{ image: 'https://picsum.photos/900/900?grayscale', link: 'https://google.com/', title: '', description: '' }
-	];
-
-	const discVertShaderSource = `#version 300 es
-uniform mat4 uWorldMatrix;
-uniform mat4 uViewMatrix;
-uniform mat4 uProjectionMatrix;
-uniform vec3 uCameraPosition;
-uniform vec4 uRotationAxisVelocity;
-in vec3 aModelPosition;
-in vec3 aModelNormal;
-in vec2 aModelUvs;
-in mat4 aInstanceMatrix;
-out vec2 vUvs;
-out float vAlpha;
-flat out int vInstanceId;
-#define PI 3.141593
-void main() {
-	vec4 worldPosition = uWorldMatrix * aInstanceMatrix * vec4(aModelPosition, 1.);
-	vec3 centerPos = (uWorldMatrix * aInstanceMatrix * vec4(0., 0., 0., 1.)).xyz;
-	float radius = length(centerPos.xyz);
-	if (gl_VertexID > 0) {
-		vec3 rotationAxis = uRotationAxisVelocity.xyz;
-		float rotationVelocity = min(.15, uRotationAxisVelocity.w * 15.);
-		vec3 stretchDir = normalize(cross(centerPos, rotationAxis));
-		vec3 relativeVertexPos = normalize(worldPosition.xyz - centerPos);
-		float strength = dot(stretchDir, relativeVertexPos);
-		float invAbsStrength = min(0., abs(strength) - 1.);
-		strength = rotationVelocity * sign(strength) * abs(invAbsStrength * invAbsStrength * invAbsStrength + 1.);
-		worldPosition.xyz += stretchDir * strength;
-	}
-	worldPosition.xyz = radius * normalize(worldPosition.xyz);
-	gl_Position = uProjectionMatrix * uViewMatrix * worldPosition;
-	vAlpha = smoothstep(0.5, 1., normalize(worldPosition.xyz).z) * .9 + .1;
-	vUvs = aModelUvs;
-	vInstanceId = gl_InstanceID;
-}`;
-
-	const discFragShaderSource = `#version 300 es
-precision highp float;
-uniform sampler2D uTex;
-uniform int uItemCount;
-uniform int uAtlasSize;
-out vec4 outColor;
-in vec2 vUvs;
-in float vAlpha;
-flat in int vInstanceId;
-void main() {
-	int itemIndex = vInstanceId % uItemCount;
-	int cellsPerRow = uAtlasSize;
-	int cellX = itemIndex % cellsPerRow;
-	int cellY = itemIndex / cellsPerRow;
-	vec2 cellSize = vec2(1.0) / vec2(float(cellsPerRow));
-	vec2 cellOffset = vec2(float(cellX), float(cellY)) * cellSize;
-	ivec2 texSize = textureSize(uTex, 0);
-	float imageAspect = float(texSize.x) / float(texSize.y);
-	float containerAspect = 1.0;
-	float scale = max(imageAspect / containerAspect, containerAspect / imageAspect);
-	vec2 st = vec2(vUvs.x, 1.0 - vUvs.y);
-	st = (st - 0.5) * scale + 0.5;
-	st = clamp(st, 0.0, 1.0);
-	st = st * cellSize + cellOffset;
-	outColor = texture(uTex, st);
-	outColor.a *= vAlpha;
-}`;
+	const settings = $derived({
+		count: clamp(Math.round(count), 6, 400),
+		tileSize: clamp(tileSize, 0.2, 1.2),
+		roundness: clamp(roundness, 0, 1),
+		zoom: clamp(zoom, 0.2, 4),
+		pullBack: clamp(pullBack, 0, 3),
+		stretch: clamp(stretch, 0, 3),
+		inertia: clamp(inertia, 0, 1),
+		autoplay: Math.max(0, autoplay),
+		grayscale,
+		dim: clamp(dim, 0, 1),
+		intro,
+		theme: theme === 'light' ? 'light' : 'dark'
+	});
 
 	onMount(() => {
-		const liveItems: InfiniteMenuItem[] = items.length ? items : defaultItems;
-
-		// ============ Geometry classes (inlined) ============
-		class Face {
-			a: number; b: number; c: number;
-			constructor(a: number, b: number, c: number) { this.a = a; this.b = b; this.c = c; }
-		}
-		class Vertex {
-			position: vec3; normal: vec3; uv: vec2;
-			constructor(x: number, y: number, z: number) {
-				this.position = vec3.fromValues(x, y, z);
-				this.normal = vec3.create();
-				this.uv = vec2.create();
-			}
-		}
-		class Geometry {
-			vertices: Vertex[] = [];
-			faces: Face[] = [];
-			addVertex(...args: number[]): this {
-				for (let i = 0; i < args.length; i += 3) this.vertices.push(new Vertex(args[i], args[i + 1], args[i + 2]));
-				return this;
-			}
-			addFace(...args: number[]): this {
-				for (let i = 0; i < args.length; i += 3) this.faces.push(new Face(args[i], args[i + 1], args[i + 2]));
-				return this;
-			}
-			get lastVertex(): Vertex { return this.vertices[this.vertices.length - 1]; }
-			subdivide(divisions = 1): this {
-				const cache: Record<string, number> = {};
-				let f = this.faces;
-				for (let div = 0; div < divisions; ++div) {
-					const newFaces = new Array<Face>(f.length * 4);
-					f.forEach((face, ndx) => {
-						const mAB = this.getMidPoint(face.a, face.b, cache);
-						const mBC = this.getMidPoint(face.b, face.c, cache);
-						const mCA = this.getMidPoint(face.c, face.a, cache);
-						const i = ndx * 4;
-						newFaces[i + 0] = new Face(face.a, mAB, mCA);
-						newFaces[i + 1] = new Face(face.b, mBC, mAB);
-						newFaces[i + 2] = new Face(face.c, mCA, mBC);
-						newFaces[i + 3] = new Face(mAB, mBC, mCA);
-					});
-					f = newFaces;
-				}
-				this.faces = f;
-				return this;
-			}
-			spherize(radius = 1): this {
-				this.vertices.forEach((v) => {
-					vec3.normalize(v.normal, v.position);
-					vec3.scale(v.position, v.normal, radius);
-				});
-				return this;
-			}
-			get vertexData(): Float32Array { return new Float32Array(this.vertices.flatMap((v) => Array.from(v.position))); }
-			get normalData(): Float32Array { return new Float32Array(this.vertices.flatMap((v) => Array.from(v.normal))); }
-			get uvData(): Float32Array { return new Float32Array(this.vertices.flatMap((v) => Array.from(v.uv))); }
-			get indexData(): Uint16Array { return new Uint16Array(this.faces.flatMap((f) => [f.a, f.b, f.c])); }
-			get data() { return { vertices: this.vertexData, indices: this.indexData, normals: this.normalData, uvs: this.uvData }; }
-			getMidPoint(ndxA: number, ndxB: number, cache: Record<string, number>): number {
-				const key = ndxA < ndxB ? `k_${ndxB}_${ndxA}` : `k_${ndxA}_${ndxB}`;
-				if (Object.prototype.hasOwnProperty.call(cache, key)) return cache[key];
-				const a = this.vertices[ndxA].position;
-				const b = this.vertices[ndxB].position;
-				const ndx = this.vertices.length;
-				cache[key] = ndx;
-				this.addVertex((a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5, (a[2] + b[2]) * 0.5);
-				return ndx;
-			}
-		}
-		class IcosahedronGeometry extends Geometry {
-			constructor() {
-				super();
-				const t = Math.sqrt(5) * 0.5 + 0.5;
-				this.addVertex(
-					-1, t, 0, 1, t, 0, -1, -t, 0, 1, -t, 0,
-					0, -1, t, 0, 1, t, 0, -1, -t, 0, 1, -t,
-					t, 0, -1, t, 0, 1, -t, 0, -1, -t, 0, 1
-				).addFace(
-					0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11,
-					1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
-					3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9,
-					4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1
-				);
-			}
-		}
-		class DiscGeometry extends Geometry {
-			constructor(steps = 4, radius = 1) {
-				super();
-				const safeSteps = Math.max(4, steps);
-				const alpha = (2 * Math.PI) / safeSteps;
-				this.addVertex(0, 0, 0);
-				this.lastVertex.uv[0] = 0.5; this.lastVertex.uv[1] = 0.5;
-				for (let i = 0; i < safeSteps; ++i) {
-					const x = Math.cos(alpha * i);
-					const y = Math.sin(alpha * i);
-					this.addVertex(radius * x, radius * y, 0);
-					this.lastVertex.uv[0] = x * 0.5 + 0.5;
-					this.lastVertex.uv[1] = y * 0.5 + 0.5;
-					if (i > 0) this.addFace(0, i, i + 1);
-				}
-				this.addFace(0, safeSteps, 1);
-			}
-		}
-
-		// ============ GL helpers ============
-		function createShader(gl: WebGL2RenderingContext, type: number, source: string) {
-			const sh = gl.createShader(type);
-			if (!sh) return null;
-			gl.shaderSource(sh, source);
-			gl.compileShader(sh);
-			if (gl.getShaderParameter(sh, gl.COMPILE_STATUS)) return sh;
-			console.error(gl.getShaderInfoLog(sh));
-			gl.deleteShader(sh);
-			return null;
-		}
-		function createProgram(gl: WebGL2RenderingContext, sources: [string, string], attribs?: Record<string, number>) {
-			const p = gl.createProgram();
-			if (!p) return null;
-			[gl.VERTEX_SHADER, gl.FRAGMENT_SHADER].forEach((t, i) => {
-				const sh = createShader(gl, t, sources[i]);
-				if (sh) gl.attachShader(p, sh);
-			});
-			if (attribs) for (const a in attribs) gl.bindAttribLocation(p, attribs[a], a);
-			gl.linkProgram(p);
-			if (gl.getProgramParameter(p, gl.LINK_STATUS)) return p;
-			console.error(gl.getProgramInfoLog(p));
-			gl.deleteProgram(p);
-			return null;
-		}
-		function makeBuffer(gl: WebGL2RenderingContext, data: ArrayBufferView, usage: number) {
-			const b = gl.createBuffer();
-			if (!b) throw new Error('buffer fail');
-			gl.bindBuffer(gl.ARRAY_BUFFER, b);
-			gl.bufferData(gl.ARRAY_BUFFER, data, usage);
-			gl.bindBuffer(gl.ARRAY_BUFFER, null);
-			return b;
-		}
-		function makeVAO(gl: WebGL2RenderingContext, pairs: Array<[WebGLBuffer, number, number]>, indices?: Uint16Array) {
-			const va = gl.createVertexArray();
-			if (!va) return null;
-			gl.bindVertexArray(va);
-			for (const [buf, loc, n] of pairs) {
-				if (loc === -1) continue;
-				gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-				gl.enableVertexAttribArray(loc);
-				gl.vertexAttribPointer(loc, n, gl.FLOAT, false, 0, 0);
-			}
-			if (indices) {
-				const ib = gl.createBuffer();
-				if (ib) {
-					gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
-					gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-				}
-			}
-			gl.bindVertexArray(null);
-			return va;
-		}
-		function resizeCanvas(canvas: HTMLCanvasElement) {
-			const dpr = Math.min(2, window.devicePixelRatio || 1);
-			const dw = Math.round(canvas.clientWidth * dpr);
-			const dh = Math.round(canvas.clientHeight * dpr);
-			const need = canvas.width !== dw || canvas.height !== dh;
-			if (need) { canvas.width = dw; canvas.height = dh; }
-			return need;
-		}
-		function makeTexture(gl: WebGL2RenderingContext) {
-			const t = gl.createTexture();
-			if (!t) throw new Error('tex fail');
-			gl.bindTexture(gl.TEXTURE_2D, t);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-			return t;
-		}
-
-		// ============ ArcballControl ============
+		const root = rootEl;
 		const canvas = canvasEl;
-		canvas.style.touchAction = 'none';
-		const arc = {
-			isPointerDown: false,
-			orientation: quat.create(),
-			pointerRotation: quat.create(),
-			rotationVelocity: 0,
-			rotationAxis: vec3.fromValues(1, 0, 0) as vec3,
-			snapDirection: vec3.fromValues(0, 0, -1) as vec3,
-			snapTargetDirection: null as vec3 | null,
-			pointerPos: vec2.create(),
-			previousPointerPos: vec2.create(),
-			_rotationVelocity: 0,
-			_combinedQuat: quat.create(),
-			EPSILON: 0.1,
-			IDENTITY_QUAT: quat.create()
-		};
+		const gl = canvas?.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true });
+		if (!root || !canvas || !gl) return;
 
-		const onPointerDown = (e: PointerEvent) => {
-			vec2.set(arc.pointerPos, e.clientX, e.clientY);
-			vec2.copy(arc.previousPointerPos, arc.pointerPos);
-			arc.isPointerDown = true;
-		};
-		const onPointerUp = () => { arc.isPointerDown = false; };
-		const onPointerLeave = () => { arc.isPointerDown = false; };
-		const onPointerMove = (e: PointerEvent) => {
-			if (arc.isPointerDown) vec2.set(arc.pointerPos, e.clientX, e.clientY);
-		};
-		canvas.addEventListener('pointerdown', onPointerDown);
-		canvas.addEventListener('pointerup', onPointerUp);
-		canvas.addEventListener('pointerleave', onPointerLeave);
-		canvas.addEventListener('pointermove', onPointerMove);
+		const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
+		const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+		const program = gl.createProgram();
+		if (!vertex || !fragment || !program) return;
+		gl.attachShader(program, vertex);
+		gl.attachShader(program, fragment);
+		gl.linkProgram(program);
+		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+		gl.useProgram(program);
 
-		function projectArc(pos: vec2): vec3 {
-			const r = 2;
-			const w = canvas.clientWidth;
-			const h = canvas.clientHeight;
-			const s = Math.max(w, h) - 1;
-			const x = (2 * pos[0] - w - 1) / s;
-			const y = (2 * pos[1] - h - 1) / s;
-			let z = 0;
-			const xySq = x * x + y * y;
-			const rSq = r * r;
-			if (xySq <= rSq / 2.0) z = Math.sqrt(rSq - xySq);
-			else z = rSq / Math.sqrt(xySq);
-			return vec3.fromValues(-x, y, z);
+		const uniforms: Record<string, WebGLUniformLocation | null> = {};
+		for (const name of [
+			'uOrientation',
+			'uProjection',
+			'uCamera',
+			'uRadius',
+			'uTileRadius',
+			'uSpin',
+			'uStretch',
+			'uShift',
+			'uAtlas',
+			'uCells',
+			'uInset',
+			'uRoundness',
+			'uGrayscale',
+			'uDim',
+			'uReveal',
+			'uPlaceholder',
+			'uTone'
+		]) {
+			uniforms[name] = gl.getUniformLocation(program, name);
 		}
-		function quatFromVectors(a: vec3, b: vec3, out: quat, angleFactor = 1) {
-			const axis = vec3.cross(vec3.create(), a, b);
-			vec3.normalize(axis, axis);
-			const d = Math.max(-1, Math.min(1, vec3.dot(a, b)));
-			const angle = Math.acos(d) * angleFactor;
-			quat.setAxisAngle(out, axis, angle);
+
+		const corners: number[] = [];
+		const indices: number[] = [];
+		for (let y = 0; y <= GRID; y++) {
+			for (let x = 0; x <= GRID; x++) corners.push((x / GRID) * 2 - 1, (y / GRID) * 2 - 1);
 		}
-		function arcUpdate(deltaTime: number, targetFrameDuration = 16) {
-			const timeScale = deltaTime / targetFrameDuration + 0.00001;
-			let angleFactor = timeScale;
-			const snapRotation = quat.create();
-			if (arc.isPointerDown) {
-				const INTENSITY = 0.3 * timeScale;
-				const ANGLE_AMPLIFICATION = 5 / timeScale;
-				const mid = vec2.sub(vec2.create(), arc.pointerPos, arc.previousPointerPos);
-				vec2.scale(mid, mid, INTENSITY);
-				if (vec2.sqrLen(mid) > arc.EPSILON) {
-					vec2.add(mid, arc.previousPointerPos, mid);
-					const p = projectArc(mid);
-					const q = projectArc(arc.previousPointerPos);
-					const a = vec3.normalize(vec3.create(), p);
-					const b = vec3.normalize(vec3.create(), q);
-					vec2.copy(arc.previousPointerPos, mid);
-					angleFactor *= ANGLE_AMPLIFICATION;
-					quatFromVectors(a, b, arc.pointerRotation, angleFactor);
-				} else {
-					quat.slerp(arc.pointerRotation, arc.pointerRotation, arc.IDENTITY_QUAT, INTENSITY);
-				}
-			} else {
-				const INTENSITY = 0.1 * timeScale;
-				quat.slerp(arc.pointerRotation, arc.pointerRotation, arc.IDENTITY_QUAT, INTENSITY);
-				if (arc.snapTargetDirection) {
-					const SNAPPING_INTENSITY = 0.2;
-					const a = arc.snapTargetDirection;
-					const b = arc.snapDirection;
-					const sqrDist = vec3.squaredDistance(a, b);
-					const distanceFactor = Math.max(0.1, 1 - sqrDist * 10);
-					angleFactor *= SNAPPING_INTENSITY * distanceFactor;
-					quatFromVectors(a, b, snapRotation, angleFactor);
-				}
+		for (let y = 0; y < GRID; y++) {
+			for (let x = 0; x < GRID; x++) {
+				const i = y * (GRID + 1) + x;
+				indices.push(i, i + 1, i + GRID + 1, i + 1, i + GRID + 2, i + GRID + 1);
 			}
-			const combined = quat.multiply(quat.create(), snapRotation, arc.pointerRotation);
-			arc.orientation = quat.multiply(quat.create(), combined, arc.orientation);
-			quat.normalize(arc.orientation, arc.orientation);
-
-			const RA_INTENSITY = 0.8 * timeScale;
-			quat.slerp(arc._combinedQuat, arc._combinedQuat, combined, RA_INTENSITY);
-			quat.normalize(arc._combinedQuat, arc._combinedQuat);
-			const rad = Math.acos(arc._combinedQuat[3]) * 2.0;
-			const s = Math.sin(rad / 2.0);
-			let rv = 0;
-			if (s > 0.000001) {
-				rv = rad / (2 * Math.PI);
-				arc.rotationAxis[0] = arc._combinedQuat[0] / s;
-				arc.rotationAxis[1] = arc._combinedQuat[1] / s;
-				arc.rotationAxis[2] = arc._combinedQuat[2] / s;
-			}
-			const RV_INTENSITY = 0.5 * timeScale;
-			arc._rotationVelocity += (rv - arc._rotationVelocity) * RV_INTENSITY;
-			arc.rotationVelocity = arc._rotationVelocity / timeScale;
 		}
 
-		// ============ InfiniteGridMenu instance ============
-		const gl = canvas.getContext('webgl2', { antialias: true, alpha: false });
-		if (!gl) {
-			console.warn('WebGL2 unavailable');
-			return;
-		}
-
-		const SPHERE_RADIUS = 2;
-		const TARGET_FRAME_DURATION = 1000 / 60;
-		const camera = {
-			matrix: mat4.create(),
-			near: 0.1,
-			far: 40,
-			fov: Math.PI / 4,
-			aspect: 1,
-			position: vec3.fromValues(0, 0, 3 * scale) as vec3,
-			up: vec3.fromValues(0, 1, 0) as vec3,
-			matrices: { view: mat4.create(), projection: mat4.create(), inversProjection: mat4.create() }
-		};
-
-		const discProgram = createProgram(gl, [discVertShaderSource, discFragShaderSource], {
-			aModelPosition: 0, aModelNormal: 1, aModelUvs: 2, aInstanceMatrix: 3
-		});
-		if (!discProgram) return;
-
-		const discLocations = {
-			aModelPosition: gl.getAttribLocation(discProgram, 'aModelPosition'),
-			aModelUvs: gl.getAttribLocation(discProgram, 'aModelUvs'),
-			aInstanceMatrix: gl.getAttribLocation(discProgram, 'aInstanceMatrix'),
-			uWorldMatrix: gl.getUniformLocation(discProgram, 'uWorldMatrix'),
-			uViewMatrix: gl.getUniformLocation(discProgram, 'uViewMatrix'),
-			uProjectionMatrix: gl.getUniformLocation(discProgram, 'uProjectionMatrix'),
-			uCameraPosition: gl.getUniformLocation(discProgram, 'uCameraPosition'),
-			uScaleFactor: gl.getUniformLocation(discProgram, 'uScaleFactor'),
-			uRotationAxisVelocity: gl.getUniformLocation(discProgram, 'uRotationAxisVelocity'),
-			uTex: gl.getUniformLocation(discProgram, 'uTex'),
-			uFrames: gl.getUniformLocation(discProgram, 'uFrames'),
-			uItemCount: gl.getUniformLocation(discProgram, 'uItemCount'),
-			uAtlasSize: gl.getUniformLocation(discProgram, 'uAtlasSize')
-		};
-
-		const discGeo = new DiscGeometry(56, 1);
-		const discBuffers = discGeo.data;
-		const discVAO = makeVAO(
-			gl,
-			[
-				[makeBuffer(gl, discBuffers.vertices, gl.STATIC_DRAW), discLocations.aModelPosition, 3],
-				[makeBuffer(gl, discBuffers.uvs, gl.STATIC_DRAW), discLocations.aModelUvs, 2]
-			],
-			discBuffers.indices
-		);
-
-		const icoGeo = new IcosahedronGeometry();
-		icoGeo.subdivide(1).spherize(SPHERE_RADIUS);
-		const instancePositions: vec3[] = icoGeo.vertices.map((v) => v.position);
-		const DISC_INSTANCE_COUNT = icoGeo.vertices.length;
-
-		// instances buffer
-		const matricesArray = new Float32Array(DISC_INSTANCE_COUNT * 16);
-		const matrices: Float32Array[] = [];
-		for (let i = 0; i < DISC_INSTANCE_COUNT; ++i) {
-			const m = new Float32Array(matricesArray.buffer, i * 16 * 4, 16);
-			mat4.identity(m as unknown as mat4);
-			matrices.push(m);
-		}
-		const instanceBuffer = gl.createBuffer();
-		gl.bindVertexArray(discVAO);
-		gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, matricesArray.byteLength, gl.DYNAMIC_DRAW);
-		const bytesPerMatrix = 16 * 4;
-		for (let j = 0; j < 4; ++j) {
-			const loc = discLocations.aInstanceMatrix + j;
-			gl.enableVertexAttribArray(loc);
-			gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, bytesPerMatrix, j * 4 * 4);
-			gl.vertexAttribDivisor(loc, 1);
-		}
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		const vao = gl.createVertexArray();
+		gl.bindVertexArray(vao);
+		const cornerBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, cornerBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(corners), gl.STATIC_DRAW);
+		const cornerLocation = gl.getAttribLocation(program, 'aCorner');
+		gl.enableVertexAttribArray(cornerLocation);
+		gl.vertexAttribPointer(cornerLocation, 2, gl.FLOAT, false, 0, 0);
+		const indexBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+		const tileBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
+		const tileLocation = gl.getAttribLocation(program, 'aTile');
+		gl.enableVertexAttribArray(tileLocation);
+		gl.vertexAttribPointer(tileLocation, 4, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribDivisor(tileLocation, 1);
 		gl.bindVertexArray(null);
 
-		// texture atlas
-		const tex = makeTexture(gl);
-		const itemCount = Math.max(1, liveItems.length);
-		const atlasSize = Math.ceil(Math.sqrt(itemCount));
-		{
-			const cellSize = 512;
-			const off = document.createElement('canvas');
-			off.width = atlasSize * cellSize;
-			off.height = atlasSize * cellSize;
-			const ctx = off.getContext('2d');
-			if (ctx) {
-				Promise.all(
-					liveItems.map(
-						(it) =>
-							new Promise<HTMLImageElement>((resolve) => {
-								const img = new Image();
-								img.crossOrigin = 'anonymous';
-								img.onload = () => resolve(img);
-								img.onerror = () => resolve(img);
-								img.src = it.image;
-							})
-					)
-				).then((imgs) => {
-					imgs.forEach((img, i) => {
-						const x = (i % atlasSize) * cellSize;
-						const y = Math.floor(i / atlasSize) * cellSize;
-						try { ctx.drawImage(img, x, y, cellSize, cellSize); } catch { /* ignore */ }
-					});
-					gl.bindTexture(gl.TEXTURE_2D, tex);
-					gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
-					gl.generateMipmap(gl.TEXTURE_2D);
-				});
-			}
-		}
+		const atlasTexture = gl.createTexture();
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, atlasTexture);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
+		gl.uniform1i(uniforms.uAtlas, 0);
 
-		// state
-		const worldMatrix = mat4.create();
-		let _time = 0, _deltaTime = 0, _deltaFrames = 0, _frames = 0;
-		let smoothRotationVelocity = 0;
-		let movementActive = false;
-
-		function updateCameraMatrix() {
-			mat4.targetTo(camera.matrix, camera.position, [0, 0, 0], camera.up);
-			mat4.invert(camera.matrices.view, camera.matrix);
-		}
-		function updateProjectionMatrix() {
-			camera.aspect = canvas.clientWidth / canvas.clientHeight;
-			const height = SPHERE_RADIUS * 0.35;
-			const distance = camera.position[2];
-			if (camera.aspect > 1) camera.fov = 2 * Math.atan(height / distance);
-			else camera.fov = 2 * Math.atan(height / camera.aspect / distance);
-			mat4.perspective(camera.matrices.projection, camera.fov, camera.aspect, camera.near, camera.far);
-			mat4.invert(camera.matrices.inversProjection, camera.matrices.projection);
-		}
-		function findNearestVertexIndex(): number {
-			const n = arc.snapDirection;
-			const inv = quat.conjugate(quat.create(), arc.orientation);
-			const nt = vec3.transformQuat(vec3.create(), n, inv);
-			let maxD = -1, idx = 0;
-			for (let i = 0; i < instancePositions.length; ++i) {
-				const d = vec3.dot(nt, instancePositions[i]);
-				if (d > maxD) { maxD = d; idx = i; }
-			}
-			return idx;
-		}
-		function getVertexWorldPosition(index: number): vec3 {
-			return vec3.transformQuat(vec3.create(), instancePositions[index], arc.orientation);
-		}
-		function onControlUpdate(deltaTime: number) {
-			const timeScale = deltaTime / TARGET_FRAME_DURATION + 0.0001;
-			let damping = 5 / timeScale;
-			let cameraTargetZ = 3 * scale;
-			const moving = arc.isPointerDown || Math.abs(smoothRotationVelocity) > 0.01;
-			if (moving !== movementActive) {
-				movementActive = moving;
-				isMoving = moving;
-			}
-			if (!arc.isPointerDown) {
-				const idx = findNearestVertexIndex();
-				const itemIdx = idx % Math.max(1, liveItems.length);
-				activeItem = liveItems[itemIdx];
-				const dir = vec3.normalize(vec3.create(), getVertexWorldPosition(idx));
-				arc.snapTargetDirection = dir;
-			} else {
-				cameraTargetZ += arc.rotationVelocity * 80 + 2.5;
-				damping = 7 / timeScale;
-			}
-			camera.position[2] += (cameraTargetZ - camera.position[2]) / damping;
-			updateCameraMatrix();
-		}
-
-		function resize() {
-			const need = resizeCanvas(canvas);
-			if (need) gl!.viewport(0, 0, gl!.drawingBufferWidth, gl!.drawingBufferHeight);
-			updateProjectionMatrix();
-		}
-
-		function animate(deltaTime: number) {
-			arcUpdate(deltaTime, TARGET_FRAME_DURATION);
-			onControlUpdate(deltaTime);
-			const SCALE_INTENSITY = 0.6;
-			const baseScale = 0.25;
-			const positions = instancePositions.map((p) => vec3.transformQuat(vec3.create(), p, arc.orientation));
-			positions.forEach((p, ndx) => {
-				const s = (Math.abs(p[2]) / SPHERE_RADIUS) * SCALE_INTENSITY + (1 - SCALE_INTENSITY);
-				const finalScale = s * baseScale;
-				const m = mat4.create();
-				mat4.multiply(m, m, mat4.fromTranslation(mat4.create(), vec3.negate(vec3.create(), p)));
-				mat4.multiply(m, m, mat4.targetTo(mat4.create(), [0, 0, 0], p, [0, 1, 0]));
-				mat4.multiply(m, m, mat4.fromScaling(mat4.create(), [finalScale, finalScale, finalScale]));
-				mat4.multiply(m, m, mat4.fromTranslation(mat4.create(), [0, 0, -SPHERE_RADIUS]));
-				mat4.copy(matrices[ndx], m);
-			});
-			gl!.bindBuffer(gl!.ARRAY_BUFFER, instanceBuffer);
-			gl!.bufferSubData(gl!.ARRAY_BUFFER, 0, matricesArray);
-			gl!.bindBuffer(gl!.ARRAY_BUFFER, null);
-			smoothRotationVelocity = arc.rotationVelocity;
-		}
-
-		function render() {
-			gl!.useProgram(discProgram!);
-			gl!.enable(gl!.CULL_FACE);
-			gl!.enable(gl!.DEPTH_TEST);
-			gl!.clearColor(0, 0, 0, 0);
-			gl!.clear(gl!.COLOR_BUFFER_BIT | gl!.DEPTH_BUFFER_BIT);
-			gl!.uniformMatrix4fv(discLocations.uWorldMatrix, false, worldMatrix);
-			gl!.uniformMatrix4fv(discLocations.uViewMatrix, false, camera.matrices.view);
-			gl!.uniformMatrix4fv(discLocations.uProjectionMatrix, false, camera.matrices.projection);
-			gl!.uniform3f(discLocations.uCameraPosition, camera.position[0], camera.position[1], camera.position[2]);
-			gl!.uniform4f(
-				discLocations.uRotationAxisVelocity,
-				arc.rotationAxis[0], arc.rotationAxis[1], arc.rotationAxis[2],
-				smoothRotationVelocity * 1.1
-			);
-			gl!.uniform1i(discLocations.uItemCount, liveItems.length);
-			gl!.uniform1i(discLocations.uAtlasSize, atlasSize);
-			gl!.uniform1f(discLocations.uFrames, _frames);
-			gl!.uniform1f(discLocations.uScaleFactor, scale);
-			gl!.uniform1i(discLocations.uTex, 0);
-			gl!.activeTexture(gl!.TEXTURE0);
-			gl!.bindTexture(gl!.TEXTURE_2D, tex);
-			gl!.bindVertexArray(discVAO);
-			gl!.drawElementsInstanced(gl!.TRIANGLES, discBuffers.indices.length, gl!.UNSIGNED_SHORT, 0, DISC_INSTANCE_COUNT);
-			gl!.bindVertexArray(null);
-		}
-
+		const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+		const atlas = { canvas: document.createElement('canvas'), cells: 1, cell: 512, request: 0, dirty: false };
+		const drag = { active: false, id: -1, x: 0, y: 0, dx: 0, dy: 0, moved: 0, start: 0 };
+		const state = {
+			width: 1,
+			height: 1,
+			tiles: [] as number[][],
+			assign: [] as number[],
+			count: 0,
+			orientation: quatNormalize([0.08, -0.3, 0, 1]),
+			axis: [0, 1, 0],
+			speed: settings.intro && !reduce ? 3.2 : 0,
+			camera: 0,
+			target: -1,
+			front: 0,
+			shown: -1,
+			moving: true,
+			reveal: 0,
+			hovered: false,
+			focused: false,
+			idle: 0,
+			settle: 0,
+			tilePx: 0,
+			layout: 'side',
+			shift: 0,
+			started: false
+		};
 		let raf = 0;
-		let stopped = false;
-		function loop(time = 0) {
-			if (stopped) return;
-			_deltaTime = Math.min(32, time - _time);
-			_time = time;
-			_deltaFrames = _deltaTime / TARGET_FRAME_DURATION;
-			_frames += _deltaFrames;
-			animate(_deltaTime);
-			render();
-			raf = requestAnimationFrame(loop);
-		}
+		let timer = 0;
+		let last = 0;
+		let visible = true;
+		let alive = true;
 
-		updateCameraMatrix();
-		updateProjectionMatrix();
+		const layout = () => {
+			const s = settings;
+			if (s.count === state.count) return;
+			state.count = s.count;
+			state.tiles = sphere(s.count);
+			const itemCount = Math.max(1, items.length);
+			const usage = new Array(itemCount).fill(0);
+			state.assign = state.tiles.map(() => -1);
+			state.tiles.forEach((tile, i) => {
+				const near = state.tiles
+					.map((other, j) => [j === i ? -2 : dot(tile, other), j])
+					.sort((a, b) => b[0] - a[0])
+					.slice(0, 6)
+					.map(([, j]) => state.assign[j]);
+				let pick = -1;
+				for (let k = 0; k < itemCount; k++) {
+					const candidate = (i + k) % itemCount;
+					if (near.includes(candidate)) continue;
+					if (pick < 0 || usage[candidate] < usage[pick]) pick = candidate;
+				}
+				if (pick < 0) pick = i % itemCount;
+				state.assign[i] = pick;
+				usage[pick] += 1;
+			});
+			const data = new Float32Array(s.count * 4);
+			state.tiles.forEach((tile, i) => data.set([tile[0], tile[1], tile[2], state.assign[i]], i * 4));
+			gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+			let first = -1;
+			let firstZ = -2;
+			state.tiles.forEach((tile, i) => {
+				const z = rotate(state.orientation, tile)[2];
+				if (state.assign[i] === 0 && z > firstZ) {
+					firstZ = z;
+					first = i;
+				}
+			});
+			state.target = first;
+		};
+
+		const uploadAtlas = () => {
+			atlas.dirty = false;
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, atlasTexture);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.canvas);
+			gl.generateMipmap(gl.TEXTURE_2D);
+		};
+
+		const loadItems = (list: InfiniteMenuItem[]) => {
+			const request = ++atlas.request;
+			const total = Math.max(1, list.length);
+			atlas.cells = Math.ceil(Math.sqrt(total));
+			atlas.cell = clamp(Math.floor(4096 / atlas.cells), 64, 512);
+			atlas.canvas.width = atlas.cells * atlas.cell;
+			atlas.canvas.height = atlas.cells * atlas.cell;
+			const ctx = atlas.canvas.getContext('2d');
+			ctx?.clearRect(0, 0, atlas.canvas.width, atlas.canvas.height);
+			uploadAtlas();
+			state.count = 0;
+			layout();
+			let pending = list.length;
+			if (!pending) state.started = true;
+			list.forEach((item, index) => {
+				const image = new Image();
+				image.crossOrigin = 'anonymous';
+				image.decoding = 'async';
+				const done = () => {
+					pending -= 1;
+					if (pending <= 0) state.started = true;
+					wake();
+				};
+				image.onload = () => {
+					if (!alive || request !== atlas.request || !ctx) return;
+					const size = atlas.cell;
+					const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
+					const width = image.naturalWidth * scale;
+					const height = image.naturalHeight * scale;
+					const x = (index % atlas.cells) * size;
+					const y = Math.floor(index / atlas.cells) * size;
+					ctx.save();
+					ctx.beginPath();
+					ctx.rect(x, y, size, size);
+					ctx.clip();
+					ctx.drawImage(image, x + (size - width) / 2, y + (size - height) / 2, width, height);
+					ctx.restore();
+					atlas.dirty = true;
+					done();
+				};
+				image.onerror = () => {
+					if (!alive || request !== atlas.request) return;
+					done();
+				};
+				image.src = item?.image ?? '';
+			});
+		};
+
+		const tileRadius = () => 0.5 * RADIUS * Math.sqrt((4 * Math.PI) / Math.max(1, state.count)) * settings.tileSize;
+
+		const restDistance = () => {
+			const s = settings;
+			const aspect = state.width / state.height;
+			const span = Math.tan(FOV / 2) * Math.min(1, aspect);
+			return RADIUS + tileRadius() / (0.46 * s.zoom * span);
+		};
+
+		const measure = () => {
+			const rest = restDistance();
+			const radius = (tileRadius() / ((rest - RADIUS) * Math.tan(FOV / 2))) * (state.height / 2);
+			const rounded = Math.round(radius);
+			if (rounded !== state.tilePx) {
+				state.tilePx = rounded;
+				root.style.setProperty('--infinite-menu-tile', `${rounded}px`);
+			}
+			const mode = state.width / 2 - radius < 120 ? 'stacked' : 'side';
+			if (mode !== state.layout) {
+				state.layout = mode;
+				layoutMode = mode;
+			}
+		};
+
+		const nearest = () => {
+			let best = 0;
+			let bestZ = -2;
+			for (let i = 0; i < state.tiles.length; i++) {
+				const z = rotate(state.orientation, state.tiles[i])[2];
+				if (z > bestZ) {
+					bestZ = z;
+					best = i;
+				}
+			}
+			return best;
+		};
+
+		const neighbor = (from: number, direction: number[]) => {
+			const origin = rotate(state.orientation, state.tiles[from]);
+			let best = -1;
+			let bestScore = Infinity;
+			for (let i = 0; i < state.tiles.length; i++) {
+				if (i === from) continue;
+				const c = rotate(state.orientation, state.tiles[i]);
+				if (c[2] < 0) continue;
+				const dx = c[0] - origin[0];
+				const dy = c[1] - origin[1];
+				const length = Math.hypot(dx, dy);
+				if (length < 0.0001) continue;
+				const align = (dx * direction[0] + dy * direction[1]) / length;
+				if (align < 0.55) continue;
+				const score = length * (2.2 - align);
+				if (score < bestScore) {
+					bestScore = score;
+					best = i;
+				}
+			}
+			return best;
+		};
+
+		const goTo = (index: number) => {
+			if (index < 0) return;
+			state.target = index;
+			state.speed = 0;
+			state.idle = 0;
+			wake();
+		};
+
+		const pick = (clientX: number, clientY: number) => {
+			const rect = canvas.getBoundingClientRect();
+			const aspect = rect.width / rect.height;
+			const span = Math.tan(FOV / 2);
+			const x = (((clientX - rect.left) / rect.width) * 2 - 1) * aspect;
+			const y = 1 - ((clientY - rect.top) / rect.height) * 2 - state.shift;
+			const radius = tileRadius();
+			let best = -1;
+			let bestDistance = Infinity;
+			for (let i = 0; i < state.tiles.length; i++) {
+				const c = rotate(state.orientation, state.tiles[i]);
+				if (c[2] < 0.2) continue;
+				const depth = state.camera - c[2] * RADIUS;
+				const sx = (c[0] * RADIUS) / (depth * span);
+				const sy = (c[1] * RADIUS) / (depth * span);
+				const reach = (radius * (0.5 + 0.5 * c[2])) / (depth * span);
+				const distance = Math.hypot(sx - x, sy - y);
+				if (distance < reach && distance < bestDistance) {
+					bestDistance = distance;
+					best = i;
+				}
+			}
+			return best;
+		};
+
+		const activate = (index: number) => {
+			const list = items;
+			if (!list.length) return;
+			const itemIndex = (state.assign[index] ?? 0) % list.length;
+			const item = list[itemIndex];
+			const handler = onItemClick;
+			if (handler) handler(item, itemIndex);
+			else if (item?.link) window.open(item.link, item.link.startsWith('http') ? '_blank' : '_self', 'noopener');
+		};
+
+		const report = () => {
+			const list = items;
+			const index = list.length ? (state.assign[state.front] ?? 0) % list.length : 0;
+			if (!state.moving && index !== state.shown) {
+				state.shown = index;
+				active = index;
+				onActiveChange?.(list[index], index);
+			}
+		};
+
+		const frame = (now: number) => {
+			raf = 0;
+			if (!alive || !visible) return;
+			const s = settings;
+			const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+			last = now;
+			layout();
+			if (atlas.dirty) uploadAtlas();
+			if (state.started) state.reveal = Math.min(1, state.reveal + dt / (reduce ? 0.01 : 0.7));
+			const minSide = Math.min(state.width, state.height);
+
+			if (drag.active) {
+				if (drag.dx || drag.dy) {
+					const length = Math.hypot(drag.dx, drag.dy);
+					const angle = (length / minSide) * 2.6;
+					const axis = normalize([drag.dy, drag.dx, 0]);
+					state.orientation = quatNormalize(quatMultiply(quatAxisAngle(axis, angle), state.orientation));
+					const blend = 1 - Math.exp(-dt * 30);
+					state.axis = normalize(state.axis.map((value, i) => value + (axis[i] - value) * blend));
+					state.speed += (angle / dt - state.speed) * blend;
+					drag.dx = 0;
+					drag.dy = 0;
+				} else {
+					state.speed *= Math.exp(-dt * 14);
+				}
+			} else {
+				if (state.speed > 0.0005) {
+					state.orientation = quatNormalize(quatMultiply(quatAxisAngle(state.axis, state.speed * dt), state.orientation));
+					state.speed *= Math.exp(-dt * (6 - 5 * s.inertia));
+				} else {
+					state.speed = 0;
+				}
+				const goal = state.target >= 0 ? state.target : nearest();
+				const current = rotate(state.orientation, state.tiles[goal]);
+				const angle = Math.acos(clamp(dot(current, FRONT), -1, 1));
+				const pull = clamp(1 - state.speed / 1.4, 0, 1);
+				if (angle > 0.0002 && pull > 0) {
+					const axis = cross(current, FRONT);
+					const step = angle * (1 - Math.exp(-dt * (state.target >= 0 ? 6 : 8))) * pull;
+					if (Math.hypot(axis[0], axis[1], axis[2]) > 1e-6) {
+						state.orientation = quatNormalize(quatMultiply(quatAxisAngle(normalize(axis), step), state.orientation));
+					}
+				} else if (state.target >= 0 && state.speed === 0) {
+					state.target = -1;
+				}
+				state.front = goal;
+			}
+
+			const settledAngle = Math.acos(clamp(rotate(state.orientation, state.tiles[state.front])[2], -1, 1));
+			const isMoving = drag.active || state.speed > 0.08 || settledAngle > 0.01;
+			if (isMoving !== state.moving) {
+				state.moving = isMoving;
+				moving = isMoving;
+			}
+			state.settle += ((isMoving ? 0 : 1) - state.settle) * (1 - Math.exp(-dt * (isMoving ? 10 : 3)));
+			if (!isMoving) report();
+
+			const rest = restDistance();
+			const pullAmount = clamp(drag.active ? 1 : state.speed / 2.2, 0, 1);
+			const target = rest + s.pullBack * pullAmount * RADIUS * 1.25 + (1 - state.reveal) * RADIUS * 1.5;
+			if (!state.camera) state.camera = target + RADIUS;
+			state.camera += (target - state.camera) * (1 - Math.exp(-dt * 4.5));
+
+			if (s.autoplay > 0 && !isMoving && !state.hovered && !state.focused && !reduce) {
+				state.idle += dt;
+				if (state.idle >= s.autoplay) {
+					state.idle = 0;
+					goTo(neighbor(state.front, [1, 0]));
+				}
+			} else {
+				state.idle = 0;
+			}
+
+			measure();
+			const shiftTarget = state.layout === 'stacked' ? Math.min(0.3, 72 / state.height) : 0;
+			state.shift += (shiftTarget - state.shift) * (1 - Math.exp(-dt * 6));
+			render();
+
+			const busy =
+				isMoving ||
+				Math.abs(target - state.camera) > 0.001 ||
+				Math.abs((state.layout === 'stacked' ? Math.min(0.3, 72 / state.height) : 0) - state.shift) > 0.0005 ||
+				Math.abs((isMoving ? 0 : 1) - state.settle) > 0.002 ||
+				state.reveal < 1 ||
+				atlas.dirty ||
+				!state.started;
+			if (busy) raf = requestAnimationFrame(frame);
+			else {
+				last = 0;
+				if (s.autoplay > 0 && !state.hovered && !state.focused && !reduce) {
+					clearTimeout(timer);
+					timer = window.setTimeout(wake, Math.max(16, (s.autoplay - state.idle) * 1000));
+				}
+			}
+		};
+
+		const render = () => {
+			const s = settings;
+			const aspect = state.width / state.height;
+			const f = 1 / Math.tan(FOV / 2);
+			const near = 0.05;
+			const far = 50;
+			const projection = new Float32Array([
+				f / aspect,
+				0,
+				0,
+				0,
+				0,
+				f,
+				0,
+				0,
+				0,
+				0,
+				(far + near) / (near - far),
+				-1,
+				0,
+				0,
+				(2 * far * near) / (near - far),
+				0
+			]);
+			gl.viewport(0, 0, canvas.width, canvas.height);
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+			gl.enable(gl.DEPTH_TEST);
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+			gl.useProgram(program);
+			const [qx, qy, qz, qw] = state.orientation;
+			gl.uniform4f(uniforms.uOrientation, qx, qy, qz, qw);
+			gl.uniformMatrix4fv(uniforms.uProjection, false, projection);
+			gl.uniform1f(uniforms.uCamera, state.camera);
+			gl.uniform1f(uniforms.uRadius, RADIUS);
+			gl.uniform1f(uniforms.uTileRadius, tileRadius());
+			gl.uniform4f(uniforms.uSpin, state.axis[0], state.axis[1], state.axis[2], reduce ? 0 : state.speed);
+			gl.uniform1f(uniforms.uStretch, s.stretch);
+			gl.uniform1f(uniforms.uShift, state.shift);
+			gl.uniform1f(uniforms.uCells, atlas.cells);
+			gl.uniform1f(uniforms.uInset, 2 / atlas.cell);
+			gl.uniform1f(uniforms.uRoundness, s.roundness);
+			gl.uniform1f(uniforms.uGrayscale, s.grayscale ? 1 : 0);
+			gl.uniform1f(uniforms.uDim, s.dim * (0.45 + 0.55 * state.settle));
+			gl.uniform1f(uniforms.uReveal, state.reveal);
+			if (s.theme === 'light') {
+				gl.uniform3f(uniforms.uPlaceholder, 0.91, 0.9, 0.89);
+				gl.uniform3f(uniforms.uTone, 1, 1, 1);
+			} else {
+				gl.uniform3f(uniforms.uPlaceholder, 0.15, 0.13, 0.11);
+				gl.uniform3f(uniforms.uTone, 0.05, 0.04, 0.035);
+			}
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, atlasTexture);
+			gl.bindVertexArray(vao);
+			gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, state.tiles.length);
+			gl.bindVertexArray(null);
+		};
+
+		const wake = () => {
+			clearTimeout(timer);
+			if (raf || !alive || !visible) return;
+			raf = requestAnimationFrame(frame);
+		};
+
+		const onPointerDown = (event: PointerEvent) => {
+			if (event.pointerType === 'mouse' && event.button !== 0) return;
+			canvas.setPointerCapture?.(event.pointerId);
+			drag.active = true;
+			drag.id = event.pointerId;
+			drag.x = event.clientX;
+			drag.y = event.clientY;
+			drag.dx = 0;
+			drag.dy = 0;
+			drag.moved = 0;
+			drag.start = performance.now();
+			state.target = -1;
+			wake();
+		};
+
+		const onPointerMove = (event: PointerEvent) => {
+			if (!drag.active || event.pointerId !== drag.id) return;
+			const dx = event.clientX - drag.x;
+			const dy = event.clientY - drag.y;
+			drag.x = event.clientX;
+			drag.y = event.clientY;
+			drag.dx += dx;
+			drag.dy += dy;
+			drag.moved += Math.hypot(dx, dy);
+			wake();
+		};
+
+		const onPointerUp = (event: PointerEvent) => {
+			if (!drag.active || event.pointerId !== drag.id) return;
+			drag.active = false;
+			canvas.releasePointerCapture?.(event.pointerId);
+			if (drag.moved < 6 && performance.now() - drag.start < 450) {
+				const index = pick(event.clientX, event.clientY);
+				if (index >= 0 && index === state.front) activate(index);
+				else if (index >= 0) goTo(index);
+			}
+			wake();
+		};
+
+		const onKeyDown = (event: KeyboardEvent) => {
+			const directions: Record<string, number[]> = {
+				ArrowRight: [1, 0],
+				ArrowLeft: [-1, 0],
+				ArrowUp: [0, 1],
+				ArrowDown: [0, -1]
+			};
+			if (directions[event.key]) {
+				event.preventDefault();
+				goTo(neighbor(state.target >= 0 ? state.target : state.front, directions[event.key]));
+			} else if (event.key === 'Enter' && event.target === root) {
+				event.preventDefault();
+				activate(state.front);
+			}
+		};
+
+		const onEnter = () => {
+			state.hovered = true;
+		};
+		const onLeave = () => {
+			state.hovered = false;
+			wake();
+		};
+		const onFocusIn = () => {
+			state.focused = true;
+		};
+		const onFocusOut = (event: FocusEvent) => {
+			if (root.contains(event.relatedTarget as Node | null)) return;
+			state.focused = false;
+			wake();
+		};
+
+		const resize = () => {
+			const dpr = Math.min(window.devicePixelRatio || 1, 2);
+			state.width = Math.max(1, root.clientWidth);
+			state.height = Math.max(1, root.clientHeight);
+			canvas.width = Math.round(state.width * dpr);
+			canvas.height = Math.round(state.height * dpr);
+			render();
+			wake();
+		};
+
+		engine = { loadItems, wake };
+
+		canvas.addEventListener('pointerdown', onPointerDown);
+		canvas.addEventListener('pointermove', onPointerMove);
+		canvas.addEventListener('pointerup', onPointerUp);
+		canvas.addEventListener('pointercancel', onPointerUp);
+		root.addEventListener('keydown', onKeyDown);
+		root.addEventListener('pointerenter', onEnter);
+		root.addEventListener('pointerleave', onLeave);
+		root.addEventListener('focusin', onFocusIn);
+		root.addEventListener('focusout', onFocusOut);
+		const resizeObserver = new ResizeObserver(resize);
+		resizeObserver.observe(root);
+		const visibility = new IntersectionObserver(entries => {
+			visible = entries.some(entry => entry.isIntersecting);
+			if (visible) {
+				last = 0;
+				wake();
+			}
+		});
+		visibility.observe(root);
+		layout();
 		resize();
-		const onResize = () => resize();
-		window.addEventListener('resize', onResize);
-		loop();
+
+		loaded = items;
+		loadItems(items);
 
 		return () => {
-			stopped = true;
+			alive = false;
 			cancelAnimationFrame(raf);
-			window.removeEventListener('resize', onResize);
+			clearTimeout(timer);
+			engine = null;
 			canvas.removeEventListener('pointerdown', onPointerDown);
-			canvas.removeEventListener('pointerup', onPointerUp);
-			canvas.removeEventListener('pointerleave', onPointerLeave);
 			canvas.removeEventListener('pointermove', onPointerMove);
+			canvas.removeEventListener('pointerup', onPointerUp);
+			canvas.removeEventListener('pointercancel', onPointerUp);
+			root.removeEventListener('keydown', onKeyDown);
+			root.removeEventListener('pointerenter', onEnter);
+			root.removeEventListener('pointerleave', onLeave);
+			root.removeEventListener('focusin', onFocusIn);
+			root.removeEventListener('focusout', onFocusOut);
+			resizeObserver.disconnect();
+			visibility.disconnect();
+			gl.deleteTexture(atlasTexture);
+			gl.deleteBuffer(cornerBuffer);
+			gl.deleteBuffer(indexBuffer);
+			gl.deleteBuffer(tileBuffer);
+			gl.deleteVertexArray(vao);
+			gl.deleteProgram(program);
+			gl.deleteShader(vertex);
+			gl.deleteShader(fragment);
 		};
 	});
 
-	function handleButtonClick() {
-		if (!activeItem?.link) return;
-		if (activeItem.link.startsWith('http')) window.open(activeItem.link, '_blank');
-		else console.log('Internal route:', activeItem.link);
-	}
+	$effect(() => {
+		const list = items;
+		untrack(() => {
+			if (!engine || list === loaded) return;
+			loaded = list;
+			engine.loadItems(list);
+		});
+	});
+
+	$effect(() => {
+		void settings;
+		void showInfo;
+		void renderInfo;
+		void accentColor;
+		void backgroundColor;
+		untrack(() => engine?.wake());
+	});
+
+	const activeIndex = $derived(items.length ? active % items.length : 0);
+	const current = $derived(items.length ? items[activeIndex] : null);
+	const ink = $derived(settings.theme === 'light' ? '#14110E' : '#ffffff');
+	const accent = $derived(accentColor || ink);
+	const onAccent = $derived(luminance(accent) > 0.5 ? '#14110E' : '#ffffff');
+	const hasAction = $derived(Boolean(current?.link || onItemClick));
+	const isExternal = $derived(Boolean(current?.link?.startsWith('http')));
+	const actionLabel = $derived(current?.title ? `Open ${current.title}` : 'Open');
+	const rootStyle = $derived(
+		[
+			backgroundColor ? `background-color: ${backgroundColor}` : '',
+			`--infinite-menu-text: ${ink}`,
+			`--infinite-menu-accent: ${accent}`,
+			`--infinite-menu-on-accent: ${onAccent}`,
+			`--infinite-menu-shadow: ${settings.theme === 'light' ? '0 2px 18px rgba(255, 255, 255, 0.7)' : '0 2px 18px rgba(0, 0, 0, 0.45)'}`,
+			style
+		]
+			.filter(Boolean)
+			.join('; ')
+	);
+
+	const handleAction = (event: MouseEvent) => {
+		if (!current) return;
+		if (onItemClick) {
+			onItemClick(current, activeIndex);
+			if (!current.link) event.preventDefault();
+		}
+	};
 </script>
 
-<div class="relative w-full h-full">
-	<canvas
-		bind:this={canvasEl}
-		id="infinite-grid-menu-canvas"
-		class="cursor-grab w-full h-full overflow-hidden relative outline-none active:cursor-grabbing"
-	></canvas>
+{#snippet arrowIcon()}
+	<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+		<path
+			d="M7 17L17 7M17 7H9M17 7V15"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		/>
+	</svg>
+{/snippet}
 
-	{#if activeItem}
-		<h2
-			class="select-none absolute font-black [font-size:4rem] left-[1.6em] top-1/2 transform translate-x-[20%] -translate-y-1/2 transition-all ease-[cubic-bezier(0.25,0.1,0.25,1.0)] {isMoving
-				? 'opacity-0 pointer-events-none duration-[100ms]'
-				: 'opacity-100 pointer-events-auto duration-[500ms]'}"
-		>{activeItem.title}</h2>
-
-		<p
-			class="select-none absolute max-w-[10ch] text-[1.5rem] top-1/2 right-[1%] transition-all ease-[cubic-bezier(0.25,0.1,0.25,1.0)] {isMoving
-				? 'opacity-0 pointer-events-none duration-[100ms] translate-x-[-60%] -translate-y-1/2'
-				: 'opacity-100 pointer-events-auto duration-[500ms] translate-x-[-90%] -translate-y-1/2'}"
-		>{activeItem.description}</p>
-
-		<button
-			type="button"
-			onclick={handleButtonClick}
-			aria-label="Open"
-			class="absolute left-1/2 z-10 w-[60px] h-[60px] grid place-items-center bg-[#FF8A4C] border-[5px] border-black rounded-full cursor-pointer transition-all ease-[cubic-bezier(0.25,0.1,0.25,1.0)] {isMoving
-				? 'bottom-[-80px] opacity-0 pointer-events-none duration-[100ms] scale-0 -translate-x-1/2'
-				: 'bottom-[3.8em] opacity-100 pointer-events-auto duration-[500ms] scale-100 -translate-x-1/2'}"
-		>
-			<span class="select-none relative text-[#120F17] top-[2px] text-[26px]">&#x2197;</span>
-		</button>
+<div
+	bind:this={rootEl}
+	class="{ROOT}{className ? ` ${className}` : ''}"
+	tabindex="0"
+	role="group"
+	aria-roledescription="carousel"
+	aria-label={current?.title || 'Infinite menu'}
+	style={rootStyle}
+>
+	<canvas bind:this={canvasEl} class={CANVAS}></canvas>
+	{#if showInfo && current}
+		{#if renderInfo}
+			<div class={CUSTOM}>{@render renderInfo(current, activeIndex, moving)}</div>
+		{:else}
+			<div class={LAYER} data-moving={moving} data-layout={layoutMode}>
+				{#if current.title}<h2 class={TITLE}>{current.title}</h2>{/if}
+				{#if current.description}<p class={DESCRIPTION}>{current.description}</p>{/if}
+				{#if hasAction}
+					{#if current.link}
+						<a
+							class={ACTION}
+							href={current.link}
+							target={isExternal ? '_blank' : undefined}
+							rel={isExternal ? 'noreferrer' : undefined}
+							aria-label={actionLabel}
+							onclick={handleAction}
+						>
+							{@render arrowIcon()}
+						</a>
+					{:else}
+						<button type="button" class={ACTION} aria-label={actionLabel} onclick={handleAction}>
+							{@render arrowIcon()}
+						</button>
+					{/if}
+				{/if}
+			</div>
+		{/if}
 	{/if}
 </div>

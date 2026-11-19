@@ -2,148 +2,283 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
+	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorList from '$lib/components/docs/preview/PreviewColorList.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import SplashCursor from '$lib/components/library/Animations/SplashCursor/SplashCursor.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
+	import { colorModeValue } from '$lib/theme.svelte';
+	import SplashCursor, {
+		type SplashCursorQuality
+	} from '$lib/components/library/Animations/SplashCursor/SplashCursor.svelte';
 	import source from '$lib/components/library/Animations/SplashCursor/SplashCursor.svelte?raw';
+	import { CLASSIC, LOOK, PRESET_OPTIONS, presetProps } from './presets/SplashCursor';
 
-	const DEFAULTS = {
-		DENSITY_DISSIPATION: 3.5,
-		VELOCITY_DISSIPATION: 2,
-		PRESSURE: 0.1,
-		CURL: 3,
-		SPLAT_RADIUS: 0.2,
-		SPLAT_FORCE: 6000,
-		COLOR_UPDATE_SPEED: 10,
-		SHADING: true,
-		RAINBOW_MODE: false,
-		COLOR: '#FF3E00'
+	const DEFAULT_PROPS = {
+		preset: 'classic',
+		...LOOK,
+		...CLASSIC,
+		quality: 'high' as SplashCursorQuality,
+		clickSplash: true,
+		intro: true,
+		contained: false
 	};
 
-	let DENSITY_DISSIPATION = $state(DEFAULTS.DENSITY_DISSIPATION);
-	let VELOCITY_DISSIPATION = $state(DEFAULTS.VELOCITY_DISSIPATION);
-	let PRESSURE = $state(DEFAULTS.PRESSURE);
-	let CURL = $state(DEFAULTS.CURL);
-	let SPLAT_RADIUS = $state(DEFAULTS.SPLAT_RADIUS);
-	let SPLAT_FORCE = $state(DEFAULTS.SPLAT_FORCE);
-	let COLOR_UPDATE_SPEED = $state(DEFAULTS.COLOR_UPDATE_SPEED);
-	let SHADING = $state(DEFAULTS.SHADING);
-	let RAINBOW_MODE = $state(DEFAULTS.RAINBOW_MODE);
-	let COLOR = $state(DEFAULTS.COLOR);
-	let renderKey = $state(0);
-	const scriptOpen = '<' + 'script lang="ts">';
-	const scriptClose = '</' + 'script>';
+	const LIGHT_SWAP: Record<string, string> = {
+		'#ff8a4c': '#ea580c',
+		'#e7e5e4': '#44403c',
+		'#3b82f6': '#1d4ed8'
+	};
 
-	const hasChanges = $derived(
-		DENSITY_DISSIPATION !== DEFAULTS.DENSITY_DISSIPATION ||
-			VELOCITY_DISSIPATION !== DEFAULTS.VELOCITY_DISSIPATION ||
-			PRESSURE !== DEFAULTS.PRESSURE ||
-			CURL !== DEFAULTS.CURL ||
-			SPLAT_RADIUS !== DEFAULTS.SPLAT_RADIUS ||
-			SPLAT_FORCE !== DEFAULTS.SPLAT_FORCE ||
-			COLOR_UPDATE_SPEED !== DEFAULTS.COLOR_UPDATE_SPEED ||
-			SHADING !== DEFAULTS.SHADING ||
-			RAINBOW_MODE !== DEFAULTS.RAINBOW_MODE ||
-			COLOR !== DEFAULTS.COLOR
+	const DARK_SWAP: Record<string, string> = Object.fromEntries(
+		Object.entries(LIGHT_SWAP).map(([dark, light]) => [light, dark])
 	);
 
-	function rerender() {
-		renderKey += 1;
-	}
-
-	function reset() {
-		DENSITY_DISSIPATION = DEFAULTS.DENSITY_DISSIPATION;
-		VELOCITY_DISSIPATION = DEFAULTS.VELOCITY_DISSIPATION;
-		PRESSURE = DEFAULTS.PRESSURE;
-		CURL = DEFAULTS.CURL;
-		SPLAT_RADIUS = DEFAULTS.SPLAT_RADIUS;
-		SPLAT_FORCE = DEFAULTS.SPLAT_FORCE;
-		COLOR_UPDATE_SPEED = DEFAULTS.COLOR_UPDATE_SPEED;
-		SHADING = DEFAULTS.SHADING;
-		RAINBOW_MODE = DEFAULTS.RAINBOW_MODE;
-		COLOR = DEFAULTS.COLOR;
-		rerender();
-	}
-
-	const usage = $derived(`${scriptOpen}
-  import SplashCursor from '$lib/components/SplashCursor.svelte';
-${scriptClose}
-
-<SplashCursor />`);
-
-	const props: PropRow[] = [
-		{ name: 'SIM_RESOLUTION', type: 'number', default: '128', description: 'Fluid simulation resolution for velocity fields.' },
-		{ name: 'DYE_RESOLUTION', type: 'number', default: '1440', description: 'Resolution of the color/dye texture.' },
-		{ name: 'CAPTURE_RESOLUTION', type: 'number', default: '512', description: 'Resolution used for certain capture operations.' },
-		{ name: 'DENSITY_DISSIPATION', type: 'number', default: '3.5', description: 'Rate at which color/density dissipates over time.' },
-		{ name: 'VELOCITY_DISSIPATION', type: 'number', default: '2', description: 'Rate at which velocity dissipates over time.' },
-		{ name: 'PRESSURE', type: 'number', default: '0.1', description: 'Base pressure for the fluid simulation.' },
-		{ name: 'PRESSURE_ITERATIONS', type: 'number', default: '20', description: 'Number of Jacobi iterations used for the pressure solver.' },
-		{ name: 'CURL', type: 'number', default: '3', description: 'Amount of vorticity/curl to apply for swirling effects.' },
-		{ name: 'SPLAT_RADIUS', type: 'number', default: '0.2', description: "Radius of the 'splat' effect when user interacts." },
-		{ name: 'SPLAT_FORCE', type: 'number', default: '6000', description: "Force of the fluid 'splat' on each interaction." },
-		{ name: 'SHADING', type: 'boolean', default: 'true', description: 'Toggles simple lighting/shading on the fluid.' },
-		{ name: 'COLOR_UPDATE_SPEED', type: 'number', default: '10', description: 'Frequency at which pointer colors are re-randomized.' },
-		{ name: 'RAINBOW_MODE', type: 'boolean', default: 'true', description: 'When true, uses randomly cycling rainbow colors. When false, uses COLOR.' },
-		{ name: 'COLOR', type: 'string', default: "'#ff0000'", description: 'Hex color for the cursor effect when RAINBOW_MODE is false.' },
-		{ name: 'BACK_COLOR', type: 'object', default: '{ r: 0.5, g: 0, b: 0 }', description: 'Base background color. Not always used if TRANSPARENT is true.' },
-		{ name: 'TRANSPARENT', type: 'boolean', default: 'true', description: 'Whether the canvas renders with transparent background.' }
+	const QUALITY_OPTIONS = [
+		{ value: 'low', label: 'Low' },
+		{ value: 'medium', label: 'Medium' },
+		{ value: 'high', label: 'High' }
 	];
+
+	const propData: PropRow[] = [
+		{
+			name: 'colors',
+			type: 'string[]',
+			default: "['#4f8cff', '#2dd4bf', '#ffd166']",
+			description: 'Palette the ink cycles through when rainbow is off.'
+		},
+		{
+			name: 'rainbow',
+			type: 'boolean',
+			default: 'true',
+			description: 'Cycles through the full spectrum instead of the palette.'
+		},
+		{
+			name: 'colorSpeed',
+			type: 'number',
+			default: '1',
+			description: 'How fast the colors shift while you move. 0 keeps one color per stroke.'
+		},
+		{ name: 'intensity', type: 'number', default: '1', description: 'How much ink each movement leaves behind.' },
+		{ name: 'size', type: 'number', default: '1', description: 'Width of the stroke and the splash.' },
+		{ name: 'force', type: 'number', default: '1', description: 'How hard the cursor pushes the fluid.' },
+		{ name: 'swirl', type: 'number', default: '3', description: 'Amount of curling eddies in the flow.' },
+		{
+			name: 'trail',
+			type: 'number',
+			default: '1',
+			description: 'How long the ink lingers before it fades. 2 lasts twice as long.'
+		},
+		{
+			name: 'momentum',
+			type: 'number',
+			default: '1',
+			description: 'How long the fluid keeps moving after the cursor stops.'
+		},
+		{ name: 'shading', type: 'number', default: '1', description: 'Depth shading on the ripples, from 0 to 1.' },
+		{ name: 'glow', type: 'number', default: '0', description: 'Soft bloom around the brightest ink, from 0 to 1.' },
+		{
+			name: 'quality',
+			type: "'low' | 'medium' | 'high'",
+			default: "'high'",
+			description: 'Simulation detail. Lower settings are lighter on older devices.'
+		},
+		{ name: 'clickSplash', type: 'boolean', default: 'true', description: 'Bursts a splash where you click or tap.' },
+		{ name: 'intro', type: 'boolean', default: 'true', description: 'Plays a short stroke across the screen on mount.' },
+		{
+			name: 'contained',
+			type: 'boolean',
+			default: 'false',
+			description: 'Fills the parent element instead of the whole viewport and only reacts inside it.'
+		},
+		{
+			name: 'theme',
+			type: "'dark' | 'light'",
+			default: "'dark'",
+			description: 'Glowing ink for dark backgrounds or absorbing ink for light ones.'
+		},
+		{ name: 'zIndex', type: 'number', default: '50', description: 'Stacking order of the effect over your content.' },
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the container.' },
+		{ name: 'style', type: 'string', default: '-', description: 'Inline styles for the container.' }
+	];
+
+	const usage = `<script lang="ts">
+  import SplashCursor from '$lib/components/SplashCursor.svelte';
+</${'script'}>
+
+<SplashCursor
+  rainbow
+  size={1}
+  force={1}
+  swirl={3}
+  trail={1}
+  clickSplash
+/>`;
+
+	const demo = createComponentProps(DEFAULT_PROPS, { lightProps: null });
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, colors: _colors, ...rest } = settings;
+		return rest;
+	});
+	const theme = $derived(colorModeValue<'light' | 'dark'>('light', 'dark'));
+	const shown = $derived.by(() => {
+		const swap = theme === 'light' ? LIGHT_SWAP : DARK_SWAP;
+		const colors = settings.colors?.length ? settings.colors : LOOK.colors;
+		return colors.map((color) => swap[color.toLowerCase()] ?? color);
+	});
+	const computedProps = $derived({ colors: shown, ...(theme === 'light' ? { theme: 'light' } : {}) });
+	let key = $state(0);
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value), preset: value });
+		key++;
+	};
 </script>
 
-<svelte:head><title>Splash Cursor - svelte-bits</title></svelte:head>
-
-<h1 class="sub-category">Splash Cursor</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="SplashCursor" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="demo-container relative z-10 flex min-h-[300px] flex-col items-center justify-center overflow-hidden p-0">
-			<p class="select-none text-center text-5xl font-black text-[#333]">Move Your Cursor</p>
-		</div>
-		{#key renderKey}
-			<SplashCursor
-				{DENSITY_DISSIPATION}
-				{VELOCITY_DISSIPATION}
-				{PRESSURE}
-				{CURL}
-				{SPLAT_RADIUS}
-				{SPLAT_FORCE}
-				{COLOR_UPDATE_SPEED}
-				{SHADING}
-				{RAINBOW_MODE}
-				{COLOR}
-			/>
-		{/key}
-	{/snippet}
-	{#snippet code()}
-		<DemoCodeTab slug="splash-cursor" {usage} {source} />
-	{/snippet}
-	{#snippet customize()}
-		<Customize>
-			<PreviewSlider title="Density Dissipation" min={0.5} max={10} step={0.5} value={DENSITY_DISSIPATION}
-				onChange={(v) => { DENSITY_DISSIPATION = v; rerender(); }} />
-			<PreviewSlider title="Velocity Dissipation" min={0.5} max={10} step={0.5} value={VELOCITY_DISSIPATION}
-				onChange={(v) => { VELOCITY_DISSIPATION = v; rerender(); }} />
-			<PreviewSlider title="Pressure" min={0} max={1} step={0.05} value={PRESSURE}
-				onChange={(v) => { PRESSURE = v; rerender(); }} />
-			<PreviewSlider title="Curl" min={0} max={50} step={1} value={CURL}
-				onChange={(v) => { CURL = v; rerender(); }} />
-			<PreviewSlider title="Splat Radius" min={0.01} max={1} step={0.01} value={SPLAT_RADIUS}
-				onChange={(v) => { SPLAT_RADIUS = v; rerender(); }} />
-			<PreviewSlider title="Splat Force" min={1000} max={20000} step={500} value={SPLAT_FORCE}
-				onChange={(v) => { SPLAT_FORCE = v; rerender(); }} />
-			<PreviewSlider title="Color Update Speed" min={1} max={30} step={1} value={COLOR_UPDATE_SPEED}
-				onChange={(v) => { COLOR_UPDATE_SPEED = v; rerender(); }} />
-			<PreviewSwitch title="Shading" checked={SHADING} onChange={(v) => { SHADING = v; rerender(); }} />
-			<PreviewSwitch title="Rainbow Mode" checked={RAINBOW_MODE} onChange={(v) => { RAINBOW_MODE = v; rerender(); }} />
-			{#if !RAINBOW_MODE}
-				<PreviewColorPicker title="Color" value={COLOR} onChange={(v) => { COLOR = v; rerender(); }} />
+<TabsLayout
+	propsState={demo}
+	componentName="SplashCursor"
+	{usage}
+	{source}
+	{propData}
+	demoOnlyProps={['preset', 'colors']}
+	{computedProps}
+>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 500px; padding: 0; overflow: hidden; cursor: crosshair;">
+			<div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+				<span class="select-none" style="font-size: 14px; color: var(--text-muted);">Move your cursor</span>
+			</div>
+			{#if settings.contained}
+				{#key key}
+					<SplashCursor {theme} {...componentProps} colors={shown} />
+				{/key}
 			{/if}
+			<RefreshButton onClick={() => key++} />
+		</div>
+
+		<Customize>
+			{#if !settings.rainbow}
+				<PreviewColorList
+					title="Colors"
+					colors={shown}
+					min={1}
+					max={6}
+					onChange={(v) => demo.updateProp('colors', v)}
+				/>
+			{/if}
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewSelect
+				title="Quality"
+				options={QUALITY_OPTIONS}
+				value={settings.quality}
+				onChange={(v) => demo.updateProp('quality', v)}
+			/>
+			<PreviewSlider
+				title="Color Speed"
+				min={0}
+				max={4}
+				step={0.05}
+				value={settings.colorSpeed}
+				onChange={(v) => demo.updateProp('colorSpeed', v)}
+			/>
+			<PreviewSlider
+				title="Intensity"
+				min={0.2}
+				max={3}
+				step={0.05}
+				value={settings.intensity}
+				onChange={(v) => demo.updateProp('intensity', v)}
+			/>
+			<PreviewSlider
+				title="Size"
+				min={0.2}
+				max={4}
+				step={0.05}
+				value={settings.size}
+				onChange={(v) => demo.updateProp('size', v)}
+			/>
+			<PreviewSlider
+				title="Force"
+				min={0}
+				max={3}
+				step={0.05}
+				value={settings.force}
+				onChange={(v) => demo.updateProp('force', v)}
+			/>
+			<PreviewSlider
+				title="Swirl"
+				min={0}
+				max={40}
+				step={0.5}
+				value={settings.swirl}
+				onChange={(v) => demo.updateProp('swirl', v)}
+			/>
+			<PreviewSlider
+				title="Trail"
+				min={0.2}
+				max={5}
+				step={0.05}
+				value={settings.trail}
+				onChange={(v) => demo.updateProp('trail', v)}
+			/>
+			<PreviewSlider
+				title="Momentum"
+				min={0.2}
+				max={5}
+				step={0.05}
+				value={settings.momentum}
+				onChange={(v) => demo.updateProp('momentum', v)}
+			/>
+			<PreviewSlider
+				title="Shading"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.shading}
+				onChange={(v) => demo.updateProp('shading', v)}
+			/>
+			<PreviewSlider
+				title="Glow"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.glow}
+				onChange={(v) => demo.updateProp('glow', v)}
+			/>
+			<PreviewSwitch title="Rainbow" isChecked={settings.rainbow} onChange={(v) => demo.updateProp('rainbow', v)} />
+			<PreviewSwitch
+				title="Click Splash"
+				isChecked={settings.clickSplash}
+				onChange={(v) => demo.updateProp('clickSplash', v)}
+			/>
+			<PreviewSwitch
+				title="Intro"
+				isChecked={settings.intro}
+				onChange={(v) => {
+					demo.updateProp('intro', v);
+					key++;
+				}}
+			/>
+			<PreviewSwitch
+				title="Contained"
+				isChecked={settings.contained}
+				onChange={(v) => demo.updateProp('contained', v)}
+			/>
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}
-		<PropTable rows={props} />
+	{#snippet codeTab()}
+		<CodeExample />
 	{/snippet}
 </TabsLayout>
+
+{#if !settings.contained}
+	{#key key}
+		<SplashCursor {theme} {...componentProps} colors={shown} />
+	{/key}
+{/if}

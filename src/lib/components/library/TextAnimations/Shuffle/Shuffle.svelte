@@ -1,7 +1,7 @@
 <!-- @svelte-bits
 {
   "title": "Shuffle",
-  "description": "Per-character shuffle animation: each letter slides through interim glyphs before settling on its final character, with hover replay and ScrollTrigger entrance.",
+  "description": "Animated text reveal where characters shuffle before settling.",
   "dependencies": ["gsap"]
 }
 -->
@@ -12,27 +12,23 @@
 
 	gsap.registerPlugin(ScrollTrigger, GSAPSplitText);
 
-	type ShuffleDirection = 'left' | 'right' | 'up' | 'down';
-	type AnimationMode = 'evenodd' | 'random';
-	type TagName = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
-</script>
+	type CSSProperties = Record<string, string | number | undefined | null>;
 
-<script lang="ts">
-	type Props = {
+	export interface ShuffleProps {
 		text: string;
-		class?: string;
-		style?: string;
-		shuffleDirection?: ShuffleDirection;
+		className?: string;
+		style?: string | CSSProperties;
+		shuffleDirection?: 'left' | 'right' | 'up' | 'down';
 		duration?: number;
 		maxDelay?: number;
 		ease?: string | ((t: number) => number);
 		threshold?: number;
 		rootMargin?: string;
-		tag?: TagName;
+		tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
 		textAlign?: string;
 		onShuffleComplete?: () => void;
 		shuffleTimes?: number;
-		animationMode?: AnimationMode;
+		animationMode?: 'evenodd' | 'sequence' | 'center' | 'random';
 		loop?: boolean;
 		loopDelay?: number;
 		stagger?: number;
@@ -42,12 +38,75 @@
 		triggerOnce?: boolean;
 		respectReducedMotion?: boolean;
 		triggerOnHover?: boolean;
-	};
+		effect?: 'slide' | 'flip' | 'blur';
+		hoverRadius?: number;
+		motionBlur?: boolean;
+		color?: string;
+		accentColor?: string;
+	}
+
+	interface ShuffleCell {
+		wrap: HTMLSpanElement;
+		inner: HTMLSpanElement;
+		orig: HTMLElement;
+		text: string;
+		w: number;
+		h: number;
+		size: number;
+		mids: HTMLElement[];
+		seq: string[];
+		shown: number;
+		from: number;
+		to: number;
+		speed: number;
+		lastValue: number;
+		lastTime: number;
+		blurLevel: number;
+		busy: boolean;
+		near: boolean;
+		travel: number;
+	}
+
+	const FONT_WEIGHTS = new Set([
+		'thin',
+		'extralight',
+		'light',
+		'normal',
+		'medium',
+		'semibold',
+		'bold',
+		'extrabold',
+		'black'
+	]);
+
+	const hasFontFamilyClass = (className: string) =>
+		className.split(/\s+/).some((name) => {
+			const utility = name.split(':').pop() ?? '';
+			return utility.startsWith('font-') && !FONT_WEIGHTS.has(utility.slice(5));
+		});
+
+	const UNITLESS = /^(opacity|zIndex|fontWeight|lineHeight|flex|flexGrow|flexShrink|order|zoom|scale)$/;
+
+	const toStyle = (value: CSSProperties) =>
+		Object.entries(value)
+			.filter(([, v]) => v !== undefined && v !== null && v !== '')
+			.map(([key, v]) => {
+				const name = key.startsWith('--') ? key : key.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase());
+				return `${name}:${typeof v === 'number' && !UNITLESS.test(key) ? `${v}px` : v}`;
+			})
+			.join(';');
+
+	const SVG_NS = 'http://www.w3.org/2000/svg';
+	const BLUR_STEPS = 12;
+</script>
+
+<script lang="ts">
+	import { untrack } from 'svelte';
 
 	let {
 		text,
-		class: className = '',
-		style = '',
+		className = '',
+		style = {},
 		shuffleDirection = 'right',
 		duration = 0.35,
 		maxDelay = 0,
@@ -67,12 +126,33 @@
 		colorTo,
 		triggerOnce = true,
 		respectReducedMotion = true,
-		triggerOnHover = true
-	}: Props = $props();
+		triggerOnHover = true,
+		effect: effectMode = 'slide',
+		hoverRadius = 0,
+		motionBlur = false,
+		color,
+		accentColor
+	}: ShuffleProps = $props();
 
-	let el: HTMLElement | undefined = $state();
+	let ref = $state<HTMLElement | null>(null);
 	let fontsLoaded = $state(false);
 	let ready = $state(false);
+
+	let splitter: GSAPSplitText | null = null;
+	let timeline: gsap.core.Timeline | null = null;
+	let playing = false;
+
+	$effect(() => {
+		const node = untrack(() => ref);
+		if (node) {
+			node.textContent = untrack(() => text) ?? '';
+			void node.offsetWidth;
+		}
+		if ('fonts' in document) {
+			if (document.fonts.status === 'loaded') fontsLoaded = true;
+			else document.fonts.ready.then(() => (fontsLoaded = true));
+		} else fontsLoaded = true;
+	});
 
 	const scrollTriggerStart = $derived.by(() => {
 		const startPct = (1 - threshold) * 100;
@@ -83,87 +163,92 @@
 		return `top ${startPct}%${sign}`;
 	});
 
-	$effect(() => {
-		if (typeof document === 'undefined') return;
-		if ('fonts' in document) {
-			if (document.fonts.status === 'loaded') fontsLoaded = true;
-			else document.fonts.ready.then(() => (fontsLoaded = true));
-		} else {
-			fontsLoaded = true;
-		}
-	});
+	const animate = (el: HTMLElement) => {
+		const mode = effectMode === 'flip' || effectMode === 'blur' ? effectMode : 'slide';
+		const isVertical = shuffleDirection === 'up' || shuffleDirection === 'down';
+		const axis = isVertical ? 'y' : 'x';
+		const forward = shuffleDirection === 'right' || shuffleDirection === 'down';
+		const rolls = Math.max(1, Math.floor(shuffleTimes));
+		const blurred = mode === 'blur' || (mode === 'slide' && motionBlur);
+		const local = triggerOnHover && hoverRadius > 0;
+		const uid = Math.random().toString(36).slice(2, 9);
+		const running = new Set<gsap.core.Timeline>();
+		const pointer = { x: 0, y: 0, lastX: 0, lastY: 0, seen: false };
+		let cells: ShuffleCell[] = [];
+		let baseColor = '';
+		let svg: SVGSVGElement | null = null;
+		let blurMax = 0;
+		let moveFrame = 0;
+		let unhover: (() => void) | null = null;
 
-	$effect(() => {
-		if (!el || !text || !fontsLoaded) return;
+		const pick = (fallback: string) =>
+			scrambleCharset ? scrambleCharset.charAt(Math.floor(Math.random() * scrambleCharset.length)) : fallback;
 
-		void duration;
-		void maxDelay;
-		void ease;
-		void scrollTriggerStart;
-		void shuffleDirection;
-		void shuffleTimes;
-		void animationMode;
-		void loop;
-		void loopDelay;
-		void stagger;
-		void scrambleCharset;
-		void colorFrom;
-		void colorTo;
-		void triggerOnce;
-		void respectReducedMotion;
-		void triggerOnHover;
-
-		const root = el;
-
-		if (
-			respectReducedMotion &&
-			window.matchMedia &&
-			window.matchMedia('(prefers-reduced-motion: reduce)').matches
-		) {
-			ready = true;
-			onShuffleComplete?.();
-			return;
-		}
-
-		let splitInstance: GSAPSplitText | null = null;
-		let wrappers: HTMLElement[] = [];
-		let tl: gsap.core.Timeline | null = null;
-		let playing = false;
-		let hoverHandler: (() => void) | null = null;
-
-		const removeHover = () => {
-			if (hoverHandler) {
-				root.removeEventListener('mouseenter', hoverHandler);
-				hoverHandler = null;
+		const ensureFilters = (unit: number) => {
+			if (svg || !blurred) return;
+			blurMax = Math.max(2, unit * (mode === 'blur' ? 0.26 : 0.24));
+			svg = document.createElementNS(SVG_NS, 'svg');
+			svg.setAttribute('aria-hidden', 'true');
+			svg.setAttribute('width', '0');
+			svg.setAttribute('height', '0');
+			Object.assign(svg.style, { position: 'absolute', width: '0', height: '0', overflow: 'hidden' });
+			for (let k = 1; k <= BLUR_STEPS; k++) {
+				const filter = document.createElementNS(SVG_NS, 'filter');
+				filter.setAttribute('id', `shuffle-${uid}-${k}`);
+				filter.setAttribute('x', isVertical ? '-10%' : '-100%');
+				filter.setAttribute('y', isVertical ? '-100%' : '-10%');
+				filter.setAttribute('width', isVertical ? '120%' : '300%');
+				filter.setAttribute('height', isVertical ? '300%' : '120%');
+				filter.setAttribute('color-interpolation-filters', 'sRGB');
+				const blur = document.createElementNS(SVG_NS, 'feGaussianBlur');
+				const amount = (blurMax * Math.pow(k / BLUR_STEPS, 1.5)).toFixed(2);
+				blur.setAttribute('stdDeviation', isVertical ? `0 ${amount}` : `${amount} 0`);
+				filter.appendChild(blur);
+				svg.appendChild(filter);
 			}
+			document.body.appendChild(svg);
+		};
+
+		const setBlur = (cell: ShuffleCell, amount: number) => {
+			if (!svg) return;
+			const level = Math.round(BLUR_STEPS * Math.pow(Math.min(1, Math.max(0, amount) / blurMax), 1 / 1.5));
+			if (level === cell.blurLevel) return;
+			cell.blurLevel = level;
+			const node = mode === 'slide' ? cell.inner : cell.orig;
+			node.style.filter = level ? `url(#shuffle-${uid}-${level})` : '';
+		};
+
+		const trackSpeed = (cell: ShuffleCell, value: number) => {
+			const now = gsap.ticker.time;
+			const dt = now - cell.lastTime;
+			if (dt > 0) cell.speed = cell.speed * 0.35 + (Math.abs(value - cell.lastValue) / dt) * 0.65;
+			cell.lastValue = value;
+			cell.lastTime = now;
+			return cell.speed;
 		};
 
 		const teardown = () => {
-			if (tl) {
-				tl.kill();
-				tl = null;
+			if (timeline) {
+				timeline.kill();
+				timeline = null;
 			}
-			if (wrappers.length) {
-				wrappers.forEach((wrap) => {
-					const inner = wrap.firstElementChild;
-					const orig = inner?.querySelector('[data-orig="1"]');
-					if (orig && wrap.parentNode) wrap.parentNode.replaceChild(orig, wrap);
-				});
-				wrappers = [];
-			}
+			running.forEach((tl) => tl.kill());
+			running.clear();
+			cells.forEach((cell) => {
+				if (cell.wrap.parentNode) cell.wrap.parentNode.replaceChild(cell.orig, cell.wrap);
+			});
+			cells = [];
 			try {
-				splitInstance?.revert();
-			} catch {
-				/* noop */
-			}
-			splitInstance = null;
+				splitter?.revert();
+			} catch {}
+			splitter = null;
 			playing = false;
 		};
 
 		const build = () => {
 			teardown();
 
-			splitInstance = new GSAPSplitText(root, {
+			splitter = new GSAPSplitText(el, {
 				type: 'chars',
 				charsClass: 'shuffle-char',
 				wordsClass: 'shuffle-word',
@@ -172,258 +257,400 @@
 				reduceWhiteSpace: false
 			});
 
-			const chars = splitInstance.chars || [];
-			wrappers = [];
+			const chars = (splitter.chars || []) as HTMLElement[];
+			const strip = mode === 'slide';
+			const metricsContext = strip && isVertical ? document.createElement('canvas').getContext('2d') : null;
+			baseColor = window.getComputedStyle(el).color;
 
-			const rolls = Math.max(1, Math.floor(shuffleTimes));
-			const rand = (set: string) =>
-				set.charAt(Math.floor(Math.random() * set.length)) || '';
+			const measureVerticalCell = (node: HTMLElement, lineBoxHeight: number) => {
+				const computed = window.getComputedStyle(node);
+				let fontHeight = 0;
+
+				if (metricsContext) {
+					metricsContext.font = [
+						computed.fontStyle,
+						computed.fontVariant,
+						computed.fontWeight,
+						computed.fontSize,
+						computed.fontFamily
+					].join(' ');
+
+					const sample = `${node.textContent || 'M'}${scrambleCharset}`;
+					const metrics = metricsContext.measureText(sample);
+					const ascent = metrics.fontBoundingBoxAscent;
+					const descent = metrics.fontBoundingBoxDescent;
+					if (Number.isFinite(ascent) && Number.isFinite(descent)) fontHeight = ascent + descent;
+				}
+
+				if (!fontHeight) {
+					const probe = node.cloneNode(true) as HTMLElement;
+					probe.textContent = `${node.textContent || 'M'}${scrambleCharset}`;
+					Object.assign(probe.style, {
+						position: 'absolute',
+						visibility: 'hidden',
+						pointerEvents: 'none',
+						width: 'auto',
+						height: 'auto',
+						whiteSpace: 'nowrap',
+						lineHeight: 'normal',
+						fontFamily: computed.fontFamily,
+						fontSize: computed.fontSize,
+						fontStyle: computed.fontStyle,
+						fontVariant: computed.fontVariant,
+						fontWeight: computed.fontWeight,
+						fontStretch: computed.fontStretch
+					});
+					document.body.appendChild(probe);
+					fontHeight = probe.getBoundingClientRect().height;
+					probe.remove();
+				}
+
+				const overflow = Math.max(0, Math.ceil(fontHeight - lineBoxHeight));
+				const padTop = Math.floor(overflow / 2);
+				return { cellHeight: lineBoxHeight + overflow, padTop, padBottom: overflow - padTop };
+			};
 
 			chars.forEach((ch) => {
-				const charEl = ch as HTMLElement;
-				const parent = charEl.parentElement;
+				const parent = ch.parentElement;
 				if (!parent) return;
 
-				const w = charEl.getBoundingClientRect().width;
-				const h = charEl.getBoundingClientRect().height;
+				const w = ch.getBoundingClientRect().width;
+				const h = ch.getBoundingClientRect().height;
 				if (!w) return;
+
+				const { cellHeight, padTop, padBottom } = metricsContext
+					? measureVerticalCell(ch, h)
+					: { cellHeight: h, padTop: 0, padBottom: 0 };
+				const tall = strip && isVertical;
 
 				const wrap = document.createElement('span');
 				Object.assign(wrap.style, {
 					display: 'inline-block',
-					overflow: 'hidden',
+					overflow: strip ? 'hidden' : 'visible',
 					width: w + 'px',
-					height: shuffleDirection === 'up' || shuffleDirection === 'down' ? h + 'px' : 'auto',
-					verticalAlign: 'bottom'
+					height: tall ? cellHeight + 'px' : 'auto',
+					marginTop: tall ? -padTop + 'px' : '0',
+					marginBottom: tall ? -padBottom + 'px' : '0',
+					verticalAlign: 'bottom',
+					perspective: mode === 'flip' ? Math.round(h * 3.2) + 'px' : ''
 				});
 
 				const inner = document.createElement('span');
 				Object.assign(inner.style, {
 					display: 'inline-block',
-					whiteSpace:
-						shuffleDirection === 'up' || shuffleDirection === 'down' ? 'normal' : 'nowrap',
-					willChange: 'transform'
+					whiteSpace: isVertical ? 'normal' : 'nowrap',
+					willChange: mode === 'slide' ? 'transform' : 'transform, opacity'
 				});
 
-				parent.insertBefore(wrap, charEl);
+				parent.insertBefore(wrap, ch);
 				wrap.appendChild(inner);
 
-				const firstOrig = charEl.cloneNode(true) as HTMLElement;
-				Object.assign(firstOrig.style, {
-					display:
-						shuffleDirection === 'up' || shuffleDirection === 'down' ? 'block' : 'inline-block',
+				Object.assign(ch.style, {
+					display: tall ? 'flex' : 'inline-block',
+					alignItems: tall ? 'center' : '',
+					justifyContent: tall ? 'center' : '',
+					height: tall ? cellHeight + 'px' : '',
+					lineHeight: tall ? h + 'px' : '',
 					width: w + 'px',
 					textAlign: 'center'
 				});
+				inner.appendChild(ch);
 
-				charEl.setAttribute('data-orig', '1');
-				Object.assign(charEl.style, {
-					display:
-						shuffleDirection === 'up' || shuffleDirection === 'down' ? 'block' : 'inline-block',
-					width: w + 'px',
-					textAlign: 'center'
+				if (colorFrom) wrap.style.color = colorFrom;
+				cells.push({
+					wrap,
+					inner,
+					orig: ch,
+					text: ch.textContent || '',
+					w,
+					h,
+					size: isVertical ? cellHeight : w,
+					mids: [],
+					seq: [],
+					shown: -1,
+					from: 0,
+					to: 0,
+					speed: 0,
+					lastValue: 0,
+					lastTime: 0,
+					blurLevel: 0,
+					busy: false,
+					near: false,
+					travel: 0
 				});
+			});
 
-				inner.appendChild(firstOrig);
-				for (let k = 0; k < rolls; k++) {
-					const c = charEl.cloneNode(true) as HTMLElement;
-					if (scrambleCharset) c.textContent = rand(scrambleCharset);
-					Object.assign(c.style, {
-						display:
-							shuffleDirection === 'up' || shuffleDirection === 'down' ? 'block' : 'inline-block',
-						width: w + 'px',
-						textAlign: 'center'
-					});
-					inner.appendChild(c);
-				}
-				inner.appendChild(charEl);
+			if (cells.length) ensureFilters(isVertical ? cells[0].size : cells[0].h);
+		};
 
-				const steps = rolls + 1;
+		const fillStrip = (cell: ShuffleCell, count: number) => {
+			const head = cell.orig.cloneNode(true) as HTMLElement;
+			const mids: HTMLElement[] = [];
+			for (let k = 0; k < count; k++) {
+				const node = cell.orig.cloneNode(true) as HTMLElement;
+				node.textContent = pick(cell.text);
+				if (accentColor) node.style.color = accentColor;
+				mids.push(node);
+			}
+			cell.mids = mids;
+			cell.inner.replaceChildren(...(forward ? [cell.orig, ...mids, head] : [head, ...mids, cell.orig]));
+			const span = (count + 1) * cell.size;
+			cell.from = forward ? -span : 0;
+			cell.to = forward ? 0 : -span;
+			gsap.set(cell.inner, { x: 0, y: 0, [axis]: cell.from, force3D: true });
+		};
 
-				if (shuffleDirection === 'right' || shuffleDirection === 'down') {
-					const firstCopy = inner.firstElementChild;
-					const real = inner.lastElementChild;
-					if (real) inner.insertBefore(real, inner.firstChild);
-					if (firstCopy) inner.appendChild(firstCopy);
-				}
+		const fillSequence = (cell: ShuffleCell, count: number) => {
+			cell.seq = [cell.text];
+			for (let k = 0; k < count; k++) cell.seq.push(pick(cell.text));
+			cell.seq.push(cell.text);
+			cell.shown = -1;
+		};
 
-				let startX = 0;
-				let finalX = 0;
-				let startY = 0;
-				let finalY = 0;
+		const reroll = (cell: ShuffleCell) => {
+			if (mode === 'slide') cell.mids.forEach((node) => (node.textContent = pick(cell.text)));
+			else for (let k = 1; k < cell.seq.length - 1; k++) cell.seq[k] = pick(cell.text);
+		};
 
-				if (shuffleDirection === 'right') {
-					startX = -steps * w;
-					finalX = 0;
-				} else if (shuffleDirection === 'left') {
-					startX = 0;
-					finalX = -steps * w;
-				} else if (shuffleDirection === 'down') {
-					startY = -steps * h;
-					finalY = 0;
-				} else if (shuffleDirection === 'up') {
-					startY = 0;
-					finalY = -steps * h;
-				}
+		const showGlyph = (cell: ShuffleCell, index: number) => {
+			if (cell.shown === index) return;
+			cell.shown = index;
+			cell.orig.textContent = cell.seq[index];
+			cell.orig.style.color = accentColor && index > 0 && index < cell.seq.length - 1 ? accentColor : '';
+		};
 
-				if (shuffleDirection === 'left' || shuffleDirection === 'right') {
-					gsap.set(inner, { x: startX, y: 0, force3D: true });
-					inner.setAttribute('data-start-x', String(startX));
-					inner.setAttribute('data-final-x', String(finalX));
-				} else {
-					gsap.set(inner, { x: 0, y: startY, force3D: true });
-					inner.setAttribute('data-start-y', String(startY));
-					inner.setAttribute('data-final-y', String(finalY));
-				}
-
-				if (colorFrom) inner.style.color = colorFrom;
-				wrappers.push(wrap);
+		const renderFlip = (cell: ShuffleCell, t: number) => {
+			const last = cell.seq.length - 1;
+			const nearest = Math.round(t);
+			showGlyph(cell, Math.max(0, Math.min(last, nearest)));
+			const angle = (t - nearest) * 180;
+			const facing = Math.abs(Math.cos((angle * Math.PI) / 180));
+			const turn = isVertical ? (forward ? -angle : angle) : forward ? angle : -angle;
+			gsap.set(cell.inner, {
+				[isVertical ? 'rotationX' : 'rotationY']: turn,
+				z: Math.sin(Math.PI * Math.min(1, Math.max(0, t / last))) * cell.h * 0.22,
+				opacity: 0.22 + 0.78 * Math.pow(facing, 1.5)
 			});
 		};
 
-		const inners = () =>
-			wrappers
-				.map((w) => w.firstElementChild)
-				.filter((node): node is HTMLElement => node instanceof HTMLElement);
-
-		const randomizeScrambles = () => {
-			if (!scrambleCharset) return;
-			wrappers.forEach((w) => {
-				const strip = w.firstElementChild;
-				if (!strip) return;
-				const kids = Array.from(strip.children);
-				for (let i = 1; i < kids.length - 1; i++) {
-					kids[i].textContent = scrambleCharset.charAt(
-						Math.floor(Math.random() * scrambleCharset.length)
-					);
-				}
+		const renderBlur = (cell: ShuffleCell, t: number) => {
+			const last = cell.seq.length - 1;
+			const nearest = Math.round(t);
+			const phase = Math.max(-0.5, Math.min(0.5, t - nearest));
+			showGlyph(cell, Math.max(0, Math.min(last, nearest)));
+			const speed = trackSpeed(cell, t);
+			gsap.set(cell.inner, {
+				[axis]: (forward ? 1 : -1) * phase * cell.size * 0.42,
+				opacity: 0.5 + 0.5 * Math.pow(Math.cos(phase * Math.PI), 0.7)
 			});
+			setBlur(cell, speed * cell.size * 0.012);
 		};
 
-		const cleanupToStill = () => {
-			wrappers.forEach((w) => {
-				const strip = w.firstElementChild as HTMLElement | null;
-				if (!strip) return;
-				const real = strip.querySelector('[data-orig="1"]');
-				if (!real) return;
-				strip.replaceChildren(real);
-				strip.style.transform = 'none';
-				strip.style.willChange = 'auto';
-			});
+		const animateCell = (cell: ShuffleCell, count: number, dur: number) => {
+			const tl = gsap.timeline();
+			if (mode === 'slide') {
+				fillStrip(cell, count);
+				tl.fromTo(
+					cell.inner,
+					{ [axis]: cell.from },
+					{
+						[axis]: cell.to,
+						duration: dur,
+						ease,
+						force3D: true,
+						immediateRender: false,
+						onStart: () => {
+							cell.speed = 0;
+							cell.lastValue = cell.from;
+							cell.lastTime = gsap.ticker.time;
+						},
+						onUpdate: blurred
+							? () => setBlur(cell, trackSpeed(cell, Number(gsap.getProperty(cell.inner, axis))) * 0.0065)
+							: undefined,
+						onComplete: () => setBlur(cell, 0)
+					},
+					0
+				);
+			} else {
+				fillSequence(cell, count);
+				const proxy = { t: 0 };
+				const render = mode === 'flip' ? renderFlip : renderBlur;
+				tl.fromTo(
+					proxy,
+					{ t: 0 },
+					{
+						t: count + 1,
+						duration: dur,
+						ease,
+						immediateRender: false,
+						onStart: () => {
+							cell.speed = 0;
+							cell.lastValue = 0;
+							cell.lastTime = gsap.ticker.time;
+						},
+						onUpdate: () => render(cell, proxy.t),
+						onComplete: () => setBlur(cell, 0)
+					},
+					0
+				);
+			}
+			if (colorFrom || colorTo) {
+				tl.fromTo(
+					cell.wrap,
+					{ color: colorFrom || baseColor },
+					{ color: colorTo || baseColor, duration: dur, ease, immediateRender: false },
+					0
+				);
+			}
+			return tl;
+		};
+
+		const settle = (cell: ShuffleCell) => {
+			if (mode === 'slide') {
+				cell.inner.replaceChildren(cell.orig);
+				cell.mids = [];
+			} else {
+				cell.orig.textContent = cell.text;
+				cell.orig.style.color = '';
+				cell.shown = -1;
+			}
+			gsap.set(cell.inner, { clearProps: 'transform,opacity' });
+			setBlur(cell, 0);
+			cell.wrap.style.color = colorTo || '';
+		};
+
+		const startOffsets = (): number[] => {
+			if (animationMode === 'evenodd') {
+				const oddCount = Math.floor(cells.length / 2);
+				const evenStart = oddCount ? (duration + Math.max(0, oddCount - 1) * stagger) * 0.7 : 0;
+				return cells.map((_, i) => (i % 2 === 1 ? Math.floor(i / 2) * stagger : evenStart + (i / 2) * stagger));
+			}
+			if (animationMode === 'center') {
+				const spread = gsap.utils.distribute({ each: stagger, from: 'center' });
+				return cells.map((cell, i) => spread(i, cell, cells));
+			}
+			if (animationMode === 'sequence') return cells.map((_, i) => i * stagger);
+			return cells.map(() => Math.random() * maxDelay);
 		};
 
 		const play = () => {
-			const strips = inners();
-			if (!strips.length) return;
-
+			if (!cells.length) return;
 			playing = true;
-			const isVertical = shuffleDirection === 'up' || shuffleDirection === 'down';
+			const offsets = startOffsets();
 
-			tl = gsap.timeline({
-				smoothChildTiming: true,
+			const tl = gsap.timeline({
 				repeat: loop ? -1 : 0,
 				repeatDelay: loop ? loopDelay : 0,
 				onRepeat: () => {
-					if (scrambleCharset) randomizeScrambles();
-					if (isVertical) {
-						gsap.set(strips, {
-							y: (_, t) => parseFloat((t as HTMLElement).getAttribute('data-start-y') || '0')
-						});
-					} else {
-						gsap.set(strips, {
-							x: (_, t) => parseFloat((t as HTMLElement).getAttribute('data-start-x') || '0')
-						});
-					}
+					cells.forEach(reroll);
 					onShuffleComplete?.();
 				},
 				onComplete: () => {
 					playing = false;
-					if (!loop) {
-						cleanupToStill();
-						if (colorTo) gsap.set(strips, { color: colorTo });
-						onShuffleComplete?.();
-						armHover();
-					}
+					if (loop) return;
+					cells.forEach(settle);
+					onShuffleComplete?.();
+					armHover();
 				}
 			});
 
-			const addTween = (targets: HTMLElement[], at: number) => {
-				const vars: gsap.TweenVars = {
-					duration,
-					ease: ease as gsap.EaseFunction,
-					force3D: true,
-					stagger: animationMode === 'evenodd' ? stagger : 0
-				};
-				if (isVertical) {
-					vars.y = (_: number, t: HTMLElement) =>
-						parseFloat(t.getAttribute('data-final-y') || '0');
-				} else {
-					vars.x = (_: number, t: HTMLElement) =>
-						parseFloat(t.getAttribute('data-final-x') || '0');
+			cells.forEach((cell, i) => tl.add(animateCell(cell, rolls, duration), offsets[i]));
+			timeline = tl;
+		};
+
+		const shuffleNear = (cell: ShuffleCell, strength: number) => {
+			cell.busy = true;
+			const tl = animateCell(
+				cell,
+				Math.max(1, Math.round(rolls * (0.35 + 0.65 * strength))),
+				duration * (0.5 + 0.5 * strength)
+			);
+			tl.delay((1 - strength) * 0.08);
+			tl.eventCallback('onComplete', () => {
+				running.delete(tl);
+				cell.busy = false;
+				settle(cell);
+			});
+			running.add(tl);
+		};
+
+		const scan = () => {
+			moveFrame = 0;
+			if (playing || !cells.length) return;
+			const moved = pointer.seen ? Math.hypot(pointer.x - pointer.lastX, pointer.y - pointer.lastY) : 0;
+			pointer.lastX = pointer.x;
+			pointer.lastY = pointer.y;
+			pointer.seen = true;
+			const box = el.getBoundingClientRect();
+			const outside =
+				pointer.x < box.left - hoverRadius ||
+				pointer.x > box.right + hoverRadius ||
+				pointer.y < box.top - hoverRadius ||
+				pointer.y > box.bottom + hoverRadius;
+
+			cells.forEach((cell) => {
+				let distance = Infinity;
+				if (!outside) {
+					const rect = cell.wrap.getBoundingClientRect();
+					distance = Math.hypot(pointer.x - (rect.left + rect.width / 2), pointer.y - (rect.top + rect.height / 2));
 				}
-
-				tl!.to(targets, vars, at);
-
-				if (colorFrom && colorTo) {
-					tl!.to(targets, { color: colorTo, duration, ease: ease as gsap.EaseFunction }, at);
+				if (distance >= hoverRadius) {
+					cell.near = false;
+					cell.travel = 0;
+					return;
 				}
-			};
+				const reach = 1 - distance / hoverRadius;
+				const strength = reach * reach * (3 - 2 * reach);
+				const entered = !cell.near;
+				cell.near = true;
+				cell.travel += moved * (0.35 + strength);
+				if (cell.busy || (!entered && cell.travel < cell.w * 1.4)) return;
+				cell.travel = 0;
+				shuffleNear(cell, strength);
+			});
+		};
 
-			if (animationMode === 'evenodd') {
-				const odd = strips.filter((_, i) => i % 2 === 1);
-				const even = strips.filter((_, i) => i % 2 === 0);
-				const oddTotal = duration + Math.max(0, odd.length - 1) * stagger;
-				const evenStart = odd.length ? oddTotal * 0.7 : 0;
-				if (odd.length) addTween(odd, 0);
-				if (even.length) addTween(even, evenStart);
-			} else {
-				strips.forEach((strip) => {
-					const d = Math.random() * maxDelay;
-					const vars: gsap.TweenVars = {
-						duration,
-						ease: ease as gsap.EaseFunction,
-						force3D: true
-					};
-					if (isVertical) {
-						vars.y = parseFloat(strip.getAttribute('data-final-y') || '0');
-					} else {
-						vars.x = parseFloat(strip.getAttribute('data-final-x') || '0');
-					}
-					tl!.to(strip, vars, d);
-					if (colorFrom && colorTo)
-						tl!.fromTo(
-							strip,
-							{ color: colorFrom },
-							{ color: colorTo, duration, ease: ease as gsap.EaseFunction },
-							d
-						);
-				});
-			}
+		const handlePointerMove = (event: PointerEvent) => {
+			pointer.x = event.clientX;
+			pointer.y = event.clientY;
+			if (!moveFrame) moveFrame = requestAnimationFrame(scan);
+		};
+
+		const removeHover = () => {
+			unhover?.();
+			unhover = null;
 		};
 
 		const armHover = () => {
-			if (!triggerOnHover || !root) return;
+			if (!triggerOnHover) return;
 			removeHover();
-			const handler = () => {
+			if (local) {
+				window.addEventListener('pointermove', handlePointerMove, { passive: true });
+				unhover = () => {
+					window.removeEventListener('pointermove', handlePointerMove);
+					cancelAnimationFrame(moveFrame);
+					moveFrame = 0;
+				};
+				return;
+			}
+			const handleEnter = () => {
 				if (playing) return;
 				build();
-				if (scrambleCharset) randomizeScrambles();
 				play();
 			};
-			hoverHandler = handler;
-			root.addEventListener('mouseenter', handler);
+			el.addEventListener('mouseenter', handleEnter);
+			unhover = () => el.removeEventListener('mouseenter', handleEnter);
 		};
 
 		const create = () => {
 			build();
-			if (scrambleCharset) randomizeScrambles();
 			play();
 			armHover();
 			ready = true;
 		};
 
 		const st = ScrollTrigger.create({
-			trigger: root,
+			trigger: el,
 			start: scrollTriggerStart,
 			once: triggerOnce,
 			onEnter: create
@@ -433,40 +660,72 @@
 			st.kill();
 			removeHover();
 			teardown();
+			svg?.remove();
+			svg = null;
 			ready = false;
 		};
+	};
+
+	$effect(() => {
+		const node = ref;
+		void [
+			text,
+			duration,
+			maxDelay,
+			ease,
+			scrollTriggerStart,
+			fontsLoaded,
+			shuffleDirection,
+			shuffleTimes,
+			animationMode,
+			loop,
+			loopDelay,
+			stagger,
+			scrambleCharset,
+			colorFrom,
+			colorTo,
+			triggerOnce,
+			respectReducedMotion,
+			triggerOnHover,
+			effectMode,
+			hoverRadius,
+			motionBlur,
+			color,
+			accentColor
+		];
+
+		return untrack(() => {
+			if (!node) return;
+			node.textContent = text ?? '';
+			if (!text || !fontsLoaded) return;
+			if (respectReducedMotion && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				ready = true;
+				onShuffleComplete?.();
+				return;
+			}
+			const ctx = gsap.context(() => animate(node), node);
+			return () => ctx.revert();
+		});
 	});
+
+	const userHasFont = $derived(hasFontFamilyClass(className));
+
+	const commonStyle = $derived(
+		[
+			toStyle({
+				textAlign,
+				...(userHasFont ? {} : { fontFamily: "'Press Start 2P', sans-serif" }),
+				...(color ? { color } : {})
+			}),
+			typeof style === 'string' ? style : toStyle(style ?? {})
+		]
+			.filter(Boolean)
+			.join(';')
+	);
+
+	const classes = $derived(
+		`inline-block whitespace-normal break-words will-change-transform uppercase text-[4rem] leading-none ${ready ? 'visible' : 'invisible'} ${className}`
+	);
 </script>
 
-<svelte:element
-	this={tag}
-	bind:this={el}
-	class="shuffle-parent {ready ? 'is-ready' : ''} {className}"
-	style="text-align:{textAlign};{style}"
->
-	{text}
-</svelte:element>
-
-<style>
-	:global(.shuffle-parent) {
-		display: inline-block;
-		white-space: normal;
-		word-wrap: break-word;
-		will-change: transform;
-		line-height: 1;
-		font-size: 4rem;
-		font-family: 'Press Start 2P', sans-serif;
-		text-transform: uppercase;
-		visibility: hidden;
-	}
-
-	:global(.shuffle-parent.is-ready) {
-		visibility: visible;
-	}
-
-	:global(.shuffle-char) {
-		line-height: 1;
-		display: inline-block;
-		text-align: center;
-	}
-</style>
+<svelte:element this={tag || 'p'} bind:this={ref} class={classes} style={commonStyle}></svelte:element>

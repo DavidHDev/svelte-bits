@@ -1,522 +1,93 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import CodeBlock from '$lib/components/docs/preview/CodeBlock.svelte';
-	import {
-		PKG_TO_RUNNER,
-		RUNNER_TO_PKG,
-		RUNNERS,
-		jsrepoAddSnippet,
-		REGISTRY_BASE,
-		registryUrl,
-		shadcnAddSnippet,
-		type PackageManager,
-		type Runner
-	} from '$lib/constants/cli';
+	import CopyPageButton from '$lib/components/docs/getstarted/CopyPageButton.svelte';
+	import CommandList from '$lib/components/docs/getstarted/CommandList.svelte';
+	import DocsStep from '$lib/components/docs/getstarted/DocsStep.svelte';
+	import DocsCodeBlock from '$lib/components/docs/getstarted/DocsCodeBlock.svelte';
+	import DocsButtonBar from '$lib/components/docs/getstarted/DocsButtonBar.svelte';
+	import { jsrepoAddSnippet, shadcnAddSnippet } from '$lib/constants/cli';
 
-	type Method = 'manual' | 'jsrepo' | 'shadcn';
+	const SCRIPT_OPEN = '<' + 'script lang="ts">';
+	const SCRIPT_CLOSE = '</' + 'script>';
 
-	let method = $state<Method>('manual');
-	let pkg = $state<PackageManager>('npm');
-	let dropOpen = $state(false);
-	let dropdownEl = $state<HTMLDivElement | null>(null);
+	const USAGE = `${SCRIPT_OPEN}
+  import SplitText from '$lib/components/SplitText.svelte';
+${SCRIPT_CLOSE}
 
-	const runner = $derived<Runner>(PKG_TO_RUNNER[pkg]);
-	const featuredJsrepoCommand = $derived(jsrepoAddSnippet('aurora', pkg));
-	const genericJsrepoCommand = $derived(jsrepoAddSnippet('<component>', pkg));
-	const featuredShadcnCommand = $derived(shadcnAddSnippet('aurora', pkg));
-	const genericShadcnCommand = $derived(shadcnAddSnippet('<component>', pkg));
+<SplitText
+  text="Hello, you!"
+  delay={100}
+  duration={0.6}
+/>`;
 
-	const usageSnippet = `<` + `script lang="ts">
-  import ShinyText from '$lib/components/svelte-bits/ShinyText.svelte';
-<` + `/script>
+	const commands = [
+		{ key: 'shadcn', label: 'shadcn', command: shadcnAddSnippet('split-text', 'npm') },
+		{ key: 'jsrepo', label: 'jsrepo', command: jsrepoAddSnippet('split-text', 'npm') }
+	];
 
-<ShinyText text="Hello, you!" speed={3} />`;
-
-	function pickRunner(r: Runner) {
-		pkg = RUNNER_TO_PKG[r];
-		dropOpen = false;
-	}
-
-	function onDocClick(e: MouseEvent) {
-		if (!dropOpen) return;
-		if (dropdownEl && !dropdownEl.contains(e.target as Node)) dropOpen = false;
-	}
-
-	onMount(() => {
-		window.scrollTo(0, 0);
-		document.addEventListener('click', onDocClick);
-		return () => document.removeEventListener('click', onDocClick);
-	});
+	onMount(() => window.scrollTo(0, 0));
 </script>
 
-<svelte:head>
-	<title>Installation - svelte-bits</title>
-</svelte:head>
-
 <section class="docs-section">
-	<h3 class="docs-category-title">Installation</h3>
-
-	<p class="docs-paragraph dim">
-		Using components is very straightforward, anyone can do it.
-	</p>
-
-	<hr class="docs-separator" />
-
-	<h3 class="docs-category-title">Pick The Method</h3>
-
-	<p class="docs-paragraph">
-		You can paste source from each component page, or pull them
-		in with <a class="docs-link" href="https://www.jsrepo.dev/" target="_blank" rel="noreferrer">jsrepo</a>, or the <a class="docs-link" href="https://ui.shadcn.com/docs/registry" target="_blank" rel="noreferrer">shadcn CLI</a>.
-	</p>
-
-	<p class="docs-paragraph dim">Click the cards below to change your preferred method.</p>
-
-	<div class="installation-methods">
-		<button
-			type="button"
-			class="installation-method"
-			class:method-active={method === 'manual'}
-			onclick={() => (method = 'manual')}
-		>
-			<svg
-				width="44"
-				height="44"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.6"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-				<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-			</svg>
-			<span class="installation-method-label">Manual</span>
-		</button>
-
-		<button
-			type="button"
-			class="installation-method"
-			class:method-active={method === 'jsrepo'}
-			onclick={() => (method = 'jsrepo')}
-		>
-			<img
-				class="installation-method-logo"
-				src="/vendor/install-brands/jsrepo-favicon.ico"
-				alt=""
-				width="44"
-				height="44"
-				loading="lazy"
-				decoding="async"
-			/>
-			<span class="installation-method-label">jsrepo</span>
-		</button>
-
-		<button
-			type="button"
-			class="installation-method"
-			class:method-active={method === 'shadcn'}
-			onclick={() => (method = 'shadcn')}
-			aria-label="shadcn CLI"
-		>
-			<img
-				class="installation-method-logo"
-				src="/vendor/install-brands/shadcn-favicon.ico"
-				alt=""
-				width="44"
-				height="44"
-				loading="lazy"
-				decoding="async"
-			/>
-			<span class="installation-method-label">shadcn</span>
-		</button>
+	<div class="docs-page-header">
+		<h1 class="docs-title">Installation</h1>
+		<CopyPageButton />
 	</div>
 
-	<h3 class="docs-category-title">Steps</h3>
-
-	{#if method === 'manual'}
-		<p class="docs-paragraph dim">Follow these steps to manually install components:</p>
-
-		<h4 class="docs-category-subtitle">1. Pick a component</h4>
-		<p class="docs-paragraph">
-			Browse components from the sidebar and find one you like, then head to the
-			<span class="docs-highlight">Code</span> tab.
-		</p>
-
-		<h4 class="docs-category-subtitle">2. Install dependencies</h4>
-		<p class="docs-paragraph short">
-			Some components use external libraries (e.g. <code class="prop-code">gsap</code>,
-			<code class="prop-code">ogl</code>, <code class="prop-code">motion</code>,
-			<code class="prop-code">three</code>). Install whatever the component lists at the top of its
-			Code tab.
-		</p>
-		<CodeBlock language="bash" code="npm install gsap" />
-
-		<h4 class="docs-category-subtitle">3. Copy the code</h4>
-		<p class="docs-paragraph short">
-			The <span class="docs-highlight">Code</span> tab contains the full source for the component.
-			Every Svelte Bits component is a single <code class="prop-code">.svelte</code> file — no
-			sibling helpers, no shared utils. Paste it under
-			<code class="prop-code">src/lib/components/</code> and you're done.
-		</p>
-
-		<h4 class="docs-category-subtitle">4. Use the component</h4>
-		<p class="docs-paragraph short">
-			Each component page includes a usage snippet. For all available props, see the
-			<span class="docs-highlight">Preview</span> tab — controls and the prop table mirror exactly
-			what's available.
-		</p>
-		<CodeBlock language="svelte" code={usageSnippet} />
-	{:else}
-		<div class="install-runner-row">
-			<span class="install-runner-label">Runner</span>
-			<div class="install-runner-dropdown" bind:this={dropdownEl}>
-				<button
-					type="button"
-					class="install-runner-trigger"
-					onclick={(e) => {
-						e.stopPropagation();
-						dropOpen = !dropOpen;
-					}}
-				>
-					{runner}
-					<svg
-						class="install-runner-caret"
-						class:open={dropOpen}
-						width="11"
-						height="11"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2.4"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<polyline points="6 9 12 15 18 9" />
-					</svg>
-				</button>
-				<div class="install-runner-menu" class:open={dropOpen}>
-					{#each RUNNERS as r (r)}
-						<button
-							type="button"
-							class="install-runner-item"
-							class:active={runner === r}
-							onclick={() => pickRunner(r)}
-						>
-							{r}
-						</button>
-					{/each}
-				</div>
-			</div>
-		</div>
-
-		{#if method === 'jsrepo'}
-			<h4 class="docs-category-subtitle">Installation</h4>
-			<p class="docs-paragraph short">
-				Run the commands below — the example installs
-				<a class="docs-link" href="/backgrounds/aurora">Aurora</a>:
-			</p>
-
-			<CodeBlock language="bash" code={featuredJsrepoCommand} />
-
-			<h4 class="docs-category-subtitle">Generic form</h4>
-			<p class="docs-paragraph short">
-				Replace <code class="prop-code">&lt;component&gt;</code> with the component slug (e.g.
-				<code class="prop-code">aurora</code>, <code class="prop-code">shiny-text</code>,
-				<code class="prop-code">dock</code>). Slugs are listed on each component page.
-			</p>
-			<CodeBlock language="bash" code={genericJsrepoCommand} />
-
-			<h4 class="docs-category-subtitle">Where it lands</h4>
-			<p class="docs-paragraph short">
-				By default the file is copied to
-				<code class="prop-code">$lib/components/&lt;Component&gt;.svelte</code>. You can
-				move it anywhere — it's just a Svelte file. Any required dependencies (
-				<code class="prop-code">gsap</code>, <code class="prop-code">ogl</code>, etc.) are detected
-				and installed with your package manager by jsrepo.
-			</p>
-		{:else}
-			<p class="docs-paragraph">
-				Requires a typical shadcn to be initialized with a <code class="prop-code">components.json</code>.
-			</p>
-
-			<h4 class="docs-category-subtitle">Installation</h4>
-			<p class="docs-paragraph short">
-				Install
-				<a class="docs-link" href="/backgrounds/aurora">Aurora</a>
-				with your runner selected above:
-			</p>
-
-			<CodeBlock language="bash" code={featuredShadcnCommand} />
-
-			<h4 class="docs-category-subtitle">Generic form</h4>
-			<p class="docs-paragraph short">
-				Substitute your slug for <code class="prop-code">&lt;component&gt;</code> — same filename as each route in the docs
-				(for example <code class="prop-code">aurora</code>, <code class="prop-code">shiny-text</code>,
-				<code class="prop-code">dock</code>):
-			</p>
-			<CodeBlock language="bash" code={genericShadcnCommand} />
-
-			<h4 class="docs-category-subtitle">Where it lands</h4>
-			<p class="docs-paragraph short">
-				The CLI follows the registry file metadata, so destinations match jsrepo installs (typically under
-				<code class="prop-code">$lib/components/svelte-bits/</code>). Relocate freely — it's ordinary Svelte
-				source. Dependencies install as part of <code class="prop-code">add</code>.
-			</p>
-		{/if}
-
-		<p class="docs-paragraph dim install-tip">
-			Tip: every component page includes an install block under its <span class="docs-highlight">Code</span> tab —
-			copy commands for jsrepo or shadcn with the slug already filled in.
-		</p>
-	{/if}
-
-	<hr class="docs-separator" />
-
-	<h4 class="docs-category-subtitle">That's all!</h4>
-
-	<p class="docs-paragraph">
-		From here on, it's all about how you integrate the component into your project. The code is
-		yours to play around with — modify styling, behavior, props, anything goes.
+	<p class="docs-lead">
+		Every component installs as source code you own. Pull it in with one CLI command, or copy the file by hand.
 	</p>
 
-	<div class="docs-button-bar">
-		<a class="docs-button" href="/get-started/introduction">
-			<svg
-				width="14"
-				height="14"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<line x1="19" y1="12" x2="5" y2="12" />
-				<polyline points="12 19 5 12 12 5" />
-			</svg>
-			Introduction
-		</a>
-		<a class="docs-button" href="/get-started/mcp-server">
-			MCP Server
-			<svg
-				width="14"
-				height="14"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<line x1="5" y1="12" x2="19" y2="12" />
-				<polyline points="12 5 19 12 12 19" />
-			</svg>
-		</a>
-	</div>
+	<h2 class="docs-section-title">With the CLI</h2>
+
+	<ol class="docs-steps">
+		<DocsStep index={1} title="Run the add command">
+			<p class="docs-step-text">Use whichever CLI you already have. Both install the same source.</p>
+			<CommandList items={commands} />
+			<p class="docs-step-note">
+				Swap <code>split-text</code> for any component's name in kebab case. On pnpm, yarn or bun, replace
+				<code>npx</code> with <code>pnpm dlx</code>, <code>yarn dlx</code> or <code>bunx --bun</code>.
+			</p>
+		</DocsStep>
+
+		<DocsStep index={2} title="Import and use it">
+			<p class="docs-step-text">Render it like any other component:</p>
+			<DocsCodeBlock code={USAGE} language="svelte" showLineNumbers />
+		</DocsStep>
+	</ol>
+
+	<h2 class="docs-section-title">By hand</h2>
+
+	<ol class="docs-steps">
+		<DocsStep index={1} title="Open a component's Code tab">
+			<p class="docs-step-text">
+				It shows the full source. Every component is a single TypeScript and Tailwind file, so there is only one thing
+				to copy.
+			</p>
+		</DocsStep>
+
+		<DocsStep index={2} title="Copy the file into your project">
+			<p class="docs-step-text">
+				Paste the component into a new file, for example <code>src/lib/components/SplitText.svelte</code>.
+			</p>
+		</DocsStep>
+
+		<DocsStep index={3} title="Install its dependencies">
+			<p class="docs-step-text">The Code tab lists what each component needs. Split Text uses GSAP:</p>
+			<DocsCodeBlock code="npm install gsap" language="bash" />
+		</DocsStep>
+
+		<DocsStep index={4} title="Import and use it">
+			<p class="docs-step-text">Import and render it the same way as the CLI example above.</p>
+		</DocsStep>
+	</ol>
+
+	<h2 class="docs-section-title">That&apos;s all</h2>
+
+	<p class="docs-paragraph">The code is yours now, so change the styles, props or behavior however you like.</p>
+
+	<DocsButtonBar
+		next={{ label: 'MCP Server', route: '/get-started/mcp' }}
+		previous={{ label: 'Introduction', route: '/get-started/introduction' }}
+	/>
 </section>
-
-<style>
-	.docs-link {
-		color: var(--color-accent);
-		text-decoration: underline;
-		text-underline-offset: 2px;
-	}
-	.docs-link:hover {
-		color: var(--color-primary);
-	}
-
-	.docs-paragraph.short {
-		margin-bottom: 0.5rem;
-	}
-
-	/* ── Method selector cards ── */
-
-	.installation-methods {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 14px;
-		margin: 18px 0 32px;
-	}
-
-	.installation-method {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 12px;
-		padding: 32px 16px;
-		border-radius: 12px;
-		border: 1px solid var(--border-primary);
-		background: var(--bg-card);
-		color: rgba(255, 255, 255, 0.55);
-		cursor: pointer;
-		transition: border-color 0.18s, color 0.18s, background 0.18s, transform 0.18s;
-	}
-
-	.installation-method:hover {
-		color: rgba(255, 255, 255, 0.9);
-		border-color: rgba(255, 255, 255, 0.18);
-		transform: translateY(-1px);
-	}
-
-	.installation-method.method-active {
-		color: var(--color-accent);
-		border-color: rgba(255, 138, 76, 0.5);
-		background: rgba(255, 138, 76, 0.06);
-	}
-
-	.installation-method-label {
-		font-family: 'Geist Mono', monospace;
-		font-size: 13px;
-		font-weight: 500;
-		letter-spacing: 0.02em;
-	}
-
-	.installation-method-logo {
-		width: 44px;
-		height: 44px;
-		object-fit: contain;
-		flex-shrink: 0;
-		transition:
-			opacity 0.18s ease,
-			filter 0.18s ease;
-		pointer-events: none;
-	}
-
-	.installation-method:not(.method-active) .installation-method-logo {
-		opacity: 0.48;
-		filter: grayscale(0.15);
-	}
-
-	.installation-method:hover:not(.method-active) .installation-method-logo {
-		opacity: 0.85;
-		filter: grayscale(0.08);
-	}
-
-	.installation-method.method-active .installation-method-logo {
-		opacity: 1;
-		filter: none;
-	}
-
-	@media (max-width: 720px) {
-		.installation-methods {
-			grid-template-columns: 1fr;
-		}
-		.installation-method {
-			padding: 24px 16px;
-		}
-	}
-
-	/* ── Runner dropdown (CLI step) ── */
-
-	.install-runner-row {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		margin: 14px 0 10px;
-	}
-
-	.install-runner-label {
-		font-family: 'Geist Mono', monospace;
-		font-size: 12px;
-		color: rgba(255, 255, 255, 0.45);
-	}
-
-	.install-runner-dropdown {
-		position: relative;
-	}
-
-	.install-runner-trigger {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		font-family: 'Geist Mono', monospace;
-		font-size: 12px;
-		color: rgba(255, 255, 255, 0.85);
-		background: var(--bg-card);
-		border: 1px solid var(--border-primary);
-		border-radius: 7px;
-		padding: 6px 10px 6px 12px;
-		cursor: pointer;
-		transition: border-color 0.15s, background 0.15s;
-	}
-
-	.install-runner-trigger:hover {
-		border-color: rgba(255, 255, 255, 0.18);
-		background: rgba(255, 255, 255, 0.03);
-	}
-
-	.install-runner-caret {
-		transition: transform 0.18s ease;
-		opacity: 0.7;
-	}
-
-	.install-runner-caret.open {
-		transform: rotate(180deg);
-	}
-
-	.install-runner-menu {
-		position: absolute;
-		top: calc(100% + 6px);
-		left: 0;
-		min-width: 140px;
-		display: flex;
-		flex-direction: column;
-		padding: 4px;
-		border-radius: 9px;
-		border: 1px solid var(--border-primary);
-		background: rgba(29, 24, 20, 0.98);
-		backdrop-filter: blur(20px) saturate(1.3);
-		-webkit-backdrop-filter: blur(20px) saturate(1.3);
-		box-shadow:
-			0 8px 28px rgba(0, 0, 0, 0.4),
-			inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
-		z-index: 20;
-		opacity: 0;
-		transform: translateY(-4px);
-		pointer-events: none;
-		transition: opacity 0.15s ease, transform 0.15s ease;
-	}
-
-	.install-runner-menu.open {
-		opacity: 1;
-		transform: translateY(0);
-		pointer-events: auto;
-	}
-
-	.install-runner-item {
-		font-family: 'Geist Mono', monospace;
-		font-size: 12px;
-		text-align: left;
-		color: rgba(255, 255, 255, 0.7);
-		background: transparent;
-		border: none;
-		border-radius: 6px;
-		padding: 7px 10px;
-		cursor: pointer;
-		transition: color 0.12s, background 0.12s;
-	}
-
-	.install-runner-item:hover {
-		color: rgba(255, 255, 255, 0.95);
-		background: rgba(255, 255, 255, 0.05);
-	}
-
-	.install-runner-item.active {
-		color: var(--color-accent);
-		background: rgba(255, 138, 76, 0.08);
-	}
-
-	.install-tip {
-		margin-top: 1rem;
-	}
-
-	/* The global .docs-separator has 2.5em top+bottom margins, and
-	   .docs-category-title also has margin-top: 2.5em, so the gap below the
-	   divider ends up doubled. Collapse it back to symmetric spacing. */
-	:global(.docs-separator + .docs-category-title),
-	:global(.docs-separator + .docs-category-subtitle) {
-		margin-top: 0;
-	}
-</style>

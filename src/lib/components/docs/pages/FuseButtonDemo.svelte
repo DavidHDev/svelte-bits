@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import FuseButton, {
@@ -220,8 +219,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedColor = $derived(color);
-	const renderedBackground = $derived(background);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
+	const renderedBackground = $derived(theme.isLight ? (background === DEFAULT_PROPS.background ? '#f6f6f6' : background) : background);
 	const content = $derived(PRESETS[preset as keyof typeof PRESETS] || PRESETS.archive);
 	const renderedFuse = $derived(fuseColor === DEFAULT_PROPS.fuseColor ? content.fuse : fuseColor);
 	const propData: PropRow[] = [
@@ -419,8 +418,6 @@
 		>{#each shapes as [tag, attrs]}<svelte:element this={tag} {...attrs} />{/each}</svg
 	>{/snippet}
 
-<svelte:head><title>Fuse Button - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Fuse Button</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -434,7 +431,7 @@
 				style="height:400px;"
 			>
 				{#key preset + epoch}<FuseButton
-						{...props}
+						{...props} color={renderedColor} background={renderedBackground}
 						label={content.label}
 						undoLabel={content.undoLabel}
 						doneLabel={content.doneLabel}
@@ -450,21 +447,21 @@
 				value={preset}
 				onChange={(val) => updateProp('preset', val)}
 			></PreviewSelect>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Text"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Background"
-				value={renderedBackground}
+				color={renderedBackground}
 				onChange={(val) => updateProp('background', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Fuse"
-				value={renderedFuse}
+				color={renderedFuse}
 				onChange={(val) => updateProp('fuseColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSelect
 				title="Size"
 				options={SIZE_OPTIONS}

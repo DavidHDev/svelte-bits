@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import PeekRating, {
@@ -91,9 +90,9 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedIdleColor = $derived(idleColor);
-	const renderedTipColor = $derived(tipColor);
-	const renderedTipTextColor = $derived(tipTextColor);
+	const renderedIdleColor = $derived(theme.isLight ? (idleColor === DEFAULT_PROPS.idleColor ? '#d4d4d8' : idleColor) : idleColor);
+	const renderedTipColor = $derived(theme.isLight ? (tipColor === DEFAULT_PROPS.tipColor ? '#18181b' : tipColor) : tipColor);
+	const renderedTipTextColor = $derived(theme.isLight ? (tipTextColor === DEFAULT_PROPS.tipTextColor ? '#ffffff' : tipTextColor) : tipTextColor);
 	const propData: PropRow[] = [
 		{
 			name: 'value',
@@ -279,8 +278,6 @@
 	);
 </script>
 
-<svelte:head><title>Peek Rating - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Peek Rating</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -293,7 +290,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				<PeekRating {...props} {value} onChange={setValue} labels={showLabels ? LABELS : []} />
+				<PeekRating {...props} idleColor={renderedIdleColor} tipColor={renderedTipColor} tipTextColor={renderedTipTextColor} {value} onChange={setValue} labels={showLabels ? LABELS : []} />
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="peek-rating" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
@@ -329,26 +326,26 @@
 			></PreviewSwitch>
 			<PreviewSwitch title="Tip" checked={showTip} onChange={(val) => updateProp('showTip', val)}
 			></PreviewSwitch>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Active"
-				value={activeColor}
+				color={activeColor}
 				onChange={(val) => updateProp('activeColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Idle"
-				value={renderedIdleColor}
+				color={renderedIdleColor}
 				onChange={(val) => updateProp('idleColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Tip"
-				value={renderedTipColor}
+				color={renderedTipColor}
 				onChange={(val) => updateProp('tipColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Tip Text"
-				value={renderedTipTextColor}
+				color={renderedTipTextColor}
 				onChange={(val) => updateProp('tipTextColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Size"
 				min={16}

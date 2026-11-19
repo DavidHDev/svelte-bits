@@ -1,21 +1,63 @@
 <!-- @svelte-bits
 {
   "title": "Pixel Transition",
-  "description": "Hover/click reveal that transitions between two contents through a randomized pixel grid effect.",
-  "dependencies": ["gsap"]
+  "description": "Retro pixel dissolve that covers a card in solid pixels, swaps the content underneath and clears again."
 }
 -->
+<script module lang="ts">
+	export type PixelTransitionPattern = 'random' | 'dither' | 'ripple' | 'wipe';
+	export type PixelTransitionAnimation = 'pop' | 'grow' | 'fade';
+	export type PixelTransitionShape = 'square' | 'rounded' | 'circle';
+
+	type Point = { x: number; y: number };
+	type Edge = 'left' | 'right' | 'top' | 'bottom';
+	type Control = { go: (next: boolean, point: Point | null) => void; goal: () => number };
+
+	const PATTERNS: PixelTransitionPattern[] = ['random', 'dither', 'ripple', 'wipe'];
+	const ANIMATIONS: PixelTransitionAnimation[] = ['pop', 'grow', 'fade'];
+	const SHAPES: PixelTransitionShape[] = ['square', 'rounded', 'circle'];
+	const ROOT =
+		'relative isolate w-[300px] max-w-full overflow-hidden rounded-[16px] [-webkit-tap-highlight-color:transparent] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-current';
+	const LAYER = 'absolute inset-0';
+	const PIXELS = 'pointer-events-none absolute inset-0 z-[1] block h-full w-full';
+
+	const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+	const WINDOW = 0.35;
+	const SEAL = 0.22;
+	const TONES = 5;
+	const LEVELS = 16;
+
+	const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+	const smooth = (t: number) => t * t * (3 - 2 * t);
+
+	const hash = (x: number, y: number, seed: number) => {
+		let h = Math.imul(x + 1, 0x27d4eb2d) ^ Math.imul(y + 1, 0x165667b1) ^ Math.imul(seed + 1, 0x2c1b3c6d);
+		h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+		h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+		return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+	};
+</script>
+
 <script lang="ts">
-	import { gsap } from 'gsap';
-	import type { Snippet } from 'svelte';
+	import { onMount, untrack, type Snippet } from 'svelte';
 
 	type Props = {
 		firstContent: Snippet;
 		secondContent: Snippet;
 		gridSize?: number;
 		pixelColor?: string;
+		mosaic?: number;
 		animationStepDuration?: number;
+		pattern?: PixelTransitionPattern;
+		randomness?: number;
+		pixelAnimation?: PixelTransitionAnimation;
+		pixelShape?: PixelTransitionShape;
+		gap?: number;
+		fps?: number;
+		trigger?: 'hover' | 'click';
+		active?: boolean;
 		once?: boolean;
+		onActiveChange?: (active: boolean) => void;
 		aspectRatio?: string;
 		class?: string;
 		style?: string;
@@ -24,104 +66,370 @@
 	let {
 		firstContent,
 		secondContent,
-		gridSize = 7,
-		pixelColor = 'currentColor',
-		animationStepDuration = 0.3,
+		gridSize = 10,
+		pixelColor = '#ffffff',
+		mosaic = 0,
+		animationStepDuration = 0.4,
+		pattern = 'random',
+		randomness = 0.3,
+		pixelAnimation = 'pop',
+		pixelShape = 'square',
+		gap = 0,
+		fps = 0,
+		trigger = 'hover',
+		active,
 		once = false,
+		onActiveChange,
 		aspectRatio = '100%',
 		class: className = '',
 		style = ''
 	}: Props = $props();
 
-	let pixelGrid: HTMLDivElement;
-	let activeEl: HTMLDivElement;
-	let isActive = $state(false);
-	let delayedCall: gsap.core.Tween | null = null;
+	let rootEl: HTMLDivElement;
+	let canvasEl: HTMLCanvasElement;
+	let firstEl: HTMLDivElement;
+	let secondEl: HTMLDivElement;
 
-	const isTouch =
-		typeof window !== 'undefined' &&
-		('ontouchstart' in window ||
-			(navigator.maxTouchPoints ?? 0) > 0 ||
-			window.matchMedia('(pointer: coarse)').matches);
+	const initial = untrack(() => (active ? 1 : 0));
+	let control: Control | null = null;
+	let pendingPoint: Point | null = null;
+	let hovering = false;
+	let focused = false;
+	let pointerType = 'mouse';
 
-	$effect(() => {
-		if (!pixelGrid) return;
-		pixelGrid.innerHTML = '';
-		for (let row = 0; row < gridSize; row++) {
-			for (let col = 0; col < gridSize; col++) {
-				const p = document.createElement('div');
-				p.classList.add('pixelated-image-card__pixel', 'absolute', 'hidden');
-				p.style.backgroundColor = pixelColor;
-				const size = 100 / gridSize;
-				p.style.width = `${size}%`;
-				p.style.height = `${size}%`;
-				p.style.left = `${col * size}%`;
-				p.style.top = `${row * size}%`;
-				pixelGrid.appendChild(p);
-			}
-		}
+	const settings = $derived({
+		gridSize: clamp(Math.round(gridSize), 2, 80),
+		pixelColor,
+		mosaic: clamp(mosaic, 0, 1),
+		duration: Math.max(0.05, animationStepDuration),
+		pattern: PATTERNS.includes(pattern) ? pattern : ('random' as PixelTransitionPattern),
+		randomness: clamp(randomness, 0, 1),
+		animation: ANIMATIONS.includes(pixelAnimation) ? pixelAnimation : ('pop' as PixelTransitionAnimation),
+		shape: SHAPES.includes(pixelShape) ? pixelShape : ('square' as PixelTransitionShape),
+		gap: Math.max(0, gap),
+		fps: clamp(fps, 0, 120),
+		once
 	});
 
-	function animate(activate: boolean) {
-		isActive = activate;
-		if (!pixelGrid || !activeEl) return;
-		const pixels = pixelGrid.querySelectorAll<HTMLDivElement>('.pixelated-image-card__pixel');
-		if (!pixels.length) return;
-		gsap.killTweensOf(pixels);
-		delayedCall?.kill();
-		gsap.set(pixels, { display: 'none' });
-		const stagger = animationStepDuration / pixels.length;
-		gsap.to(pixels, {
-			display: 'block',
-			duration: 0,
-			stagger: { each: stagger, from: 'random' }
-		});
-		delayedCall = gsap.delayedCall(animationStepDuration, () => {
-			activeEl.style.display = activate ? 'block' : 'none';
-			activeEl.style.pointerEvents = activate ? 'none' : '';
-		});
-		gsap.to(pixels, {
-			display: 'none',
-			duration: 0,
-			delay: animationStepDuration,
-			stagger: { each: stagger, from: 'random' }
-		});
-	}
+	const hover = $derived(trigger !== 'click');
+	const ratio = $derived(String(aspectRatio).trim());
+	const padded = $derived(ratio.endsWith('%'));
+	const rootStyle = $derived(padded ? style : `aspect-ratio: ${ratio};${style ? ` ${style}` : ''}`);
 
-	const handleEnter = () => {
-		if (!isActive) animate(true);
+	onMount(() => {
+		const root = rootEl;
+		const canvas = canvasEl;
+		const ctx = canvas?.getContext('2d');
+		if (!root || !canvas || !ctx) return;
+
+		const probe = document.createElement('canvas');
+		probe.width = 1;
+		probe.height = 1;
+		const probeCtx = probe.getContext('2d', { willReadFrequently: true });
+		const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+		const state = {
+			progress: 0,
+			base: initial,
+			goal: initial,
+			shown: initial,
+			seed: 1,
+			originX: 0.5,
+			originY: 0.5,
+			edge: 'left' as Edge,
+			tones: ['#ffffff'] as string[],
+			toneKey: '',
+			dpr: 1
+		};
+		let raf = 0;
+		let last = 0;
+		let drawnAt = 0;
+		let alive = true;
+
+		const resolveTones = () => {
+			const s = settings;
+			canvas.style.color = s.pixelColor;
+			const color = getComputedStyle(canvas).color;
+			canvas.style.color = '';
+			let rgba = [255, 255, 255, 1];
+			if (probeCtx) {
+				probeCtx.clearRect(0, 0, 1, 1);
+				probeCtx.fillStyle = color;
+				probeCtx.fillRect(0, 0, 1, 1);
+				const data = probeCtx.getImageData(0, 0, 1, 1).data;
+				rgba = [data[0], data[1], data[2], data[3] / 255];
+			}
+			const target = (0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2]) / 255 > 0.5 ? 0 : 255;
+			state.tones = Array.from({ length: TONES }, (_, index) => {
+				const mix = s.mosaic * 0.5 * (index / (TONES - 1));
+				const [r, g, b] = rgba.slice(0, 3).map((value) => Math.round(value + (target - value) * mix));
+				return `rgba(${r}, ${g}, ${b}, ${rgba[3]})`;
+			});
+			state.toneKey = `${s.pixelColor}|${s.mosaic}`;
+		};
+
+		const show = (index: number) => {
+			state.shown = index;
+			if (firstEl) firstEl.style.visibility = index === 0 ? '' : 'hidden';
+			if (secondEl) secondEl.style.visibility = index === 1 ? '' : 'hidden';
+		};
+
+		const draw = () => {
+			const s = settings;
+			const { width, height } = canvas;
+			ctx.globalAlpha = 1;
+			ctx.clearRect(0, 0, width, height);
+			const progress = state.progress;
+			if (progress <= 0 || progress >= 1) return;
+			if (state.toneKey !== `${s.pixelColor}|${s.mosaic}`) resolveTones();
+
+			const covering = progress < 0.5;
+			const local = covering ? progress * 2 : progress * 2 - 1;
+			const seal = covering
+				? smooth(clamp((local - 1 + SEAL) / SEAL, 0, 1))
+				: 1 - smooth(clamp(local / SEAL, 0, 1));
+			const cols = s.gridSize;
+			const cell = width / cols;
+			const rows = Math.ceil(height / cell);
+			const top = (height - rows * cell) / 2;
+			const gapSize = Math.min(cell * 0.8, s.gap * state.dpr) * (1 - seal);
+			const ox = state.originX * width;
+			const oy = state.originY * height;
+			const far = Math.max(
+				Math.hypot(ox, oy),
+				Math.hypot(width - ox, oy),
+				Math.hypot(ox, height - oy),
+				Math.hypot(width - ox, height - oy)
+			);
+			const paths = new Map<number, Path2D>();
+
+			for (let row = 0; row < rows; row++) {
+				const y0 = top + row * cell;
+				const cy = y0 + cell / 2;
+				for (let col = 0; col < cols; col++) {
+					const x0 = col * cell;
+					const cx = x0 + cell / 2;
+					const noise = hash(col, row, state.seed);
+					let delay = noise;
+					if (s.pattern === 'dither') delay = (BAYER[(row & 3) * 4 + (col & 3)] + noise) / 16;
+					else if (s.pattern !== 'random') {
+						let base;
+						if (s.pattern === 'ripple') base = Math.hypot(cx - ox, cy - oy) / Math.max(1, far);
+						else if (state.edge === 'left') base = cx / width;
+						else if (state.edge === 'right') base = 1 - cx / width;
+						else if (state.edge === 'top') base = cy / height;
+						else base = 1 - cy / height;
+						delay = clamp(base, 0, 1) * (1 - s.randomness) + noise * s.randomness;
+					}
+
+					let amount;
+					if (s.animation === 'pop') amount = local >= delay === covering ? 1 : 0;
+					else {
+						const t = smooth(clamp((local - delay * (1 - WINDOW)) / WINDOW, 0, 1));
+						amount = covering ? t : 1 - t;
+					}
+					if (amount <= 0.002) continue;
+
+					const size = (s.animation === 'grow' ? cell * amount : cell) - gapSize;
+					if (size <= 0) continue;
+					const level = s.animation === 'fade' ? Math.max(1, Math.round(amount * LEVELS)) : LEVELS;
+					const tone = s.mosaic > 0 ? Math.floor(hash(col, row, 7) * TONES) : 0;
+					const key = tone * (LEVELS + 1) + level;
+					let path = paths.get(key);
+					if (!path) {
+						path = new Path2D();
+						paths.set(key, path);
+					}
+
+					if (s.shape === 'circle') {
+						const radius = (size / 2) * (1 + 0.45 * seal);
+						path.moveTo(cx + radius, cy);
+						path.arc(cx, cy, radius, 0, Math.PI * 2);
+					} else if (s.shape === 'rounded' && seal < 1 && path.roundRect) {
+						path.roundRect(cx - size / 2, cy - size / 2, size, size, size * 0.3 * (1 - seal));
+					} else if (size >= cell - 0.01) {
+						const left = Math.round(x0);
+						const upper = Math.round(y0);
+						path.rect(left, upper, Math.round(x0 + cell) - left, Math.round(y0 + cell) - upper);
+					} else {
+						path.rect(cx - size / 2, cy - size / 2, size, size);
+					}
+				}
+			}
+
+			paths.forEach((path, key) => {
+				ctx.globalAlpha = (key % (LEVELS + 1)) / LEVELS;
+				ctx.fillStyle = state.tones[Math.floor(key / (LEVELS + 1))] ?? state.tones[0];
+				ctx.fill(path);
+			});
+			ctx.globalAlpha = 1;
+		};
+
+		const paint = () => {
+			const index = state.progress >= 0.5 ? 1 - state.base : state.base;
+			if (index !== state.shown) show(index);
+			draw();
+		};
+
+		const frame = (now: number) => {
+			raf = 0;
+			if (!alive) return;
+			const s = settings;
+			const dt = last ? Math.min(0.1, (now - last) / 1000) : 1 / 60;
+			last = now;
+			const aim = state.goal === state.base ? 0 : 1;
+			const step = reduce ? 1 : dt / (2 * s.duration);
+			state.progress =
+				aim > state.progress ? Math.min(aim, state.progress + step) : Math.max(aim, state.progress - step);
+			const settled = state.progress === aim;
+			if (settled && aim === 1) {
+				state.base = 1 - state.base;
+				state.progress = 0;
+			}
+			if (settled || !s.fps || now - drawnAt >= 1000 / s.fps - 2) {
+				drawnAt = now;
+				paint();
+			}
+			if (!settled) raf = requestAnimationFrame(frame);
+		};
+
+		const start = (point: Point | null) => {
+			const rect = root.getBoundingClientRect();
+			const x = point ? clamp((point.x - rect.left) / Math.max(1, rect.width), 0, 1) : 0.5;
+			const y = point ? clamp((point.y - rect.top) / Math.max(1, rect.height), 0, 1) : 0.5;
+			state.originX = x;
+			state.originY = y;
+			state.seed = Math.floor(Math.random() * 65536);
+			if (!point) state.edge = 'left';
+			else {
+				const sides: [Edge, number][] = [
+					['left', x * rect.width],
+					['right', (1 - x) * rect.width],
+					['top', y * rect.height],
+					['bottom', (1 - y) * rect.height]
+				];
+				state.edge = sides.reduce((best, side) => (side[1] < best[1] ? side : best))[0];
+			}
+			resolveTones();
+		};
+
+		const go = (next: boolean, point: Point | null) => {
+			const goal = next ? 1 : 0;
+			if (goal === state.goal) return;
+			if (!goal && settings.once) return;
+			state.goal = goal;
+			if (state.progress === 0 && goal !== state.base) start(point);
+			if (raf) return;
+			last = 0;
+			drawnAt = 0;
+			raf = requestAnimationFrame(frame);
+		};
+
+		control = { go, goal: () => state.goal };
+
+		const resize = () => {
+			state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+			canvas.width = Math.max(1, Math.round(root.clientWidth * state.dpr));
+			canvas.height = Math.max(1, Math.round(root.clientHeight * state.dpr));
+			draw();
+		};
+
+		const resizeObserver = new ResizeObserver(resize);
+		resizeObserver.observe(root);
+		resize();
+
+		return () => {
+			alive = false;
+			cancelAnimationFrame(raf);
+			control = null;
+			resizeObserver.disconnect();
+		};
+	});
+
+	$effect(() => {
+		const next = active;
+		untrack(() => {
+			if (next === undefined) return;
+			control?.go(next, pendingPoint);
+			pendingPoint = null;
+		});
+	});
+
+	const request = (next: boolean, point: Point | null) => {
+		if (!control || (!next && once && control.goal() === 1)) return;
+		if (active === undefined) control.go(next, point);
+		else pendingPoint = point;
+		onActiveChange?.(next);
 	};
-	const handleLeave = () => {
-		if (isActive && !once) animate(false);
+
+	const pointOf = (event: PointerEvent | MouseEvent): Point => ({ x: event.clientX, y: event.clientY });
+
+	const onPointerEnter = (event: PointerEvent) => {
+		if (event.pointerType === 'touch') return;
+		hovering = true;
+		if (hover) request(true, pointOf(event));
 	};
-	const handleClick = () => {
-		if (!isActive) animate(true);
-		else if (isActive && !once) animate(false);
+
+	const onPointerLeave = (event: PointerEvent) => {
+		if (event.pointerType === 'touch') return;
+		hovering = false;
+		if (hover && !focused) request(false, pointOf(event));
+	};
+
+	const onPointerDown = (event: PointerEvent) => {
+		pointerType = event.pointerType;
+	};
+
+	const onClick = (event: MouseEvent) => {
+		if (hover && pointerType !== 'touch') return;
+		request(control?.goal() !== 1, pointOf(event));
+	};
+
+	const onFocus = (event: FocusEvent) => {
+		const current = event.currentTarget as HTMLElement;
+		if (!hover || current.contains(event.relatedTarget as Node | null)) return;
+		if (!(event.target as HTMLElement).matches(':focus-visible')) return;
+		focused = true;
+		request(true, null);
+	};
+
+	const onBlur = (event: FocusEvent) => {
+		const current = event.currentTarget as HTMLElement;
+		if (!focused || current.contains(event.relatedTarget as Node | null)) return;
+		focused = false;
+		if (!hovering) request(false, null);
+	};
+
+	const onKeyDown = (event: KeyboardEvent) => {
+		if (hover || event.target !== event.currentTarget) return;
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+		event.preventDefault();
+		request(control?.goal() !== 1, null);
 	};
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
-	class="bg-[#222] text-white rounded-[15px] border-2 border-white w-[300px] max-w-full relative overflow-hidden {className}"
-	{style}
-	onmouseenter={!isTouch ? handleEnter : undefined}
-	onmouseleave={!isTouch ? handleLeave : undefined}
-	onclick={isTouch ? handleClick : undefined}
-	onfocus={!isTouch ? handleEnter : undefined}
-	onblur={!isTouch ? handleLeave : undefined}
-	tabindex="0"
-	role="button"
+	bind:this={rootEl}
+	class={`${ROOT}${className ? ` ${className}` : ''}`}
+	style={rootStyle || undefined}
+	tabindex={0}
+	role={hover ? undefined : 'button'}
+	onpointerenter={onPointerEnter}
+	onpointerleave={onPointerLeave}
+	onpointerdown={onPointerDown}
+	onclick={onClick}
+	onfocusin={onFocus}
+	onfocusout={onBlur}
+	onkeydown={onKeyDown}
 >
-	<div style="padding-top:{aspectRatio};"></div>
-	<div class="absolute inset-0 w-full h-full" aria-hidden={isActive}>
+	{#if padded}
+		<div style:padding-top={ratio}></div>
+	{/if}
+	<div bind:this={firstEl} class={LAYER} style:visibility={initial === 0 ? undefined : 'hidden'}>
 		{@render firstContent()}
 	</div>
-	<div
-		bind:this={activeEl}
-		class="absolute inset-0 w-full h-full z-[2]"
-		style="display:none;"
-		aria-hidden={!isActive}
-	>
+	<div bind:this={secondEl} class={LAYER} style:visibility={initial === 1 ? undefined : 'hidden'}>
 		{@render secondContent()}
 	</div>
-	<div bind:this={pixelGrid} class="absolute inset-0 w-full h-full pointer-events-none z-[3]"></div>
+	<canvas bind:this={canvasEl} class={PIXELS} aria-hidden="true"></canvas>
 </div>

@@ -2,107 +2,315 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
+	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
+	import PreviewColorList from '$lib/components/docs/preview/PreviewColorList.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import BackgroundContent from '$lib/components/docs/preview/BackgroundContent.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
 	import Prism from '$lib/components/library/Backgrounds/Prism/Prism.svelte';
 	import source from '$lib/components/library/Backgrounds/Prism/Prism.svelte?raw';
+	import { DEFAULT_PROPS, PRESET_OPTIONS, presetProps, type PrismAnimationType } from './presets/Prism';
 
-	const D = {
-		height: 3.5, baseWidth: 5.5, animationType: 'rotate' as 'rotate' | 'hover' | '3drotate',
-		glow: 1, noise: 0.5, scale: 3.6, hueShift: 0, colorFrequency: 1,
-		hoverStrength: 2, inertia: 0.05, bloom: 1, timeScale: 0.5, transparent: true
-	};
-	let height = $state(D.height);
-	let baseWidth = $state(D.baseWidth);
-	let animationType = $state(D.animationType);
-	let glow = $state(D.glow);
-	let noise = $state(D.noise);
-	let scale = $state(D.scale);
-	let hueShift = $state(D.hueShift);
-	let colorFrequency = $state(D.colorFrequency);
-	let hoverStrength = $state(D.hoverStrength);
-	let inertia = $state(D.inertia);
-	let bloom = $state(D.bloom);
-	let timeScale = $state(D.timeScale);
-	let transparent = $state(D.transparent);
-	let showContent = $state(true);
-
-	const sO = '<' + 'script lang="ts">';
-	const sC = '</' + 'script>';
-
-	const hasChanges = $derived(
-		height !== D.height || baseWidth !== D.baseWidth || animationType !== D.animationType ||
-		glow !== D.glow || noise !== D.noise || scale !== D.scale || hueShift !== D.hueShift ||
-		colorFrequency !== D.colorFrequency || hoverStrength !== D.hoverStrength ||
-		inertia !== D.inertia || bloom !== D.bloom || timeScale !== D.timeScale || transparent !== D.transparent
-	);
-	function reset() {
-		height = D.height; baseWidth = D.baseWidth; animationType = D.animationType;
-		glow = D.glow; noise = D.noise; scale = D.scale; hueShift = D.hueShift;
-		colorFrequency = D.colorFrequency; hoverStrength = D.hoverStrength;
-		inertia = D.inertia; bloom = D.bloom; timeScale = D.timeScale; transparent = D.transparent;
-	}
-	const usage = $derived(`${sO}
-  import Prism from '$lib/components/Prism.svelte';
-${sC}
-
-<div style="position: relative; width: 100%; height: 600px;">
-  <Prism animationType="${animationType}" timeScale={${timeScale}} />
-</div>`);
-
-	const props: PropRow[] = [
-		{ name: 'height', type: 'number', default: '3.5', description: 'Pyramid height.' },
-		{ name: 'baseWidth', type: 'number', default: '5.5', description: 'Pyramid base width.' },
-		{ name: 'animationType', type: "'rotate'|'hover'|'3drotate'", default: "'rotate'", description: 'Animation mode.' },
-		{ name: 'glow', type: 'number', default: '1', description: 'Glow strength.' },
-		{ name: 'offset', type: '{x,y}', default: '{x:0,y:0}', description: 'Pixel offset.' },
-		{ name: 'noise', type: 'number', default: '0.5', description: 'Grain noise.' },
-		{ name: 'transparent', type: 'boolean', default: 'true', description: 'Alpha background.' },
-		{ name: 'scale', type: 'number', default: '3.6', description: 'Scene scale.' },
-		{ name: 'hueShift', type: 'number', default: '0', description: 'Hue rotation (rad).' },
-		{ name: 'colorFrequency', type: 'number', default: '1', description: 'Color stripe frequency.' },
-		{ name: 'hoverStrength', type: 'number', default: '2', description: 'Hover rotate strength.' },
-		{ name: 'inertia', type: 'number', default: '0.05', description: 'Hover inertia.' },
-		{ name: 'bloom', type: 'number', default: '1', description: 'Bloom multiplier.' },
-		{ name: 'suspendWhenOffscreen', type: 'boolean', default: 'false', description: 'Pause RAF off-screen.' },
-		{ name: 'timeScale', type: 'number', default: '0.5', description: 'Time multiplier.' }
+	const ANIMATION_OPTIONS = [
+		{ value: 'rotate', label: 'Rotate' },
+		{ value: '3drotate', label: '3D Rotate' },
+		{ value: 'hover', label: 'Hover' },
+		{ value: 'static', label: 'Static' }
 	];
 
+	const propData: PropRow[] = [
+		{
+			name: 'animationType',
+			type: "'rotate' | '3drotate' | 'hover' | 'static'",
+			default: "'rotate'",
+			description: 'Rotate spins the prism in place, 3D rotate tumbles it, hover turns it only toward the cursor.'
+		},
+		{
+			name: 'timeScale',
+			type: 'number',
+			default: '0.5',
+			description: 'Speed of the rotation. 0 holds it still.'
+		},
+		{
+			name: 'colors',
+			type: 'string[]',
+			default: '[]',
+			description: 'Custom colors for the light, cycled through the color bands. Leave empty for the original spectrum.'
+		},
+		{
+			name: 'glow',
+			type: 'number',
+			default: '1',
+			description: 'Brightness of the light.'
+		},
+		{
+			name: 'scale',
+			type: 'number',
+			default: '3.6',
+			description: 'Size of the prism on screen. Larger values zoom in.'
+		},
+		{
+			name: 'height',
+			type: 'number',
+			default: '3.5',
+			description: 'Height of the prism from its base to its tip.'
+		},
+		{
+			name: 'baseWidth',
+			type: 'number',
+			default: '5.5',
+			description: 'Width of the prism at its base.'
+		},
+		{
+			name: 'hueShift',
+			type: 'number',
+			default: '0',
+			description: 'Rotates every color around the color wheel, in degrees.'
+		},
+		{
+			name: 'colorFrequency',
+			type: 'number',
+			default: '1',
+			description: 'How quickly the colors change through the light. Higher values show more bands.'
+		},
+		{
+			name: 'saturation',
+			type: 'number',
+			default: '1.5',
+			description: 'Color intensity, from 0 (grayscale) to 2.'
+		},
+		{
+			name: 'noise',
+			type: 'number',
+			default: '0',
+			description: 'Film grain over the light, from 0 to 1.'
+		},
+		{
+			name: 'offset',
+			type: '{ x?: number; y?: number }',
+			default: '{ x: 0, y: 0 }',
+			description: 'Moves the prism by a number of pixels, x to the right and y down.'
+		},
+		{
+			name: 'interactive',
+			type: 'boolean',
+			default: 'true',
+			description: 'Tilts the prism toward the cursor in every animation mode.'
+		},
+		{
+			name: 'hoverStrength',
+			type: 'number',
+			default: '2',
+			description: 'How far the prism turns toward the cursor.'
+		},
+		{
+			name: 'inertia',
+			type: 'number',
+			default: '0.05',
+			description: 'How quickly the prism follows the cursor, from 0.01 (slow and smooth) to 1 (instant).'
+		},
+		{
+			name: 'intro',
+			type: 'boolean',
+			default: 'true',
+			description: 'Fades the light in on mount.'
+		},
+		{
+			name: 'resolution',
+			type: 'number',
+			default: '0.5',
+			description:
+				'Fraction of the screen resolution the light is rendered at, from 0.25 to 1. The glow is soft, so 0.5 looks the same as full resolution and runs about four times faster.'
+		},
+		{
+			name: 'lightMode',
+			type: 'boolean',
+			default: 'false',
+			description: 'Draws the light as colored ink for light backgrounds.'
+		},
+		{ name: 'dpr', type: 'number', default: 'auto', description: 'Maximum device pixel ratio, capped at 2.' },
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the container.' },
+		{ name: 'style', type: 'string', default: '-', description: 'Inline styles for the container.' }
+];
+
+	const usage = `<script lang="ts">
+  import Prism from '$lib/components/Prism.svelte';
+</${'script'}>
+
+<div style="width: 100%; height: 600px; position: relative;">
+  <Prism
+    animationType="rotate"
+    timeScale={0.5}
+    height={3.5}
+    baseWidth={5.5}
+    scale={3.6}
+    hueShift={0}
+    colorFrequency={1}
+    glow={1}
+  />
+</div>`;
+
+	const demo = createComponentProps(DEFAULT_PROPS);
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, ...rest } = settings;
+		return rest;
+	});
 	let key = $state(0);
-	function rebuild() { key++; }
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value, { defaults: demo.defaultProps }), preset: value });
+	};
 </script>
 
-<svelte:head><title>Prism - svelte-bits</title></svelte:head>
-
-<h1 class="sub-category">Prism</h1>
-
-<TabsLayout onreset={() => { reset(); rebuild(); }} {hasChanges} componentName="Prism" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="relative h-[500px] w-full overflow-hidden rounded-[14px]">
+<TabsLayout propsState={demo} componentName="Prism" {usage} {source} {propData} demoOnlyProps={['preset']}>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 500px; padding: 0; overflow: hidden;">
 			{#key key}
-				<Prism {height} {baseWidth} {animationType} {glow} {noise} {scale} {hueShift} {colorFrequency} {hoverStrength} {inertia} {bloom} {timeScale} {transparent} />
+				<Prism {...componentProps} />
 			{/key}
-			<BackgroundContentToggle {showContent} onToggle={(v) => (showContent = v)} />
+			<BackgroundContent headline="A spectrum of colors that spark creativity" />
+			<RefreshButton onClick={() => key++} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="prism" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewSlider title="Height" min={0.5} max={10} step={0.1} value={height} onChange={(v) => { height = v; rebuild(); }} />
-			<PreviewSlider title="Base Width" min={0.5} max={12} step={0.1} value={baseWidth} onChange={(v) => { baseWidth = v; rebuild(); }} />
-			<PreviewSlider title="Glow" min={0} max={5} step={0.1} value={glow} onChange={(v) => (glow = v)} />
-			<PreviewSlider title="Noise" min={0} max={1} step={0.01} value={noise} onChange={(v) => (noise = v)} />
-			<PreviewSlider title="Scale" min={0.5} max={10} step={0.1} value={scale} onChange={(v) => { scale = v; rebuild(); }} />
-			<PreviewSlider title="Hue Shift" min={-3.14} max={3.14} step={0.01} value={hueShift} onChange={(v) => (hueShift = v)} />
-			<PreviewSlider title="Color Frequency" min={0} max={5} step={0.1} value={colorFrequency} onChange={(v) => (colorFrequency = v)} />
-			<PreviewSlider title="Hover Strength" min={0} max={5} step={0.1} value={hoverStrength} onChange={(v) => { hoverStrength = v; rebuild(); }} />
-			<PreviewSlider title="Inertia" min={0.01} max={1} step={0.01} value={inertia} onChange={(v) => { inertia = v; rebuild(); }} />
-			<PreviewSlider title="Bloom" min={0} max={5} step={0.1} value={bloom} onChange={(v) => (bloom = v)} />
-			<PreviewSlider title="Time Scale" min={0} max={3} step={0.05} value={timeScale} onChange={(v) => { timeScale = v; rebuild(); }} />
-			<PreviewSwitch title="Transparent" checked={transparent} onChange={(v) => { transparent = v; rebuild(); }} />
+			<PreviewColorList
+				title="Colors"
+				colors={settings.colors}
+				min={0}
+				max={8}
+				onChange={(value) => demo.updateProp('colors', value)}
+			/>
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewSelect
+				title="Animation"
+				options={ANIMATION_OPTIONS}
+				value={settings.animationType}
+				onChange={(value) => demo.updateProp('animationType', value as PrismAnimationType)}
+			/>
+			<PreviewSlider
+				title="Time Scale"
+				min={0}
+				max={2}
+				step={0.05}
+				value={settings.timeScale}
+				isDisabled={settings.animationType === 'hover' || settings.animationType === 'static'}
+				onChange={(value) => demo.updateProp('timeScale', value)}
+			/>
+			<PreviewSlider
+				title="Glow"
+				min={0.2}
+				max={3}
+				step={0.05}
+				value={settings.glow}
+				onChange={(value) => demo.updateProp('glow', value)}
+			/>
+			<PreviewSlider
+				title="Scale"
+				min={1.5}
+				max={6}
+				step={0.1}
+				value={settings.scale}
+				onChange={(value) => demo.updateProp('scale', value)}
+			/>
+			<PreviewSlider
+				title="Height"
+				min={1}
+				max={8}
+				step={0.1}
+				value={settings.height}
+				onChange={(value) => demo.updateProp('height', value)}
+			/>
+			<PreviewSlider
+				title="Base Width"
+				min={1}
+				max={10}
+				step={0.1}
+				value={settings.baseWidth}
+				onChange={(value) => demo.updateProp('baseWidth', value)}
+			/>
+			<PreviewSlider
+				title="Hue Shift"
+				min={0}
+				max={360}
+				step={1}
+				value={settings.hueShift}
+				valueUnit="°"
+				onChange={(value) => demo.updateProp('hueShift', value)}
+			/>
+			<PreviewSlider
+				title="Color Frequency"
+				min={0.25}
+				max={4}
+				step={0.05}
+				value={settings.colorFrequency}
+				onChange={(value) => demo.updateProp('colorFrequency', value)}
+			/>
+			<PreviewSlider
+				title="Saturation"
+				min={0}
+				max={2}
+				step={0.05}
+				value={settings.saturation}
+				onChange={(value) => demo.updateProp('saturation', value)}
+			/>
+			<PreviewSlider
+				title="Noise"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.noise}
+				onChange={(value) => demo.updateProp('noise', value)}
+			/>
+			<PreviewSlider
+				title="Hover Strength"
+				min={0}
+				max={4}
+				step={0.1}
+				value={settings.hoverStrength}
+				isDisabled={!settings.interactive && settings.animationType !== 'hover'}
+				onChange={(value) => demo.updateProp('hoverStrength', value)}
+			/>
+			<PreviewSlider
+				title="Inertia"
+				min={0.01}
+				max={0.3}
+				step={0.01}
+				value={settings.inertia}
+				isDisabled={!settings.interactive && settings.animationType !== 'hover'}
+				onChange={(value) => demo.updateProp('inertia', value)}
+			/>
+			<PreviewSlider
+				title="Resolution"
+				min={0.25}
+				max={1}
+				step={0.05}
+				value={settings.resolution}
+				onChange={(value) => demo.updateProp('resolution', value)}
+			/>
+			<PreviewSwitch
+				title="Interactive"
+				isChecked={settings.interactive}
+				onChange={(value) => demo.updateProp('interactive', value)}
+			/>
+			<PreviewSwitch
+				title="Intro"
+				isChecked={settings.intro}
+				onChange={(value) => demo.updateProp('intro', value)}
+			/>
+			<PreviewSwitch
+				title="Light Mode"
+				isChecked={settings.lightMode}
+				onChange={(value) => demo.updateProp('lightMode', value)}
+			/>
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>

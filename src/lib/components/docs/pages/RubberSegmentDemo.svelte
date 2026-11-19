@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import RubberSegment, {
@@ -88,10 +87,10 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedTrack = $derived(trackColor);
-	const renderedThumb = $derived(thumbColor);
-	const renderedText = $derived(textColor);
-	const renderedActiveText = $derived(activeTextColor);
+	const renderedTrack = $derived(theme.isLight ? (trackColor === DEFAULT_PROPS.trackColor ? '#f6f6f6' : trackColor) : trackColor);
+	const renderedThumb = $derived(theme.isLight ? (thumbColor === DEFAULT_PROPS.thumbColor ? '#18181b' : thumbColor) : thumbColor);
+	const renderedText = $derived(theme.isLight ? (textColor === DEFAULT_PROPS.textColor ? '#18181b' : textColor) : textColor);
+	const renderedActiveText = $derived(theme.isLight ? (activeTextColor === DEFAULT_PROPS.activeTextColor ? '#fafafa' : activeTextColor) : activeTextColor);
 	const propData: PropRow[] = [
 		{
 			name: 'items',
@@ -259,8 +258,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Rubber Segment - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Rubber Segment</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -273,7 +270,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				{#key preset + epoch}<RubberSegment {...props} {items} />{/key}
+				{#key preset + epoch}<RubberSegment {...props} trackColor={renderedTrack} thumbColor={renderedThumb} textColor={renderedText} activeTextColor={renderedActiveText} {items} />{/key}
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="rubber-segment" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
@@ -289,26 +286,26 @@
 				value={size}
 				onChange={(val) => updateProp('size', val)}
 			></PreviewSelect>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Track"
-				value={renderedTrack}
+				color={renderedTrack}
 				onChange={(val) => updateProp('trackColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Thumb"
-				value={renderedThumb}
+				color={renderedThumb}
 				onChange={(val) => updateProp('thumbColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Text"
-				value={renderedText}
+				color={renderedText}
 				onChange={(val) => updateProp('textColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Active Text"
-				value={renderedActiveText}
+				color={renderedActiveText}
 				onChange={(val) => updateProp('activeTextColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Radius"
 				min={0}

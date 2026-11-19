@@ -2,162 +2,275 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
-	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
+	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
-	import GridScan from '$lib/components/library/Backgrounds/GridScan/GridScan.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import BackgroundContent from '$lib/components/docs/preview/BackgroundContent.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
+	import { theme } from '$lib/theme.svelte';
+	import GridScan, {
+		type GridScanClickEffect as ClickEffect,
+		type GridScanDirection as ScanDirection,
+		type GridScanLineStyle as LineStyle
+	} from '$lib/components/library/Backgrounds/GridScan/GridScan.svelte';
 	import source from '$lib/components/library/Backgrounds/GridScan/GridScan.svelte?raw';
+	import { DEFAULT_PROPS, PRESET_OPTIONS, presetProps } from './presets/GridScan';
 
-	const D = {
-		linesColor: '#3A2D24',
-		scanColor: '#ff8a3d',
-		scanOpacity: 0.4,
-		gridScale: 0.1,
-		lineThickness: 1,
-		lineJitter: 0.1,
-		lineStyle: 'solid' as const,
-		scanDirection: 'pingpong' as const,
-		scanDuration: 2,
-		scanDelay: 2,
-		scanSoftness: 2,
-		scanGlow: 0.5,
-		scanPhaseTaper: 0.9,
-		bloomIntensity: 0,
-		chromaticAberration: 0.002,
-		noiseIntensity: 0.01,
-		sensitivity: 0.55,
-		enableWebcam: false,
-		enablePost: true
-	};
+	const STYLE_OPTIONS = [
+		{ value: 'solid', label: 'Solid' },
+		{ value: 'dashed', label: 'Dashed' },
+		{ value: 'dotted', label: 'Dotted' }
+	];
 
-	let linesColor = $state(D.linesColor);
-	let scanColor = $state(D.scanColor);
-	let scanOpacity = $state(D.scanOpacity);
-	let gridScale = $state(D.gridScale);
-	let lineThickness = $state(D.lineThickness);
-	let lineJitter = $state(D.lineJitter);
-	let lineStyle = $state<'solid' | 'dashed' | 'dotted'>(D.lineStyle);
-	let scanDirection = $state<'forward' | 'backward' | 'pingpong'>(D.scanDirection);
-	let scanDuration = $state(D.scanDuration);
-	let scanDelay = $state(D.scanDelay);
-	let scanSoftness = $state(D.scanSoftness);
-	let scanGlow = $state(D.scanGlow);
-	let scanPhaseTaper = $state(D.scanPhaseTaper);
-	let bloomIntensity = $state(D.bloomIntensity);
-	let chromaticAberration = $state(D.chromaticAberration);
-	let noiseIntensity = $state(D.noiseIntensity);
-	let sensitivity = $state(D.sensitivity);
-	let enableWebcam = $state(D.enableWebcam);
-	let enablePost = $state(D.enablePost);
-	let showContent = $state(true);
-	let key = $state(0);
+	const DIRECTION_OPTIONS = [
+		{ value: 'forward', label: 'Forward' },
+		{ value: 'backward', label: 'Backward' },
+		{ value: 'pingpong', label: 'Ping Pong' }
+	];
 
-	const sO = '<' + 'script lang="ts">';
-	const sC = '</' + 'script>';
+	const CLICK_OPTIONS = [
+		{ value: 'ping', label: 'Ping' },
+		{ value: 'scan', label: 'Scan' },
+		{ value: 'none', label: 'None' }
+	];
 
-	const hasChanges = $derived(
-		linesColor !== D.linesColor || scanColor !== D.scanColor || scanOpacity !== D.scanOpacity ||
-		gridScale !== D.gridScale || lineThickness !== D.lineThickness || lineJitter !== D.lineJitter ||
-		lineStyle !== D.lineStyle || scanDirection !== D.scanDirection ||
-		scanDuration !== D.scanDuration || scanDelay !== D.scanDelay ||
-		scanSoftness !== D.scanSoftness || scanGlow !== D.scanGlow ||
-		scanPhaseTaper !== D.scanPhaseTaper || bloomIntensity !== D.bloomIntensity ||
-		chromaticAberration !== D.chromaticAberration || noiseIntensity !== D.noiseIntensity ||
-		sensitivity !== D.sensitivity || enableWebcam !== D.enableWebcam || enablePost !== D.enablePost
-	);
+	const propData: PropRow[] = [
+		{ name: 'linesColor', type: 'string', default: "'#544a43'", description: 'Color of the grid lines. Light mode defaults to a pale gray.' },
+		{ name: 'scanColor', type: 'string', default: "'#7dd3fc'", description: 'Color of the scan, its trail, the points and the click ping. Light mode defaults to a deeper blue.' },
+		{ name: 'cells', type: 'number', default: '8', description: 'Number of grid cells from the floor to the ceiling.' },
+		{ name: 'lineThickness', type: 'number', default: '1', description: 'Thickness of the grid lines in pixels.' },
+		{ name: 'lineStyle', type: "'solid' | 'dashed' | 'dotted'", default: "'solid'", description: 'Style of the grid lines.' },
+		{ name: 'depth', type: 'number', default: '3', description: 'How deep the room goes, relative to its height. High values turn it into a long corridor.' },
+		{ name: 'depthFade', type: 'number', default: '0.6', description: 'How much the room fades into the distance, from 0 (evenly bright) to 1 (gone by the back wall).' },
+		{ name: 'parallax', type: 'number', default: '1', description: 'How far the view shifts as the cursor moves, as if you were moving your head in front of a window. 0 keeps it still.' },
+		{ name: 'shading', type: 'number', default: '0.7', description: 'Soft light and corner shadows on the walls, from 0 (pure wireframe) to 1.' },
+		{ name: 'reflection', type: 'number', default: '0.35', description: 'How much the glossy floor reflects the scan and pings, from 0 to 1.' },
+		{ name: 'points', type: 'boolean', default: 'true', description: 'Scatters points over the walls that sparkle as the scan passes, like a LiDAR capture.' },
+		{ name: 'scanDirection', type: "'forward' | 'backward' | 'pingpong'", default: "'forward'", description: 'Whether the scan travels into the room, out of it, or alternates.' },
+		{ name: 'scanDuration', type: 'number', default: '2.4', description: 'Seconds each scan takes to cross the room.' },
+		{ name: 'scanDelay', type: 'number', default: '1.6', description: 'Seconds between scans.' },
+		{ name: 'scanWidth', type: 'number', default: '1', description: 'Thickness of the scan line, from 0.2 to 5.' },
+		{ name: 'trail', type: 'number', default: '0.5', description: 'How long the walls keep glowing behind the scan, from 0 to 1.' },
+		{ name: 'glow', type: 'number', default: '0.6', description: 'Bloom around the scan line and points, from 0 to 1.5.' },
+		{ name: 'autoScan', type: 'boolean', default: 'true', description: 'Runs scans on a loop. Turn it off to scan only on click.' },
+		{ name: 'interactive', type: 'boolean', default: 'true', description: 'Moves the view with the cursor and lights up the walls under it.' },
+		{ name: 'clickEffect', type: "'ping' | 'scan' | 'none'", default: "'ping'", description: 'What a click does. Ping sends a ring of light across the walls from that spot, scan starts a new scan.' },
+		{ name: 'enableWebcam', type: 'boolean', default: 'false', description: 'Moves the view with your head through the webcam. The face tracker is loaded from a CDN the first time it turns on.' },
+		{ name: 'showPreview', type: 'boolean', default: 'false', description: 'Shows a small camera preview with the tracking status while the webcam is on.' },
+		{ name: 'modelsPath', type: 'string', default: 'CDN URL', description: 'Where the face tracking model is loaded from. Point it at your own copy to self-host.' },
+		{ name: 'enableGyro', type: 'boolean', default: 'false', description: 'Moves the view as a phone or tablet tilts. iOS asks for permission on the first tap.' },
+		{ name: 'intro', type: 'boolean', default: 'true', description: 'Reveals the room with a first scan on mount.' },
+		{ name: 'lightMode', type: 'boolean', default: 'false', description: 'Renders a bright room with dark shading for light backgrounds.' },
+		{ name: 'dpr', type: 'number', default: 'auto', description: 'Maximum device pixel ratio, capped at 2.' },
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the container.' },
+		{ name: 'style', type: 'string', default: '-', description: 'Inline styles for the container.' }
+	];
 
-	function reset() {
-		linesColor = D.linesColor; scanColor = D.scanColor; scanOpacity = D.scanOpacity;
-		gridScale = D.gridScale; lineThickness = D.lineThickness; lineJitter = D.lineJitter;
-		lineStyle = D.lineStyle; scanDirection = D.scanDirection;
-		scanDuration = D.scanDuration; scanDelay = D.scanDelay;
-		scanSoftness = D.scanSoftness; scanGlow = D.scanGlow;
-		scanPhaseTaper = D.scanPhaseTaper; bloomIntensity = D.bloomIntensity;
-		chromaticAberration = D.chromaticAberration; noiseIntensity = D.noiseIntensity;
-		sensitivity = D.sensitivity; enableWebcam = D.enableWebcam; enablePost = D.enablePost;
-		key++;
-	}
-
-	const usage = $derived(`${sO}
+	const usage = `<script lang="ts">
   import GridScan from '$lib/components/GridScan.svelte';
-${sC}
+</${'script'}>
 
 <div style="width: 100%; height: 600px; position: relative;">
-  <GridScan linesColor="${linesColor}" scanColor="${scanColor}" />
-</div>`);
+  <GridScan
+    linesColor="#544a43"
+    scanColor="#7dd3fc"
+    cells={8}
+    depth={3}
+    scanDuration={2.4}
+    scanDelay={1.6}
+    clickEffect="ping"
+  />
+</div>`;
 
-	const props: PropRow[] = [
-		{ name: 'linesColor', type: 'string', default: '"#222222"', description: 'Grid line color.' },
-		{ name: 'scanColor', type: 'string', default: '"#FF9FFC"', description: 'Scan beam color.' },
-		{ name: 'scanOpacity', type: 'number', default: '0.4', description: 'Scan opacity.' },
-		{ name: 'gridScale', type: 'number', default: '0.1', description: 'Grid scale.' },
-		{ name: 'lineThickness', type: 'number', default: '1', description: 'Line thickness in pixels.' },
-		{ name: 'lineJitter', type: 'number', default: '0.1', description: 'Line jitter [0-1].' },
-		{ name: 'lineStyle', type: '"solid" | "dashed" | "dotted"', default: '"solid"', description: 'Line style.' },
-		{ name: 'scanDirection', type: '"forward" | "backward" | "pingpong"', default: '"pingpong"', description: 'Scan direction.' },
-		{ name: 'scanDuration', type: 'number', default: '2', description: 'Scan duration (seconds).' },
-		{ name: 'scanDelay', type: 'number', default: '2', description: 'Delay between scans.' },
-		{ name: 'scanSoftness', type: 'number', default: '2', description: 'Scan beam softness.' },
-		{ name: 'scanGlow', type: 'number', default: '0.5', description: 'Scan glow.' },
-		{ name: 'scanPhaseTaper', type: 'number', default: '0.9', description: 'Phase taper.' },
-		{ name: 'enablePost', type: 'boolean', default: 'true', description: 'Enable postprocessing.' },
-		{ name: 'bloomIntensity', type: 'number', default: '0', description: 'Bloom intensity.' },
-		{ name: 'chromaticAberration', type: 'number', default: '0.002', description: 'Chromatic aberration.' },
-		{ name: 'noiseIntensity', type: 'number', default: '0.01', description: 'Static noise.' },
-		{ name: 'sensitivity', type: 'number', default: '0.55', description: 'Mouse/face sensitivity [0-1].' },
-		{ name: 'enableWebcam', type: 'boolean', default: 'false', description: 'Enable face tracking.' },
-		{ name: 'showPreview', type: 'boolean', default: 'false', description: 'Show webcam preview.' },
-		{ name: 'modelsPath', type: 'string', default: 'face-api CDN', description: 'face-api models URL.' },
-		{ name: 'enableGyro', type: 'boolean', default: 'false', description: 'Enable device orientation.' },
-		{ name: 'scanOnClick', type: 'boolean', default: 'false', description: 'Trigger scan on click.' },
-		{ name: 'snapBackDelay', type: 'number', default: '250', description: 'Snap-back delay (ms).' }
-	];
+	const demo = createComponentProps(DEFAULT_PROPS);
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, ...rest } = settings;
+		return rest;
+	});
+	let key = $state(0);
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value, { light: theme.isLight, defaults: demo.defaultProps }), preset: value });
+	};
 </script>
 
-<svelte:head><title>Grid Scan - svelte-bits</title></svelte:head>
-
-<h1 class="sub-category">Grid Scan</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="GridScan" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="relative h-[500px] w-full overflow-hidden rounded-[14px]">
+<TabsLayout propsState={demo} componentName="GridScan" {usage} {source} {propData} demoOnlyProps={['preset']}>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 500px; padding: 0; overflow: hidden;">
 			{#key key}
-				<GridScan
-					{linesColor} {scanColor} {scanOpacity} {gridScale} {lineThickness} {lineJitter}
-					{lineStyle} {scanDirection} {scanDuration} {scanDelay} {scanSoftness} {scanGlow}
-					{scanPhaseTaper} {bloomIntensity} {chromaticAberration} {noiseIntensity}
-					{sensitivity} {enableWebcam} {enablePost}
-				/>
+				<GridScan {...componentProps} />
 			{/key}
-			<BackgroundContentToggle {showContent} onToggle={(v) => (showContent = v)} />
+			<BackgroundContent headline="Hold on, scanning for Angular users." />
+			<RefreshButton onClick={() => key++} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="grid-scan" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewColorPicker title="Lines Color" value={linesColor} onChange={(v) => (linesColor = v)} />
-			<PreviewColorPicker title="Scan Color" value={scanColor} onChange={(v) => (scanColor = v)} />
-			<PreviewSlider title="Scan Opacity" min={0} max={1} step={0.01} value={scanOpacity} onChange={(v) => (scanOpacity = v)} />
-			<PreviewSlider title="Grid Scale" min={0.02} max={0.5} step={0.005} value={gridScale} onChange={(v) => (gridScale = v)} />
-			<PreviewSlider title="Line Thickness" min={0.5} max={5} step={0.1} value={lineThickness} onChange={(v) => (lineThickness = v)} />
-			<PreviewSlider title="Line Jitter" min={0} max={1} step={0.01} value={lineJitter} onChange={(v) => (lineJitter = v)} />
-			<PreviewSelect title="Line Style" value={lineStyle} options={[{ label: 'Solid', value: 'solid' }, { label: 'Dashed', value: 'dashed' }, { label: 'Dotted', value: 'dotted' }]} onChange={(v) => (lineStyle = v as 'solid' | 'dashed' | 'dotted')} />
-			<PreviewSelect title="Scan Direction" value={scanDirection} options={[{ label: 'Forward', value: 'forward' }, { label: 'Backward', value: 'backward' }, { label: 'Ping-Pong', value: 'pingpong' }]} onChange={(v) => (scanDirection = v as 'forward' | 'backward' | 'pingpong')} />
-			<PreviewSlider title="Scan Duration" min={0.1} max={10} step={0.1} value={scanDuration} onChange={(v) => (scanDuration = v)} />
-			<PreviewSlider title="Scan Delay" min={0} max={10} step={0.1} value={scanDelay} onChange={(v) => (scanDelay = v)} />
-			<PreviewSlider title="Scan Softness" min={0.1} max={5} step={0.05} value={scanSoftness} onChange={(v) => (scanSoftness = v)} />
-			<PreviewSlider title="Scan Glow" min={0.1} max={3} step={0.05} value={scanGlow} onChange={(v) => (scanGlow = v)} />
-			<PreviewSlider title="Phase Taper" min={0} max={0.49} step={0.01} value={scanPhaseTaper} onChange={(v) => (scanPhaseTaper = v)} />
-			<PreviewSlider title="Bloom" min={0} max={3} step={0.05} value={bloomIntensity} onChange={(v) => (bloomIntensity = v)} />
-			<PreviewSlider title="Chromatic Aberration" min={0} max={0.02} step={0.0005} value={chromaticAberration} onChange={(v) => (chromaticAberration = v)} />
-			<PreviewSlider title="Noise" min={0} max={0.2} step={0.005} value={noiseIntensity} onChange={(v) => (noiseIntensity = v)} />
-			<PreviewSlider title="Sensitivity" min={0} max={1} step={0.01} value={sensitivity} onChange={(v) => (sensitivity = v)} />
-			<PreviewSwitch title="Enable Postprocessing" checked={enablePost} onChange={(v) => { enablePost = v; key++; }} />
-			<PreviewSwitch title="Enable Webcam" checked={enableWebcam} onChange={(v) => { enableWebcam = v; key++; }} />
+			<PreviewColorPickerCustom title="Lines Color" color={settings.linesColor} onChange={(v: string) => demo.updateProp('linesColor', v)} />
+			<PreviewColorPickerCustom title="Scan Color" color={settings.scanColor} onChange={(v: string) => demo.updateProp('scanColor', v)} />
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={(v: string) => applyPreset(String(v))} />
+			<PreviewSelect
+				title="Line Style"
+				options={STYLE_OPTIONS}
+				value={settings.lineStyle}
+				onChange={(v: string) => demo.updateProp('lineStyle', v as LineStyle)}
+			/>
+			<PreviewSelect
+				title="Direction"
+				options={DIRECTION_OPTIONS}
+				value={settings.scanDirection}
+				onChange={(v: string) => demo.updateProp('scanDirection', v as ScanDirection)}
+			/>
+			<PreviewSelect
+				title="Click Effect"
+				options={CLICK_OPTIONS}
+				value={settings.clickEffect}
+				onChange={(v: string) => demo.updateProp('clickEffect', v as ClickEffect)}
+			/>
+			<PreviewSlider
+				title="Cells"
+				min={3}
+				max={20}
+				step={1}
+				value={settings.cells}
+				onChange={(v: number) => demo.updateProp('cells', v)}
+			/>
+			<PreviewSlider
+				title="Line Thickness"
+				min={0.5}
+				max={3}
+				step={0.1}
+				valueUnit="px"
+				value={settings.lineThickness}
+				onChange={(v: number) => demo.updateProp('lineThickness', v)}
+			/>
+			<PreviewSlider
+				title="Depth"
+				min={1}
+				max={10}
+				step={0.1}
+				value={settings.depth}
+				onChange={(v: number) => demo.updateProp('depth', v)}
+			/>
+			<PreviewSlider
+				title="Depth Fade"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.depthFade}
+				onChange={(v: number) => demo.updateProp('depthFade', v)}
+			/>
+			<PreviewSlider
+				title="Parallax"
+				min={0}
+				max={2}
+				step={0.05}
+				value={settings.parallax}
+				onChange={(v: number) => demo.updateProp('parallax', v)}
+			/>
+			<PreviewSlider
+				title="Shading"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.shading}
+				onChange={(v: number) => demo.updateProp('shading', v)}
+			/>
+			<PreviewSlider
+				title="Reflection"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.reflection}
+				onChange={(v: number) => demo.updateProp('reflection', v)}
+			/>
+			<PreviewSlider
+				title="Scan Duration"
+				min={0.5}
+				max={6}
+				step={0.1}
+				valueUnit="s"
+				value={settings.scanDuration}
+				onChange={(v: number) => demo.updateProp('scanDuration', v)}
+			/>
+			<PreviewSlider
+				title="Scan Delay"
+				min={0}
+				max={6}
+				step={0.1}
+				valueUnit="s"
+				isDisabled={!settings.autoScan}
+				value={settings.scanDelay}
+				onChange={(v: number) => demo.updateProp('scanDelay', v)}
+			/>
+			<PreviewSlider
+				title="Scan Width"
+				min={0.2}
+				max={5}
+				step={0.1}
+				value={settings.scanWidth}
+				onChange={(v: number) => demo.updateProp('scanWidth', v)}
+			/>
+			<PreviewSlider
+				title="Trail"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.trail}
+				onChange={(v: number) => demo.updateProp('trail', v)}
+			/>
+			<PreviewSlider
+				title="Glow"
+				min={0}
+				max={1.5}
+				step={0.01}
+				value={settings.glow}
+				onChange={(v: number) => demo.updateProp('glow', v)}
+			/>
+			<PreviewSwitch
+				title="Points"
+				isChecked={settings.points}
+				onChange={(v: boolean) => demo.updateProp('points', v)}
+			/>
+			<PreviewSwitch
+				title="Auto Scan"
+				isChecked={settings.autoScan}
+				onChange={(v: boolean) => demo.updateProp('autoScan', v)}
+			/>
+			<PreviewSwitch
+				title="Interactive"
+				isChecked={settings.interactive}
+				onChange={(v: boolean) => demo.updateProp('interactive', v)}
+			/>
+			<PreviewSwitch
+				title="Webcam"
+				isChecked={settings.enableWebcam}
+				onChange={(v: boolean) => demo.updateProp('enableWebcam', v)}
+			/>
+			<PreviewSwitch
+				title="Camera Preview"
+				isDisabled={!settings.enableWebcam}
+				isChecked={settings.showPreview}
+				onChange={(v: boolean) => demo.updateProp('showPreview', v)}
+			/>
+			<PreviewSwitch
+				title="Intro"
+				isChecked={settings.intro}
+				onChange={(v: boolean) => demo.updateProp('intro', v)}
+			/>
+			<PreviewSwitch
+				title="Light Mode"
+				isChecked={settings.lightMode}
+				onChange={(v: boolean) => demo.updateProp('lightMode', v)}
+			/>
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>

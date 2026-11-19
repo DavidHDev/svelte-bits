@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import SlingButton, {
@@ -87,11 +86,11 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedPad = $derived(padColor);
-	const renderedIcon = $derived(iconColor);
-	const renderedAccent = $derived(accentColor);
-	const renderedWell = $derived(wellColor);
-	const renderedBand = $derived(bandColor);
+	const renderedPad = $derived(theme.isLight ? (padColor === DEFAULT_PROPS.padColor ? '#18181b' : padColor) : padColor);
+	const renderedIcon = $derived(theme.isLight ? (iconColor === DEFAULT_PROPS.iconColor ? '#ffffff' : iconColor) : iconColor);
+	const renderedAccent = $derived(theme.isLight ? (accentColor === DEFAULT_PROPS.accentColor ? '#18181b' : accentColor) : accentColor);
+	const renderedWell = $derived(theme.isLight ? (wellColor === DEFAULT_PROPS.wellColor ? '#f6f6f6' : wellColor) : wellColor);
+	const renderedBand = $derived(theme.isLight ? (bandColor === DEFAULT_PROPS.bandColor ? '#a1a1aa' : bandColor) : bandColor);
 	const propData: PropRow[] = [
 		{
 			name: 'children',
@@ -268,8 +267,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Sling Button - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Sling Button</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -282,7 +279,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				<SlingButton {...props} onSend={handleSend} /><span
+				<SlingButton {...props} padColor={renderedPad} iconColor={renderedIcon} accentColor={renderedAccent} wellColor={renderedWell} bandColor={renderedBand} onSend={handleSend} /><span
 					class="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 text-xs leading-none tracking-[0.02em] transition-opacity duration-200"
 					style:margin-top={Math.round(size / 2) + 22 + 'px'}
 					style:color={accentColor}
@@ -292,31 +289,31 @@
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="sling-button" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Pad"
-				value={renderedPad}
+				color={renderedPad}
 				onChange={(val) => updateProp('padColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Icon"
-				value={renderedIcon}
+				color={renderedIcon}
 				onChange={(val) => updateProp('iconColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Accent"
-				value={renderedAccent}
+				color={renderedAccent}
 				onChange={(val) => updateProp('accentColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Well"
-				value={renderedWell}
+				color={renderedWell}
 				onChange={(val) => updateProp('wellColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Band"
-				value={renderedBand}
+				color={renderedBand}
 				onChange={(val) => updateProp('bandColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Size"
 				min={40}

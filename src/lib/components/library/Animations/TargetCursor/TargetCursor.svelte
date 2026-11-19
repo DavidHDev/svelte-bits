@@ -1,263 +1,413 @@
 <!-- @svelte-bits
-{
-  "title": "Target Cursor",
-  "description": "Custom spinning crosshair cursor that snaps to corners of elements matching a selector when hovered.",
-  "dependencies": ["gsap"]
-}
+{ "title": "TargetCursor", "description": "A reticle cursor whose corner brackets snap around targets, matching their shape." }
 -->
-<script lang="ts">
-	import { gsap } from 'gsap';
+<script module lang="ts">
+	export type TargetCursorContainer = { current: HTMLElement | null } | HTMLElement | null;
 
-	type Props = {
+	type Spring = { x: number; v: number };
+
+	const CORNER_ANGLES = [0, 90, 180, 270];
+	const QUARTER = Math.PI / 2;
+
+	const spring = (state: Spring, goal: number, stiffness: number, damping: number, dt: number) => {
+		const steps = 2;
+		const h = dt / steps;
+		for (let i = 0; i < steps; i++) {
+			state.v += (stiffness * (goal - state.x) - damping * state.v) * h;
+			state.x += state.v * h;
+		}
+	};
+
+	const resolveElement = (value: TargetCursorContainer | undefined): HTMLElement | null =>
+		(value && 'current' in value ? value.current : value) || null;
+
+	function portal(node: HTMLElement, target: HTMLElement) {
+		target.appendChild(node);
+		return {
+			destroy() {
+				node.remove();
+			}
+		};
+	}
+</script>
+
+<script lang="ts">
+	interface TargetCursorProps {
 		targetSelector?: string;
+		cursorColor?: string;
+		cursorColorOnTarget?: string;
 		spinDuration?: number;
-		hideDefaultCursor?: boolean;
 		hoverDuration?: number;
 		parallaxOn?: boolean;
-	};
+		hideDefaultCursor?: boolean;
+		size?: number;
+		cornerSize?: number;
+		thickness?: number;
+		padding?: number;
+		matchRadius?: boolean;
+		dotSize?: number;
+		blendMode?: CSSStyleDeclaration['mixBlendMode'];
+		showLabel?: boolean;
+		clickEffect?: boolean;
+		container?: TargetCursorContainer;
+	}
 
 	let {
 		targetSelector = '.cursor-target',
+		cursorColor = '#ffffff',
+		cursorColorOnTarget,
 		spinDuration = 2,
-		hideDefaultCursor = true,
 		hoverDuration = 0.2,
-		parallaxOn = true
-	}: Props = $props();
+		parallaxOn = true,
+		hideDefaultCursor = true,
+		size = 36,
+		cornerSize = 12,
+		thickness = 3,
+		padding = 6,
+		matchRadius = true,
+		dotSize = 4,
+		blendMode = 'difference',
+		showLabel = true,
+		clickEffect = true,
+		container
+	}: TargetCursorProps = $props();
 
-	let cursor: HTMLDivElement;
-	let dot: HTMLDivElement;
+	let host = $state<HTMLElement | null>(null);
+	let root = $state<HTMLDivElement | null>(null);
+	let corners = $state<(HTMLSpanElement | null)[]>([]);
+	let dot = $state<HTMLSpanElement | null>(null);
+	let labelEl = $state<HTMLSpanElement | null>(null);
+	let wakeFn: (() => void) | null = null;
 
-	const isMobile = (() => {
-		if (typeof window === 'undefined') return false;
-		const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-		const small = window.innerWidth <= 768;
-		const ua = navigator.userAgent || navigator.vendor || (window as any).opera || '';
-		const re = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
-		return (hasTouch && small) || re.test(ua.toLowerCase());
-	})();
+	const settings = $derived({
+		targetSelector,
+		cursorColor,
+		cursorColorOnTarget,
+		spinDuration,
+		hoverDuration: Math.max(0.05, hoverDuration),
+		parallaxOn,
+		hideDefaultCursor,
+		size: Math.max(4, size),
+		cornerSize: Math.max(2, cornerSize),
+		thickness: Math.max(0.5, thickness),
+		padding,
+		matchRadius,
+		dotSize: Math.max(0, dotSize),
+		showLabel,
+		clickEffect,
+		container
+	});
 
 	$effect(() => {
-		if (isMobile || !cursor) return;
+		const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+		const update = () => (host = finePointer.matches ? document.body : null);
+		update();
+		finePointer.addEventListener('change', update);
+		return () => finePointer.removeEventListener('change', update);
+	});
 
-		const corners = cursor.querySelectorAll<HTMLDivElement>('.target-cursor-corner');
-		const constants = { borderWidth: 3, cornerSize: 12 };
+	$effect(() => {
+		const el = root;
+		if (!host || !el) return;
 
-		let activeTarget: Element | null = null;
-		let currentLeaveHandler: (() => void) | null = null;
-		let resumeTimeout: ReturnType<typeof setTimeout> | null = null;
-		let targetCornerPositions: { x: number; y: number }[] | null = null;
-		const activeStrength = { current: 0 };
-		let tickerFn: (() => void) | null = null;
-		let spinTl: gsap.core.Timeline;
+		el.style.opacity = '0';
+		const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const style = document.createElement('style');
+		document.head.appendChild(style);
 
-		const originalCursor = document.body.style.cursor;
-		if (hideDefaultCursor) document.body.style.cursor = 'none';
+		const pointer = { x: 0, y: 0, inside: false, seen: false, pressed: false };
+		const centerX = { x: 0, v: 0 };
+		const centerY = { x: 0, v: 0 };
+		const halfW = { x: 0, v: 0 };
+		const halfH = { x: 0, v: 0 };
+		const radius = { x: 0, v: 0 };
+		const turn = { x: 0, v: 0 };
+		const lock = { x: 0, v: 0 };
+		const press = { x: 0, v: 0 };
+		const presence = { x: 0, v: 0 };
+		let target: Element | null = null;
+		let targetRadius = 0;
+		let quarter = 0;
+		let spinSpeed = 0;
+		let raf = 0;
+		let last = 0;
+		let lastLabel = '';
+		let lastColor = '';
+		let lastScope: HTMLElement | null = null;
 
-		const cleanupTarget = (target: Element) => {
-			if (currentLeaveHandler) target.removeEventListener('mouseleave', currentLeaveHandler);
-			currentLeaveHandler = null;
-		};
+		const scopeOf = () => resolveElement(settings.container);
 
-		gsap.set(cursor, {
-			xPercent: -50,
-			yPercent: -50,
-			x: window.innerWidth / 2,
-			y: window.innerHeight / 2
-		});
-
-		const createSpin = () => {
-			spinTl?.kill();
-			spinTl = gsap
-				.timeline({ repeat: -1 })
-				.to(cursor, { rotation: '+=360', duration: spinDuration, ease: 'none' });
-		};
-		createSpin();
-
-		tickerFn = () => {
-			if (!targetCornerPositions || !cursor) return;
-			const strength = activeStrength.current;
-			if (strength === 0) return;
-			const cx = gsap.getProperty(cursor, 'x') as number;
-			const cy = gsap.getProperty(cursor, 'y') as number;
-			Array.from(corners).forEach((corner, i) => {
-				const curX = gsap.getProperty(corner, 'x') as number;
-				const curY = gsap.getProperty(corner, 'y') as number;
-				const tx = targetCornerPositions![i].x - cx;
-				const ty = targetCornerPositions![i].y - cy;
-				const finalX = curX + (tx - curX) * strength;
-				const finalY = curY + (ty - curY) * strength;
-				const dur = strength >= 0.99 ? (parallaxOn ? 0.2 : 0) : 0.05;
-				gsap.to(corner, {
-					x: finalX,
-					y: finalY,
-					duration: dur,
-					ease: dur === 0 ? 'none' : 'power1.out',
-					overwrite: 'auto'
-				});
-			});
-		};
-
-		const moveHandler = (e: MouseEvent) => {
-			gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1, ease: 'power3.out' });
-		};
-		window.addEventListener('mousemove', moveHandler);
-
-		const scrollHandler = () => {
-			if (!activeTarget || !cursor) return;
-			const mx = gsap.getProperty(cursor, 'x') as number;
-			const my = gsap.getProperty(cursor, 'y') as number;
-			const under = document.elementFromPoint(mx, my);
-			const still =
-				under && (under === activeTarget || under.closest(targetSelector) === activeTarget);
-			if (!still) currentLeaveHandler?.();
-		};
-		window.addEventListener('scroll', scrollHandler, { passive: true });
-
-		const mouseDown = () => {
-			if (!dot) return;
-			gsap.to(dot, { scale: 0.7, duration: 0.3 });
-			gsap.to(cursor, { scale: 0.9, duration: 0.2 });
-		};
-		const mouseUp = () => {
-			if (!dot) return;
-			gsap.to(dot, { scale: 1, duration: 0.3 });
-			gsap.to(cursor, { scale: 1, duration: 0.2 });
-		};
-		window.addEventListener('mousedown', mouseDown);
-		window.addEventListener('mouseup', mouseUp);
-
-		const enterHandler = (ev: MouseEvent) => {
-			const direct = ev.target as Element;
-			let target: Element | null = null;
-			let cur: Element | null = direct;
-			while (cur && cur !== document.body) {
-				if (cur.matches(targetSelector)) {
-					target = cur;
-					break;
-				}
-				cur = cur.parentElement;
+		const hideCursor = () => {
+			const s = settings;
+			const scope = scopeOf();
+			if (scope !== lastScope) {
+				lastScope?.removeAttribute('data-target-cursor-scope');
+				scope?.setAttribute('data-target-cursor-scope', '');
+				lastScope = scope;
 			}
-			if (!target || !cursor) return;
-			if (activeTarget === target) return;
-			if (activeTarget) cleanupTarget(activeTarget);
-			if (resumeTimeout) {
-				clearTimeout(resumeTimeout);
-				resumeTimeout = null;
+			const selector = scope ? '[data-target-cursor-scope]' : 'html';
+			const rule =
+				s.hideDefaultCursor && pointer.inside ? `${selector}, ${selector} * { cursor: none !important; }` : '';
+			if (style.textContent !== rule) style.textContent = rule;
+		};
+
+		const findTarget = (x: number, y: number, element?: Element | null): Element | null => {
+			const s = settings;
+			const node = element || document.elementFromPoint(x, y);
+			const found = node?.closest(s.targetSelector) || null;
+			const scope = scopeOf();
+			if (found && scope && !scope.contains(found)) return null;
+			return found;
+		};
+
+		const lockOn = (next: Element | null) => {
+			if (next === target) return;
+			target = next;
+			if (target) {
+				const angle = turn.x;
+				quarter = Math.round(angle / QUARTER);
+				const corner = parseFloat(getComputedStyle(target).borderTopLeftRadius) || 0;
+				targetRadius = corner;
+				spinSpeed = 0;
 			}
-			activeTarget = target;
-			Array.from(corners).forEach((c) => gsap.killTweensOf(c));
-			gsap.killTweensOf(cursor, 'rotation');
-			spinTl?.pause();
-			gsap.set(cursor, { rotation: 0 });
+		};
 
-			const rect = target.getBoundingClientRect();
-			const { borderWidth, cornerSize } = constants;
-			const cx = gsap.getProperty(cursor, 'x') as number;
-			const cy = gsap.getProperty(cursor, 'y') as number;
+		const frame = (now: number) => {
+			raf = 0;
+			const s = settings;
+			const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+			last = now;
 
-			targetCornerPositions = [
-				{ x: rect.left - borderWidth, y: rect.top - borderWidth },
-				{ x: rect.right + borderWidth - cornerSize, y: rect.top - borderWidth },
-				{ x: rect.right + borderWidth - cornerSize, y: rect.bottom + borderWidth - cornerSize },
-				{ x: rect.left - borderWidth, y: rect.bottom + borderWidth - cornerSize }
+			if (target && !target.isConnected) lockOn(null);
+			const rect = target ? target.getBoundingClientRect() : null;
+			const locked = !!rect && pointer.inside;
+			const snapW = 4.6 / s.hoverDuration;
+			const snapK = snapW * snapW;
+			const snapC = 2 * 0.62 * snapW;
+
+			spring(presence, pointer.inside ? 1 : 0, 260, 32, dt);
+			spring(lock, locked ? 1 : 0, snapK, 2 * snapW, dt);
+			spring(press, pointer.pressed && s.clickEffect ? 1 : 0, 900, 40, dt);
+
+			let goalX = pointer.x;
+			let goalY = pointer.y;
+			let goalW = s.size / 2;
+			let goalH = s.size / 2;
+			let goalR = Math.min(2, s.cornerSize / 4);
+			if (locked && rect) {
+				const cx = rect.left + rect.width / 2;
+				const cy = rect.top + rect.height / 2;
+				const lean = s.parallaxOn ? 0.08 : 0;
+				goalX = cx + (pointer.x - cx) * lean;
+				goalY = cy + (pointer.y - cy) * lean;
+				const odd = Math.abs(quarter) % 2 === 1;
+				const w = rect.width / 2 + s.padding;
+				const h = rect.height / 2 + s.padding;
+				goalW = odd ? h : w;
+				goalH = odd ? w : h;
+				goalR = s.matchRadius ? Math.min(targetRadius + Math.max(0, s.padding), s.cornerSize) : 0;
+			}
+
+			if (!pointer.inside && presence.x < 0.01) pointer.seen = false;
+			if (!pointer.seen) {
+				centerX.x = goalX;
+				centerY.x = goalY;
+				halfW.x = goalW;
+				halfH.x = goalH;
+				pointer.seen = pointer.inside;
+			}
+
+			const follow = locked ? snapK : 2200;
+			const followC = locked ? snapC : 2 * Math.sqrt(2200);
+			spring(centerX, goalX, follow, followC, dt);
+			spring(centerY, goalY, follow, followC, dt);
+			spring(halfW, goalW, snapK, snapC, dt);
+			spring(halfH, goalH, snapK, snapC, dt);
+			spring(radius, goalR, snapK, 2 * snapW, dt);
+
+			if (locked) {
+				spring(turn, quarter * QUARTER, snapK, snapC, dt);
+			} else {
+				const speed = s.spinDuration > 0 && !reduce ? (Math.PI * 2) / s.spinDuration : 0;
+				spinSpeed += (speed - spinSpeed) * (1 - Math.exp(-dt * 3));
+				turn.v = spinSpeed;
+				turn.x += spinSpeed * dt;
+			}
+
+			const squeeze = 1 - press.x * 0.14;
+			const cos = Math.cos(turn.x);
+			const sin = Math.sin(turn.x);
+			const w = Math.max(0, halfW.x) * squeeze;
+			const h = Math.max(0, halfH.x) * squeeze;
+			const local = [
+				[-w, -h],
+				[w, -h],
+				[w, h],
+				[-w, h]
 			];
-
-			gsap.ticker.add(tickerFn!);
-			gsap.to(activeStrength, { current: 1, duration: hoverDuration, ease: 'power2.out' });
-
-			Array.from(corners).forEach((corner, i) => {
-				gsap.to(corner, {
-					x: targetCornerPositions![i].x - cx,
-					y: targetCornerPositions![i].y - cy,
-					duration: 0.2,
-					ease: 'power2.out'
-				});
+			const r = Math.max(0, Math.min(radius.x, s.cornerSize));
+			const degrees = (turn.x * 180) / Math.PI;
+			let left = Infinity;
+			let top = Infinity;
+			corners.forEach((corner, i) => {
+				if (!corner) return;
+				const [lx, ly] = local[i];
+				const x = centerX.x + lx * cos - ly * sin;
+				const y = centerY.x + lx * sin + ly * cos;
+				left = Math.min(left, x);
+				top = Math.min(top, y);
+				corner.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) rotate(${(CORNER_ANGLES[i] + degrees).toFixed(2)}deg)`;
+				corner.style.width = `${s.cornerSize}px`;
+				corner.style.height = `${s.cornerSize}px`;
+				corner.style.borderWidth = `${s.thickness}px 0 0 ${s.thickness}px`;
+				corner.style.borderTopLeftRadius = `${r.toFixed(2)}px`;
 			});
 
-			const leaveHandler = () => {
-				gsap.ticker.remove(tickerFn!);
-				targetCornerPositions = null;
-				gsap.set(activeStrength, { current: 0, overwrite: true });
-				activeTarget = null;
-				const cs = Array.from(corners);
-				gsap.killTweensOf(cs);
-				const { cornerSize } = constants;
-				const positions = [
-					{ x: -cornerSize * 1.5, y: -cornerSize * 1.5 },
-					{ x: cornerSize * 0.5, y: -cornerSize * 1.5 },
-					{ x: cornerSize * 0.5, y: cornerSize * 0.5 },
-					{ x: -cornerSize * 1.5, y: cornerSize * 0.5 }
-				];
-				const tl = gsap.timeline();
-				cs.forEach((c, i) => {
-					tl.to(c, { x: positions[i].x, y: positions[i].y, duration: 0.3, ease: 'power3.out' }, 0);
-				});
+			if (dot) {
+				const dotScale = 1 - press.x * 0.35;
+				dot.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0) translate(-50%, -50%) scale(${dotScale.toFixed(3)})`;
+				dot.style.width = `${s.dotSize}px`;
+				dot.style.height = `${s.dotSize}px`;
+			}
 
-				resumeTimeout = setTimeout(() => {
-					if (!activeTarget && cursor && spinTl) {
-						const r = gsap.getProperty(cursor, 'rotation') as number;
-						const norm = r % 360;
-						spinTl.kill();
-						spinTl = gsap
-							.timeline({ repeat: -1 })
-							.to(cursor, { rotation: '+=360', duration: spinDuration, ease: 'none' });
-						gsap.to(cursor, {
-							rotation: norm + 360,
-							duration: spinDuration * (1 - norm / 360),
-							ease: 'none',
-							onComplete: () => spinTl?.restart()
-						});
-					}
-					resumeTimeout = null;
-				}, 50);
-				cleanupTarget(target!);
-			};
-			currentLeaveHandler = leaveHandler;
-			target.addEventListener('mouseleave', leaveHandler);
+			const label = labelEl;
+			if (label) {
+				const text = s.showLabel && target ? target.getAttribute('data-cursor-label') || '' : '';
+				if (text && text !== lastLabel) label.textContent = text;
+				if (text) lastLabel = text;
+				const shown = text ? Math.max(0, Math.min(1, lock.x)) : 0;
+				label.style.transform = `translate3d(${left.toFixed(2)}px, ${(top - 8).toFixed(2)}px, 0) translateY(-100%) translateY(${((1 - shown) * 4).toFixed(2)}px)`;
+				label.style.opacity = shown.toFixed(3);
+			}
+
+			const mix = s.cursorColorOnTarget ? Math.round(Math.max(0, Math.min(1, lock.x)) * 100) : 0;
+			const color = mix ? `color-mix(in oklab, ${s.cursorColorOnTarget} ${mix}%, ${s.cursorColor})` : s.cursorColor;
+			if (color !== lastColor) {
+				el.style.setProperty('--target-cursor-color', color);
+				lastColor = color;
+			}
+			el.style.opacity = Math.max(0, Math.min(1, presence.x)).toFixed(3);
+
+			const resting =
+				!pointer.inside &&
+				presence.x < 0.002 &&
+				Math.abs(presence.v) < 0.002 &&
+				Math.abs(lock.x) < 0.002 &&
+				Math.abs(press.x) < 0.002;
+			const spinning = pointer.inside && !locked && spinSpeed > 0.0001;
+			const moving =
+				Math.abs(centerX.v) + Math.abs(centerY.v) + Math.abs(halfW.v) + Math.abs(halfH.v) + Math.abs(turn.v) > 0.01 ||
+				Math.abs(goalX - centerX.x) + Math.abs(goalY - centerY.x) > 0.05 ||
+				Math.abs(lock.v) + Math.abs(press.v) + Math.abs(presence.v) > 0.001;
+			if (!resting && (spinning || moving || locked)) raf = requestAnimationFrame(frame);
+			else last = 0;
 		};
 
-		window.addEventListener('mouseover', enterHandler as EventListener);
+		const wake = () => {
+			if (!raf) raf = requestAnimationFrame(frame);
+		};
+		wakeFn = () => {
+			hideCursor();
+			wake();
+		};
+
+		const insideScope = (x: number, y: number, element?: Element | null) => {
+			const scope = scopeOf();
+			if (!scope) return true;
+			if (element && scope.contains(element)) return true;
+			const box = scope.getBoundingClientRect();
+			return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+		};
+
+		const onPointerMove = (event: PointerEvent) => {
+			if (event.pointerType && event.pointerType !== 'mouse') return;
+			pointer.x = event.clientX;
+			pointer.y = event.clientY;
+			const inside = insideScope(pointer.x, pointer.y, event.target as Element | null);
+			if (inside !== pointer.inside) {
+				pointer.inside = inside;
+				hideCursor();
+			}
+			lockOn(inside ? findTarget(pointer.x, pointer.y, event.target as Element | null) : null);
+			wake();
+		};
+
+		const onPointerDown = (event: PointerEvent) => {
+			if (event.pointerType && event.pointerType !== 'mouse') return;
+			pointer.pressed = true;
+			wake();
+		};
+
+		const onPointerUp = () => {
+			pointer.pressed = false;
+			wake();
+		};
+
+		const onLeave = () => {
+			pointer.inside = false;
+			pointer.pressed = false;
+			lockOn(null);
+			hideCursor();
+			wake();
+		};
+
+		const onScroll = () => {
+			if (!pointer.inside) return;
+			lockOn(findTarget(pointer.x, pointer.y));
+			wake();
+		};
+
+		window.addEventListener('pointermove', onPointerMove, { passive: true });
+		window.addEventListener('pointerdown', onPointerDown, { passive: true });
+		window.addEventListener('pointerup', onPointerUp, { passive: true });
+		window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+		document.documentElement.addEventListener('pointerleave', onLeave);
+		window.addEventListener('blur', onLeave);
 
 		return () => {
-			if (tickerFn) gsap.ticker.remove(tickerFn);
-			window.removeEventListener('mousemove', moveHandler);
-			window.removeEventListener('mouseover', enterHandler as EventListener);
-			window.removeEventListener('scroll', scrollHandler);
-			window.removeEventListener('mousedown', mouseDown);
-			window.removeEventListener('mouseup', mouseUp);
-			if (activeTarget) cleanupTarget(activeTarget);
-			spinTl?.kill();
-			document.body.style.cursor = originalCursor;
+			cancelAnimationFrame(raf);
+			wakeFn = null;
+			window.removeEventListener('pointermove', onPointerMove);
+			window.removeEventListener('pointerdown', onPointerDown);
+			window.removeEventListener('pointerup', onPointerUp);
+			window.removeEventListener('scroll', onScroll, { capture: true });
+			document.documentElement.removeEventListener('pointerleave', onLeave);
+			window.removeEventListener('blur', onLeave);
+			lastScope?.removeAttribute('data-target-cursor-scope');
+			style.remove();
 		};
+	});
+
+	$effect(() => {
+		void settings;
+		void resolveElement(container);
+		void host;
+		void root;
+		wakeFn?.();
 	});
 </script>
 
-{#if !isMobile}
+{#if host}
 	<div
-		bind:this={cursor}
-		class="fixed top-0 left-0 w-0 h-0 pointer-events-none z-[9999]"
-		style="will-change:transform;"
+		bind:this={root}
+		use:portal={host}
+		class="pointer-events-none fixed inset-0 z-[2147483647]"
+		style:mix-blend-mode={blendMode}
+		aria-hidden="true"
 	>
-		<div
+		{#each CORNER_ANGLES as angle, i (angle)}
+			<span
+				bind:this={corners[i]}
+				class="absolute top-0 left-0 box-border origin-top-left border-solid [border-color:var(--target-cursor-color,#ffffff)] will-change-transform"
+			></span>
+		{/each}
+		<span
 			bind:this={dot}
-			class="absolute top-1/2 left-1/2 w-1 h-1 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"
-			style="will-change:transform;"
-		></div>
-		<div
-			class="target-cursor-corner absolute top-1/2 left-1/2 w-3 h-3 border-[3px] border-white -translate-x-[150%] -translate-y-[150%] border-r-0 border-b-0"
-			style="will-change:transform;"
-		></div>
-		<div
-			class="target-cursor-corner absolute top-1/2 left-1/2 w-3 h-3 border-[3px] border-white translate-x-1/2 -translate-y-[150%] border-l-0 border-b-0"
-			style="will-change:transform;"
-		></div>
-		<div
-			class="target-cursor-corner absolute top-1/2 left-1/2 w-3 h-3 border-[3px] border-white translate-x-1/2 translate-y-1/2 border-l-0 border-t-0"
-			style="will-change:transform;"
-		></div>
-		<div
-			class="target-cursor-corner absolute top-1/2 left-1/2 w-3 h-3 border-[3px] border-white -translate-x-[150%] translate-y-1/2 border-r-0 border-t-0"
-			style="will-change:transform;"
-		></div>
+			class="absolute top-0 left-0 rounded-full [background:var(--target-cursor-color,#ffffff)] will-change-transform"
+		></span>
+		<span
+			bind:this={labelEl}
+			class="absolute top-0 left-0 text-[12px] leading-none font-medium whitespace-nowrap opacity-0 [color:var(--target-cursor-color,#ffffff)] will-change-[transform,opacity]"
+		></span>
 	</div>
 {/if}

@@ -1,12 +1,10 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import WakeSlider, {
@@ -72,8 +70,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedFill = $derived(fillColor);
-	const renderedTrack = $derived(trackColor);
+	const renderedFill = $derived(theme.isLight ? (fillColor === DEFAULT_PROPS.fillColor ? '#18181b' : fillColor) : fillColor);
+	const renderedTrack = $derived(theme.isLight ? (trackColor === DEFAULT_PROPS.trackColor ? '#f6f6f6' : trackColor) : trackColor);
 	const propData: PropRow[] = [
 		{ name: 'value', type: 'number', default: 'undefined', description: 'Controlled value.' },
 		{
@@ -237,8 +235,6 @@
 	);
 </script>
 
-<svelte:head><title>Wake Slider - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Wake Slider</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -252,21 +248,21 @@
 				style="height:400px;"
 			>
 				<div class="w-[320px] max-w-[80%]">
-					<WakeSlider {...props} {value} onChange={setValue} />
+					<WakeSlider {...props} fillColor={renderedFill} trackColor={renderedTrack} {value} onChange={setValue} />
 				</div>
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="wake-slider" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Fill"
-				value={renderedFill}
+				color={renderedFill}
 				onChange={(val) => updateProp('fillColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Track"
-				value={renderedTrack}
+				color={renderedTrack}
 				onChange={(val) => updateProp('trackColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider title="Value" min={0} max={100} step={1} {value} onChange={setValue}
 			></PreviewSlider>
 			<PreviewSlider

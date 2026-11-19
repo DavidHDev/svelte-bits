@@ -1,0 +1,220 @@
+.right-panel {
+	display: none;
+}
+
+.pro-card-inline {
+	max-width: 300px;
+	margin: -2.5rem auto 3rem;
+}
+
+@media only screen and (max-width: 340px) {
+	.pro-card-inline .pro-card-content {
+		padding-inline: 14px;
+	}
+
+	.pro-card-inline .pro-card-cta {
+		margin-inline: -8px;
+	}
+}
+
+@media only screen and (min-width: 1321px) {
+	.pro-card-inline {
+		display: none;
+	}
+
+	.category-wrapper:has(> .right-panel) {
+		--right-panel-width: 300px;
+		--content-inset-right: calc(var(--right-panel-width) + var(--content-gap));
+	}
+
+	.right-panel {
+		position: fixed;
+		right: var(--content-gap, 2em);
+		top: calc(var(--docs-header-height) + 16px);
+		display: block;
+		width: var(--right-panel-width, 300px);
+		z-index: 0;
+	}
+
+	.right-panel-inner {
+		max-height: calc(100vh - var(--docs-header-height) - 32px);
+		overflow-y: auto;
+	}
+}
+
+.pro-card-link {
+	display: block;
+	margin-bottom: 1em;
+	text-decoration: none;
+}
+
+.pro-card-link:focus-visible {
+	outline: none;
+}
+
+.pro-card-link:focus-visible .pro-card {
+	outline: 2px solid #ffb089;
+	outline-offset: 2px;
+}
+
+.pro-card {
+	overflow: hidden;
+	border-radius: var(--docs-rail-radius, 16px);
+	background: color-mix(in srgb, var(--shell-panel-solid) 78%, transparent);
+	border: 1px solid var(--shell-border);
+	box-shadow: var(--shadow-elevated);
+	transition:
+		border-color 0.3s ease,
+		box-shadow 0.3s ease;
+}
+
+.pro-card:hover {
+	border-color: var(--shell-border-strong);
+	box-shadow: var(--shadow-elevated-hover);
+}
+
+.pro-card-preview {
+	position: relative;
+	display: block;
+	aspect-ratio: 1200 / 630;
+	margin: 6px;
+	overflow: hidden;
+	border-radius: calc(var(--docs-rail-radius, 16px) - 6px);
+	background: #0b0908;
+}
+
+.pro-card-preview :is(canvas, img) {
+	pointer-events: none;
+}
+
+.pro-card-preview > .pro-card-dither {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: block;
+	width: 100%;
+	height: 100%;
+	opacity: 0.42;
+	image-rendering: pixelated;
+}
+
+.pro-card-og {
+	position: relative;
+	z-index: 1;
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	filter: grayscale(1);
+	transform: scale(1.01);
+	transition:
+		transform 0.6s var(--ease-out, ease),
+		filter 0.3s var(--ease-out, ease);
+}
+
+.pro-card-link:focus-visible .pro-card-og {
+	filter: grayscale(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.pro-card:hover .pro-card-og {
+		filter: grayscale(0);
+	}
+}
+
+.pro-card-og-light {
+	display: none;
+}
+
+.pro-card:hover .pro-card-og {
+	transform: scale(1.045);
+}
+
+:root[data-theme='light'] .pro-card-preview {
+	border: 1px solid var(--border-subtle);
+	background: #f8f6f4;
+}
+
+:root[data-theme='light'] .pro-card-og-dark {
+	display: none;
+}
+
+:root[data-theme='light'] .pro-card-og-light {
+	display: block;
+}
+
+:root[data-theme='light'] .pro-card-dither {
+	opacity: 0.36;
+}
+
+.pro-card-content {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 15px 20px 22px;
+}
+
+.pro-card-title {
+	margin: 0;
+	color: var(--text-primary);
+	font-size: 17px;
+	font-weight: 500;
+	letter-spacing: -0.4px;
+	line-height: 1.22;
+	text-wrap: balance;
+}
+
+.pro-card-desc {
+	margin: 9px 0 0;
+	color: var(--text-muted);
+	font-size: 11.5px;
+	letter-spacing: -0.12px;
+	line-height: 1.55;
+	text-wrap: balance;
+}
+
+.pro-card-counts {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin-top: 14px;
+	color: var(--text-dimmed);
+	font-size: 10px;
+	font-weight: 500;
+	line-height: 1.4;
+}
+
+.pro-card-cta {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	align-self: stretch;
+	margin: 18px -14px -16px;
+	border-radius: 10px;
+	font-size: 13px;
+	font-weight: 500;
+	transition:
+		color var(--transition-fast),
+		transform var(--dur-press) var(--ease-out),
+		box-shadow 0.3s ease;
+}
+
+.pro-card:hover .pro-card-cta {
+	background: var(--pro-hover);
+	color: var(--pro-fg);
+}
+
+:root[data-theme='light'] .pro-card,
+:root[data-theme='light'] .pro-card:hover {
+	box-shadow: none;
+}
+
+:root[data-theme='light'] .pro-card-link:focus-visible .pro-card {
+	outline-color: #c2410c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pro-card-og {
+		transition: none;
+	}
+}

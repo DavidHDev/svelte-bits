@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { theme } from '$lib/theme.svelte';
 	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import RefineFrame, {
@@ -81,8 +81,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedBackground = $derived(background);
-	const renderedColor = $derived(color);
+	const renderedBackground = $derived(theme.isLight ? (background === DEFAULT_PROPS.background ? '#f6f6f6' : background) : background);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
 	const propData: PropRow[] = [
 		{
 			name: 'status',
@@ -218,8 +218,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Refine Frame - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Refine Frame</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -232,7 +230,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				<ReplayButton onClick={walk} /><RefineFrame {...props} onRetry={walk}
+				<ReplayButton onClick={walk} /><RefineFrame {...props} background={renderedBackground} color={renderedColor} onRetry={walk}
 					><img src={IMAGE} alt="" crossorigin="anonymous" draggable={false} /></RefineFrame
 				>
 			</div>{/key}{/snippet}
@@ -271,16 +269,16 @@
 				valueUnit="px"
 				onChange={(val) => updateProp('radius', val)}
 			></PreviewSlider>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Background"
-				value={renderedBackground}
+				color={renderedBackground}
 				onChange={(val) => updateProp('background', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Ink"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Stage"
 				min={150}

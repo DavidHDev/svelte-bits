@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { stripSvelteBitsHeader } from '$lib/utils/svelte-bits-source-header';
-	import CliInstall from './CliInstall.svelte';
-	import CodeBlock from './CodeBlock.svelte';
+	import CodeExample from './CodeExample.svelte';
 
 	type Props = {
 		slug: string;
@@ -10,13 +8,6 @@
 	};
 
 	let { slug, usage, source }: Props = $props();
-	
-	/** Mirrors registry installs: omit internal `<!-- @svelte-bits -->` metadata. */
-	const sourceForDocs = $derived(stripSvelteBitsHeader(source));
 </script>
 
-<CliInstall {slug} />
-<h3 class="demo-title-extra">Usage</h3>
-<CodeBlock code={usage} language="svelte" />
-<h3 class="demo-title-extra">Component source</h3>
-<CodeBlock code={sourceForDocs} language="svelte" />
+<CodeExample {slug} {usage} {source} />

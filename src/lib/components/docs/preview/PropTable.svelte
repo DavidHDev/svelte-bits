@@ -1,54 +1,78 @@
-<script lang="ts">
-	export type PropRow = {
-		name: string;
-		type: string;
-		default: string;
-		description: string;
-	};
-
-	type Props = { rows: PropRow[] };
-	let { rows }: Props = $props();
+<script module lang="ts">
+	export type PropRow = { name: string; type: string; default?: string; description: string };
 </script>
 
-<section class="prop-table-section">
-	<h2 class="demo-title-extra">Props</h2>
+<script lang="ts">
+	import { useProSlot } from './lib/proSlot.svelte';
+	import CategoryProFooter from '$lib/components/common/Pro/CategoryProFooter.svelte';
 
-	<div class="prop-table-wrap">
-		<table class="prop-table">
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Type</th>
-					<th>Default</th>
-					<th>Description</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each rows as row (row.name)}
-					<tr>
-						<td><code class="prop-code">{row.name}</code></td>
-						<td><span class="prop-type">{row.type}</span></td>
-						<td><code class="prop-code">{row.default}</code></td>
-						<td>{row.description}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+	type Props = { data?: PropRow[]; rows?: PropRow[] };
 
-	<div class="prop-cards">
-		{#each rows as row (row.name)}
-			<div class="prop-card">
-				<div class="prop-card-header">
-					<code class="prop-code">{row.name}</code>
-					<span class="prop-card-type">{row.type}</span>
-				</div>
-				<p class="prop-card-desc">{row.description}</p>
-				<div class="prop-card-default">
-					<span class="prop-card-label">Default:</span>
-					<code class="prop-code">{row.default}</code>
-				</div>
+	let { data, rows }: Props = $props();
+
+	const list = $derived(data ?? rows ?? []);
+	const proSlot = useProSlot('props');
+</script>
+
+<div class="prop-table-section">
+	<div class="prop-table-frame">
+		<div class="prop-table-heading">
+			<h2>Props</h2>
+			<span>{list.length} {list.length === 1 ? 'property' : 'properties'}</span>
+		</div>
+
+		<div class="prop-table-wrap">
+			<div class="prop-table-surface">
+				<table class="prop-table">
+					<caption>Component properties</caption>
+					<colgroup>
+						<col class="prop-column-name" />
+						<col class="prop-column-type" />
+						<col class="prop-column-default" />
+						<col class="prop-column-description" />
+					</colgroup>
+					<thead>
+						<tr>
+							<th scope="col">Property</th>
+							<th scope="col">Type</th>
+							<th scope="col">Default</th>
+							<th scope="col">Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each list as prop, index (index)}
+							<tr>
+								<td><code class="prop-name">{prop.name}</code></td>
+								<td class="prop-type">{prop.type}</td>
+								<td><code class="prop-default">{prop.default?.length ? prop.default : '—'}</code></td>
+								<td class="prop-desc">{prop.description}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
-		{/each}
+		</div>
+
+		<div class="prop-cards">
+			<div class="prop-cards-surface">
+				{#each list as prop, index (index)}
+					<div class="prop-card">
+						<div class="prop-card-header">
+							<code class="prop-name">{prop.name}</code>
+							<span class="prop-card-type">{prop.type}</span>
+						</div>
+						<p class="prop-card-desc">{prop.description}</p>
+						<div class="prop-card-default">
+							<span class="prop-card-label">Default</span>
+							<code class="prop-default">{prop.default?.length ? prop.default : '—'}</code>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</div>
 	</div>
-</section>
+</div>
+
+{#if proSlot?.owns}
+	<CategoryProFooter category={proSlot.category} />
+{/if}

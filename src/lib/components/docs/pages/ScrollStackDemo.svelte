@@ -1,152 +1,337 @@
 <script lang="ts">
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
-	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import ScrollStack from '$lib/components/library/Components/ScrollStack/ScrollStack.svelte';
+	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
+	import PropTable from '$lib/components/docs/preview/PropTable.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
+	import ScrollStack, { type ScrollStackCard } from '$lib/components/library/Components/ScrollStack/ScrollStack.svelte';
 	import source from '$lib/components/library/Components/ScrollStack/ScrollStack.svelte?raw';
 
-	const DEFAULTS = { itemDistance: 200, itemStackDistance: 30, baseScale: 0.85, rotationAmount: 0, blurAmount: 0, stackPosition: '20%' };
-	let itemDistance = $state(DEFAULTS.itemDistance);
-	let itemStackDistance = $state(DEFAULTS.itemStackDistance);
-	let baseScale = $state(DEFAULTS.baseScale);
-	let rotationAmount = $state(DEFAULTS.rotationAmount);
-	let blurAmount = $state(DEFAULTS.blurAmount);
-	let stackPosition = $state(DEFAULTS.stackPosition);
-	let key = $state(0);
-	let isCompleted = $state(false);
+	const PHOTOS = ['night-landscape', 'day-portrait', 'night-sky', 'day-landscape', 'night-portrait'];
 
-	const hasChanges = $derived(
-		itemDistance !== DEFAULTS.itemDistance || itemStackDistance !== DEFAULTS.itemStackDistance ||
-		baseScale !== DEFAULTS.baseScale || rotationAmount !== DEFAULTS.rotationAmount ||
-		blurAmount !== DEFAULTS.blurAmount || stackPosition !== DEFAULTS.stackPosition
-	);
-	function reset() {
-		itemDistance = DEFAULTS.itemDistance; itemStackDistance = DEFAULTS.itemStackDistance;
-		baseScale = DEFAULTS.baseScale; rotationAmount = DEFAULTS.rotationAmount;
-		blurAmount = DEFAULTS.blurAmount; stackPosition = DEFAULTS.stackPosition;
-		refresh();
-	}
-	function refresh() { key++; isCompleted = false; }
-	function bump<T>(setter: (v: T) => void, v: T) { setter(v); refresh(); }
+	const LOOK = {
+		itemStackDistance: 22,
+		itemScale: 0.05,
+		baseScale: 0.8,
+		dimAmount: 0.25,
+		blurAmount: 0,
+		tiltAmount: 0,
+		rotationAmount: 0
+	};
 
-	const usage = `<ScrollStack cards={[c1, c2, c3]} itemDistance={200} baseScale={0.85} stackPosition="20%" />`;
-	const props: PropRow[] = [
-		{ name: 'cards', type: 'Snippet[]', default: '-', description: 'Array of card content snippets.' },
-		{ name: 'itemDistance', type: 'number', default: '100', description: 'Distance between stacked items in px.' },
-		{ name: 'itemScale', type: 'number', default: '0.03', description: 'Scale increment per item.' },
-		{ name: 'itemStackDistance', type: 'number', default: '30', description: 'Distance when items start stacking.' },
-		{ name: 'stackPosition', type: 'string', default: '"20%"', description: 'Where stacking begins (% of viewport).' },
-		{ name: 'scaleEndPosition', type: 'string', default: '"10%"', description: 'Where scaling ends (% of viewport).' },
-		{ name: 'baseScale', type: 'number', default: '0.85', description: 'Base scale of first item.' },
-		{ name: 'rotationAmount', type: 'number', default: '0', description: 'Rotation per item in degrees.' },
-		{ name: 'blurAmount', type: 'number', default: '0', description: 'Blur for back items.' },
-		{ name: 'useWindowScroll', type: 'boolean', default: 'false', description: 'Use window scroll instead of container.' },
-		{ name: 'onStackComplete', type: '() => void', default: '-', description: 'Fires when stack completes.' }
+	const DEFAULT_PROPS = {
+		preset: 'stack',
+		itemDistance: 40,
+		stackPosition: 12,
+		...LOOK,
+		smoothScroll: true,
+		snap: false
+	};
+
+	type DemoProps = typeof DEFAULT_PROPS;
+
+	const PRESETS: Record<string, Partial<DemoProps>> = {
+		stack: { ...LOOK },
+		deck: { ...LOOK, itemStackDistance: 30, itemScale: 0.03, tiltAmount: 24, dimAmount: 0.3 },
+		pile: { ...LOOK, itemStackDistance: 0, itemScale: 0.015, baseScale: 0.9, dimAmount: 0.12, rotationAmount: 3 },
+		focus: { ...LOOK, itemScale: 0.06, dimAmount: 0.35, blurAmount: 3 },
+		flat: { ...LOOK, itemStackDistance: 40, itemScale: 0, dimAmount: 0.15 }
+	};
+
+	const PRESET_OPTIONS = [
+		{ value: 'stack', label: 'Stack' },
+		{ value: 'deck', label: 'Deck' },
+		{ value: 'pile', label: 'Pile' },
+		{ value: 'focus', label: 'Focus' },
+		{ value: 'flat', label: 'Flat' }
 	];
 
-	const stackPositionOptions = [
-		{ value: '10%', label: '10%' }, { value: '15%', label: '15%' }, { value: '20%', label: '20%' },
-		{ value: '25%', label: '25%' }, { value: '30%', label: '30%' }, { value: '35%', label: '35%' }
+	const propData = [
+		{
+			name: 'cards',
+			type: '(Snippet | ScrollStackItem)[]',
+			default: '-',
+			description:
+				'The cards to stack. Pass a snippet per card, or { content, itemClassName, style } to style a card.'
+		},
+		{
+			name: 'itemDistance',
+			type: 'number',
+			default: '100',
+			description: 'Gap between cards before they stack, in px. Larger gaps mean more scrolling between cards.'
+		},
+		{
+			name: 'itemStackDistance',
+			type: 'number',
+			default: '24',
+			description: 'How far each card rests below the one before it in the stack, in px. 0 piles them exactly.'
+		},
+		{
+			name: 'stackPosition',
+			type: 'number | string',
+			default: "'15%'",
+			description: 'Where the stack pins, from the top of the viewport or container. A number is px, or use a % string.'
+		},
+		{
+			name: 'itemScale',
+			type: 'number',
+			default: '0.05',
+			description: 'How much a card shrinks for each card stacked on top of it.'
+		},
+		{
+			name: 'baseScale',
+			type: 'number',
+			default: '0.8',
+			description: 'The smallest a buried card can shrink to.'
+		},
+		{
+			name: 'dimAmount',
+			type: 'number',
+			default: '0.2',
+			description: 'How much a card darkens for each card stacked on top of it, from 0 to 1.'
+		},
+		{
+			name: 'blurAmount',
+			type: 'number',
+			default: '0',
+			description: 'Blur added for each card stacked on top, in px.'
+		},
+		{
+			name: 'tiltAmount',
+			type: 'number',
+			default: '0',
+			description: 'How far buried cards lean back in 3D, in degrees.'
+		},
+		{
+			name: 'rotationAmount',
+			type: 'number',
+			default: '0',
+			description: 'How far buried cards turn, alternating left and right like a loose pile, in degrees.'
+		},
+		{
+			name: 'holdDistance',
+			type: 'number',
+			default: '200',
+			description: 'How long the finished stack stays pinned before it scrolls away, in px of scrolling.'
+		},
+		{
+			name: 'smoothScroll',
+			type: 'boolean',
+			default: 'true',
+			description:
+				'Glides mouse wheel scrolling smoothly. Touch, keyboard and scrollbar scrolling stay native. With useWindowScroll it smooths the whole page while the stack is mounted.'
+		},
+		{
+			name: 'snap',
+			type: 'boolean',
+			default: 'false',
+			description: 'When scrolling stops near a card, glides it the rest of the way onto the stack.'
+		},
+		{
+			name: 'useWindowScroll',
+			type: 'boolean',
+			default: 'false',
+			description:
+				'Stacks the cards as the page scrolls instead of scrolling inside its own container. Avoid overflow: hidden on parent elements, which stops cards from pinning.'
+		},
+		{
+			name: 'onStackComplete',
+			type: '() => void',
+			default: '-',
+			description: 'Called when the last card lands on the stack.'
+		},
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the stack container.' },
+		{
+			name: 'itemClassName',
+			type: 'string',
+			default: "''",
+			description: 'Card item only. Extra class names for the card, for its size, colors and content.'
+		},
+		{
+			name: 'style',
+			type: 'string',
+			default: '-',
+			description: 'Card item only. Inline styles for the card.'
+		}
 	];
-</script>
+
+	const usage = `<script lang="ts">
+  import ScrollStack from '$lib/components/ScrollStack.svelte';
+</${'script'}>
 
 {#snippet card1()}
-	<h3>Text Animations</h3>
+  <h2>Card 1</h2>
+  <p>This is the first card in the stack</p>
 {/snippet}
+
 {#snippet card2()}
-	<h3>Animations</h3>
+  <h2>Card 2</h2>
+  <p>This is the second card in the stack</p>
 {/snippet}
+
 {#snippet card3()}
-	<h3>Components</h3>
-{/snippet}
-{#snippet card4()}
-	<h3>Backgrounds</h3>
-{/snippet}
-{#snippet card5()}
-	<h3>All on svelte-bits!</h3>
+  <h2>Card 3</h2>
+  <p>This is the third card in the stack</p>
 {/snippet}
 
-<svelte:head><title>Scroll Stack - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Scroll Stack</h1>
+<div style="height: 600px">
+  <ScrollStack
+    cards={[card1, card2, card3]}
+  />
+</div>`;
 
-<TabsLayout onreset={reset} {hasChanges} componentName="ScrollStack" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="demo-container" style="position:relative;height:400px;padding:0;overflow:hidden;">
-			<button class="refresh-btn" onclick={refresh} aria-label="Refresh" type="button">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-			</button>
-			<div
-				style="text-align:center;color:#222222;font-size:clamp(2rem,4vw,3rem);font-weight:900;position:absolute;top:25%;left:50%;transform:translate(-50%,-50%);pointer-events:none;transition:all 0.3s ease;z-index:1;"
-			>{isCompleted ? 'Stack Completed!' : 'Scroll Down'}</div>
-			{#key key}
-				<ScrollStack
-					cards={[card1, card2, card3, card4, card5]}
-					{itemDistance}
-					{itemStackDistance}
-					{stackPosition}
-					{baseScale}
-					{rotationAmount}
-					{blurAmount}
-					itemClass="scroll-stack-card-demo"
-					onStackComplete={() => (isCompleted = true)}
-				/>
-			{/key}
+	const demo = createComponentProps(DEFAULT_PROPS);
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, stackPosition: _stackPosition, ...rest } = settings;
+		return rest;
+	});
+	const computedProps = $derived({ stackPosition: `${settings.stackPosition}%` });
+
+	const applyPreset = (value: string) => {
+		const base = Object.fromEntries(
+			(Object.keys(DEFAULT_PROPS) as (keyof DemoProps)[]).map((name) => [name, demo.defaultProps[name]])
+		) as DemoProps;
+		demo.updateProps({
+			...base,
+			...PRESETS[value],
+			smoothScroll: settings.smoothScroll,
+			snap: settings.snap,
+			preset: value
+		});
+	};
+</script>
+
+{#snippet photo(name: string)}
+	<img
+		src={`/assets/demo/${name}.webp`}
+		alt=""
+		draggable="false"
+		style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit;"
+	/>
+{/snippet}
+
+{#snippet photo0()}{@render photo(PHOTOS[0])}{/snippet}
+{#snippet photo1()}{@render photo(PHOTOS[1])}{/snippet}
+{#snippet photo2()}{@render photo(PHOTOS[2])}{/snippet}
+{#snippet photo3()}{@render photo(PHOTOS[3])}{/snippet}
+{#snippet photo4()}{@render photo(PHOTOS[4])}{/snippet}
+
+<TabsLayout
+	propsState={demo}
+	componentName="ScrollStack"
+	{usage}
+	{source}
+	{propData}
+	demoOnlyProps={['preset']}
+	{computedProps}
+	dependencies={[]}
+>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 500px; padding: 0; overflow: hidden;">
+			<ScrollStack
+				{...componentProps}
+				stackPosition={`${settings.stackPosition}%`}
+				cards={[photo0, photo1, photo2, photo3, photo4].map(
+					(content): ScrollStackCard => ({ content, style: 'height: 300px; padding: 0; background: none;' })
+				)}
+			/>
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="scroll-stack" {usage} {source} />{/snippet}
-	{#snippet customize()}
-		<Customize>
-			<PreviewSlider title="Item Distance" min={0} max={1000} step={10} value={itemDistance} valueUnit="px" onChange={(v) => bump((x) => (itemDistance = x), v)} />
-			<PreviewSlider title="Stack Distance" min={0} max={40} step={5} value={itemStackDistance} valueUnit="px" onChange={(v) => bump((x) => (itemStackDistance = x), v)} />
-			<PreviewSelect title="Stack Position" options={stackPositionOptions} value={stackPosition} onChange={(v) => bump((x) => (stackPosition = x), v)} />
-			<PreviewSlider title="Base Scale" min={0.5} max={1.0} step={0.05} value={baseScale} onChange={(v) => bump((x) => (baseScale = x), v)} />
-			<PreviewSlider title="Rotation Amount" min={0} max={1} step={0.1} value={rotationAmount} valueUnit="°" onChange={(v) => bump((x) => (rotationAmount = x), v)} />
-			<PreviewSlider title="Blur Amount" min={0} max={10} step={0.5} value={blurAmount} valueUnit="px" onChange={(v) => bump((x) => (blurAmount = x), v)} />
-		</Customize>
-	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
-</TabsLayout>
 
-<style>
-	:global(.scroll-stack-card-demo) {
-		background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-		color: #fff;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-	}
-	:global(.scroll-stack-card-demo h3) {
-		font-size: 2rem;
-		font-weight: 700;
-		color: #fff;
-	}
-	.refresh-btn {
-		position: absolute;
-		top: 12px;
-		right: 12px;
-		z-index: 2;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 36px;
-		height: 36px;
-		padding: 8px;
-		border-radius: 10px;
-		background: #1a1a1a;
-		border: 1px solid #333;
-		color: #fff;
-		cursor: pointer;
-		transition: background-color 0.3s ease;
-	}
-	.refresh-btn:hover,
-	.refresh-btn:active {
-		background: #262626;
-	}
-	.refresh-btn svg {
-		width: 16px;
-		height: 16px;
-	}
-</style>
+		<Customize>
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewSlider
+				title="Item Distance"
+				min={0}
+				max={200}
+				step={5}
+				value={settings.itemDistance}
+				valueUnit="px"
+				onChange={(value) => demo.updateProp('itemDistance', value)}
+			/>
+			<PreviewSlider
+				title="Stack Distance"
+				min={0}
+				max={60}
+				step={1}
+				value={settings.itemStackDistance}
+				valueUnit="px"
+				onChange={(value) => demo.updateProp('itemStackDistance', value)}
+			/>
+			<PreviewSlider
+				title="Stack Position"
+				min={0}
+				max={40}
+				step={1}
+				value={settings.stackPosition}
+				valueUnit="%"
+				onChange={(value) => demo.updateProp('stackPosition', value)}
+			/>
+			<PreviewSlider
+				title="Item Scale"
+				min={0}
+				max={0.15}
+				step={0.005}
+				value={settings.itemScale}
+				onChange={(value) => demo.updateProp('itemScale', value)}
+			/>
+			<PreviewSlider
+				title="Base Scale"
+				min={0.5}
+				max={1}
+				step={0.01}
+				value={settings.baseScale}
+				onChange={(value) => demo.updateProp('baseScale', value)}
+			/>
+			<PreviewSlider
+				title="Dim"
+				min={0}
+				max={0.6}
+				step={0.01}
+				value={settings.dimAmount}
+				onChange={(value) => demo.updateProp('dimAmount', value)}
+			/>
+			<PreviewSlider
+				title="Blur"
+				min={0}
+				max={8}
+				step={0.1}
+				value={settings.blurAmount}
+				valueUnit="px"
+				onChange={(value) => demo.updateProp('blurAmount', value)}
+			/>
+			<PreviewSlider
+				title="Tilt"
+				min={0}
+				max={45}
+				step={1}
+				value={settings.tiltAmount}
+				valueUnit="°"
+				onChange={(value) => demo.updateProp('tiltAmount', value)}
+			/>
+			<PreviewSlider
+				title="Rotation"
+				min={0}
+				max={10}
+				step={0.5}
+				value={settings.rotationAmount}
+				valueUnit="°"
+				onChange={(value) => demo.updateProp('rotationAmount', value)}
+			/>
+			<PreviewSwitch
+				title="Smooth Scroll"
+				isChecked={settings.smoothScroll}
+				onChange={(value) => demo.updateProp('smoothScroll', value)}
+			/>
+			<PreviewSwitch title="Snap" isChecked={settings.snap} onChange={(value) => demo.updateProp('snap', value)} />
+		</Customize>
+
+		<PropTable data={propData} />
+	{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
+</TabsLayout>

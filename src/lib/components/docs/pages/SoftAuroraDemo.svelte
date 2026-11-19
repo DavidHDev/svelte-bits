@@ -2,114 +2,262 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
+	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import BackgroundContent from '$lib/components/docs/preview/BackgroundContent.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import SoftAurora from '$lib/components/library/Backgrounds/SoftAurora/SoftAurora.svelte';
 	import source from '$lib/components/library/Backgrounds/SoftAurora/SoftAurora.svelte?raw';
+	import { DEFAULT_PROPS, PRESET_OPTIONS, presetProps } from './presets/SoftAurora';
 
-	const D = {
-		speed: 0.6,
-		scale: 1.5,
-		brightness: 1,
-		color1: '#f7f7f7',
-		color2: '#ff8a3d',
-		bandHeight: 0.5,
-		bandSpread: 1,
-		colorSpeed: 1,
-		enableMouseInteraction: true
-	};
+	const propData: PropRow[] = [
+		{ name: 'color1', type: 'string', default: "'#f7f7f7'", description: 'Tint of the first aurora layer.' },
+		{ name: 'color2', type: 'string', default: "'#FF8A4C'", description: 'Tint of the second aurora layer.' },
+		{
+			name: 'spectrum',
+			type: 'number',
+			default: '1',
+			description: 'How much of the shifting rainbow shows through the tints, from 0 to 1. 0 uses the two colors as they are.'
+		},
+		{ name: 'speed', type: 'number', default: '0.6', description: 'Overall animation speed.' },
+		{ name: 'colorSpeed', type: 'number', default: '1', description: 'How fast the colors drift along the band.' },
+		{ name: 'scale', type: 'number', default: '1.5', description: 'Scale of the noise that shapes the band.' },
+		{ name: 'brightness', type: 'number', default: '1', description: 'Overall brightness.' },
+		{ name: 'noiseFrequency', type: 'number', default: '2.5', description: 'How tightly the band ripples.' },
+		{ name: 'noiseAmplitude', type: 'number', default: '1', description: 'How far the band waves up and down.' },
+		{
+			name: 'bandHeight',
+			type: 'number',
+			default: '0.5',
+			description: 'Vertical position of the band, from 0 at the bottom to 1 at the top.'
+		},
+		{
+			name: 'bandSpread',
+			type: 'number',
+			default: '1',
+			description: 'How tight and bright the band is. Lower values spread it into a wide, soft glow.'
+		},
+		{ name: 'tilt', type: 'number', default: '0', description: 'Tilts the band by this many degrees.' },
+		{
+			name: 'octaveDecay',
+			type: 'number',
+			default: '0.1',
+			description: 'How much fine ripple sits on top of the large waves.'
+		},
+		{
+			name: 'layerOffset',
+			type: 'number',
+			default: '0',
+			description: 'Shifts the second layer in time so the two separate.'
+		},
+		{
+			name: 'enableMouseInteraction',
+			type: 'boolean',
+			default: 'true',
+			description: 'The aurora drifts with the cursor and reaches toward it when it comes close.'
+		},
+		{ name: 'mouseInfluence', type: 'number', default: '0.25', description: 'Strength of the cursor drift and reach.' },
+		{
+			name: 'clickPulse',
+			type: 'boolean',
+			default: 'true',
+			description: 'Clicking sends a soft pulse of light along the band.'
+		},
+		{
+			name: 'intro',
+			type: 'boolean',
+			default: 'true',
+			description: 'The band starts as a thin line and blooms in on mount.'
+		},
+		{
+			name: 'lightMode',
+			type: 'boolean',
+			default: 'false',
+			description: 'Prints the aurora as soft colored ink so it sits on light pages.'
+		},
+		{ name: 'opacity', type: 'number', default: '1', description: 'Overall opacity, from 0 to 1.' },
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the container.' },
+		{ name: 'style', type: 'string', default: '-', description: 'Inline styles for the container.' }
+	];
 
-	let speed = $state(D.speed);
-	let scale = $state(D.scale);
-	let brightness = $state(D.brightness);
-	let color1 = $state(D.color1);
-	let color2 = $state(D.color2);
-	let bandHeight = $state(D.bandHeight);
-	let bandSpread = $state(D.bandSpread);
-	let colorSpeed = $state(D.colorSpeed);
-	let enableMouseInteraction = $state(D.enableMouseInteraction);
-	let showContent = $state(true);
-
-	const sO = '<' + 'script lang="ts">';
-	const sC = '</' + 'script>';
-
-	const hasChanges = $derived(
-		speed !== D.speed ||
-			scale !== D.scale ||
-			brightness !== D.brightness ||
-			color1 !== D.color1 ||
-			color2 !== D.color2 ||
-			bandHeight !== D.bandHeight ||
-			bandSpread !== D.bandSpread ||
-			colorSpeed !== D.colorSpeed ||
-			enableMouseInteraction !== D.enableMouseInteraction
-	);
-
-	function reset() {
-		speed = D.speed;
-		scale = D.scale;
-		brightness = D.brightness;
-		color1 = D.color1;
-		color2 = D.color2;
-		bandHeight = D.bandHeight;
-		bandSpread = D.bandSpread;
-		colorSpeed = D.colorSpeed;
-		enableMouseInteraction = D.enableMouseInteraction;
-	}
-
-	const usage = $derived(`${sO}
+	const usage = `<script lang="ts">
   import SoftAurora from '$lib/components/SoftAurora.svelte';
-${sC}
+</${'script'}>
 
 <div style="width: 100%; height: 600px; position: relative;">
-  <SoftAurora color1="${color1}" color2="${color2}" speed={${speed}} />
-</div>`);
+  <SoftAurora
+    speed={0.6}
+    scale={1.5}
+    brightness={1}
+    color1="#f7f7f7"
+    color2="#FF8A4C"
+    bandHeight={0.5}
+    bandSpread={1}
+    enableMouseInteraction
+    mouseInfluence={0.25}
+  />
+</div>`;
 
-	const props: PropRow[] = [
-		{ name: 'speed', type: 'number', default: '0.6', description: 'Animation speed.' },
-		{ name: 'scale', type: 'number', default: '1.5', description: 'Noise scale.' },
-		{ name: 'brightness', type: 'number', default: '1', description: 'Overall brightness.' },
-		{ name: 'color1', type: 'string', default: '"#f7f7f7"', description: 'Layer 1 color.' },
-		{ name: 'color2', type: 'string', default: '"#e100ff"', description: 'Layer 2 color.' },
-		{ name: 'noiseFrequency', type: 'number', default: '2.5', description: 'Noise frequency.' },
-		{ name: 'noiseAmplitude', type: 'number', default: '1', description: 'Noise amplitude.' },
-		{ name: 'bandHeight', type: 'number', default: '0.5', description: 'Aurora band height.' },
-		{ name: 'bandSpread', type: 'number', default: '1', description: 'Aurora band spread.' },
-		{ name: 'octaveDecay', type: 'number', default: '0.1', description: 'Octave decay.' },
-		{ name: 'layerOffset', type: 'number', default: '0', description: 'Second layer offset.' },
-		{ name: 'colorSpeed', type: 'number', default: '1', description: 'Color cycle speed.' },
-		{ name: 'enableMouseInteraction', type: 'boolean', default: 'true', description: 'Mouse interaction.' },
-		{ name: 'mouseInfluence', type: 'number', default: '0.25', description: 'Mouse influence.' }
-	];
+	const demo = createComponentProps(DEFAULT_PROPS);
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, ...rest } = settings;
+		return rest;
+	});
+	let key = $state(0);
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value, { light: theme.isLight, defaults: demo.defaultProps }), preset: value });
+	};
 </script>
 
-<svelte:head><title>Soft Aurora - svelte-bits</title></svelte:head>
-
-<h1 class="sub-category">Soft Aurora</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="SoftAurora" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="relative h-[500px] w-full overflow-hidden rounded-[14px]">
-			<SoftAurora {speed} {scale} {brightness} {color1} {color2} {bandHeight} {bandSpread} {colorSpeed} {enableMouseInteraction} />
-			<BackgroundContentToggle {showContent} onToggle={(v) => (showContent = v)} />
+<TabsLayout propsState={demo} componentName="SoftAurora" {usage} {source} {propData} demoOnlyProps={['preset']}>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 500px; padding: 0; overflow: hidden;">
+			{#key key}
+				<SoftAurora {...componentProps} />
+			{/key}
+			<BackgroundContent headline="A gentle glow to light your way!" />
+			<RefreshButton onClick={() => key++} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="soft-aurora" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewColorPicker title="Color 1" value={color1} onChange={(v) => (color1 = v)} />
-			<PreviewColorPicker title="Color 2" value={color2} onChange={(v) => (color2 = v)} />
-			<PreviewSlider title="Speed" min={0} max={3} step={0.05} value={speed} onChange={(v) => (speed = v)} />
-			<PreviewSlider title="Scale" min={0.1} max={5} step={0.05} value={scale} onChange={(v) => (scale = v)} />
-			<PreviewSlider title="Brightness" min={0} max={3} step={0.05} value={brightness} onChange={(v) => (brightness = v)} />
-			<PreviewSlider title="Band Height" min={-1} max={2} step={0.05} value={bandHeight} onChange={(v) => (bandHeight = v)} />
-			<PreviewSlider title="Band Spread" min={0} max={3} step={0.05} value={bandSpread} onChange={(v) => (bandSpread = v)} />
-			<PreviewSlider title="Color Speed" min={0} max={3} step={0.05} value={colorSpeed} onChange={(v) => (colorSpeed = v)} />
-			<PreviewSwitch title="Mouse Interaction" checked={enableMouseInteraction} onChange={(v) => (enableMouseInteraction = v)} />
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewColorPickerCustom title="Color 1" color={settings.color1} onChange={(value) => demo.updateProp('color1', value)} />
+			<PreviewColorPickerCustom title="Color 2" color={settings.color2} onChange={(value) => demo.updateProp('color2', value)} />
+			<PreviewSlider
+				title="Spectrum"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.spectrum}
+				onChange={(value) => demo.updateProp('spectrum', value)}
+			/>
+			<PreviewSlider
+				title="Speed"
+				min={0}
+				max={3}
+				step={0.05}
+				value={settings.speed}
+				onChange={(value) => demo.updateProp('speed', value)}
+			/>
+			<PreviewSlider
+				title="Color Speed"
+				min={0}
+				max={5}
+				step={0.1}
+				value={settings.colorSpeed}
+				onChange={(value) => demo.updateProp('colorSpeed', value)}
+			/>
+			<PreviewSlider
+				title="Scale"
+				min={0.1}
+				max={3}
+				step={0.1}
+				value={settings.scale}
+				onChange={(value) => demo.updateProp('scale', value)}
+			/>
+			<PreviewSlider
+				title="Brightness"
+				min={0.1}
+				max={3}
+				step={0.05}
+				value={settings.brightness}
+				onChange={(value) => demo.updateProp('brightness', value)}
+			/>
+			<PreviewSlider
+				title="Noise Frequency"
+				min={0.5}
+				max={10}
+				step={0.5}
+				value={settings.noiseFrequency}
+				onChange={(value) => demo.updateProp('noiseFrequency', value)}
+			/>
+			<PreviewSlider
+				title="Noise Amplitude"
+				min={0}
+				max={5}
+				step={0.1}
+				value={settings.noiseAmplitude}
+				onChange={(value) => demo.updateProp('noiseAmplitude', value)}
+			/>
+			<PreviewSlider
+				title="Band Height"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.bandHeight}
+				onChange={(value) => demo.updateProp('bandHeight', value)}
+			/>
+			<PreviewSlider
+				title="Band Spread"
+				min={0.1}
+				max={3}
+				step={0.05}
+				value={settings.bandSpread}
+				onChange={(value) => demo.updateProp('bandSpread', value)}
+			/>
+			<PreviewSlider
+				title="Tilt"
+				min={-45}
+				max={45}
+				step={1}
+				value={settings.tilt}
+				onChange={(value) => demo.updateProp('tilt', value)}
+			/>
+			<PreviewSlider
+				title="Octave Decay"
+				min={0}
+				max={0.5}
+				step={0.01}
+				value={settings.octaveDecay}
+				onChange={(value) => demo.updateProp('octaveDecay', value)}
+			/>
+			<PreviewSlider
+				title="Layer Offset"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.layerOffset}
+				onChange={(value) => demo.updateProp('layerOffset', value)}
+			/>
+			<PreviewSlider
+				title="Mouse Influence"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.mouseInfluence}
+				onChange={(value) => demo.updateProp('mouseInfluence', value)}
+			/>
+			<PreviewSwitch
+				title="Mouse Interaction"
+				isChecked={settings.enableMouseInteraction}
+				onChange={(value) => demo.updateProp('enableMouseInteraction', value)}
+			/>
+			<PreviewSwitch
+				title="Click Pulse"
+				isChecked={settings.clickPulse}
+				onChange={(value) => demo.updateProp('clickPulse', value)}
+			/>
+			<PreviewSwitch
+				title="Intro"
+				isChecked={settings.intro}
+				onChange={(value) => {
+					demo.updateProp('intro', value);
+					key++;
+				}}
+			/>
+			<PreviewSwitch title="Light Mode" isChecked={settings.lightMode} onChange={(value) => demo.updateProp('lightMode', value)} />
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>

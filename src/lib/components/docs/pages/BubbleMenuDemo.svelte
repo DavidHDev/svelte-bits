@@ -3,7 +3,7 @@
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import BubbleMenu from '$lib/components/library/Components/BubbleMenu/BubbleMenu.svelte';
@@ -58,8 +58,6 @@
 	];
 </script>
 
-<svelte:head><title>Bubble Menu - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Bubble Menu</h1>
 
 <TabsLayout onreset={reset} {hasChanges} componentName="BubbleMenu" {usage} {source} {props}>
 	{#snippet preview()}
@@ -77,8 +75,8 @@
 				{ label: 'elastic.out(1,0.5)', value: 'elastic.out(1,0.5)' },
 				{ label: 'bounce.out', value: 'bounce.out' }
 			]} onChange={(v) => (animationEase = v)} />
-			<PreviewColorPicker title="Menu BG" value={menuBg} onChange={(v) => (menuBg = v)} />
-			<PreviewColorPicker title="Content Color" value={menuContentColor} onChange={(v) => (menuContentColor = v)} />
+			<PreviewColorPickerCustom title="Menu BG" color={menuBg} onChange={(v) => (menuBg = v)} />
+			<PreviewColorPickerCustom title="Content Color" color={menuContentColor} onChange={(v) => (menuContentColor = v)} />
 			<PreviewSlider title="Anim Duration" min={0.1} max={2} step={0.05} value={animationDuration} onChange={(v) => (animationDuration = v)} />
 			<PreviewSlider title="Stagger" min={0} max={0.5} step={0.01} value={staggerDelay} onChange={(v) => (staggerDelay = v)} />
 		</Customize>

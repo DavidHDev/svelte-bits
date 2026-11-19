@@ -2,143 +2,342 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
+	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import BackgroundContentToggle from '$lib/components/docs/preview/BackgroundContentToggle.svelte';
-	import Radar from '$lib/components/library/Backgrounds/Radar/Radar.svelte';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import BackgroundContent from '$lib/components/docs/preview/BackgroundContent.svelte';
+	import RefreshButton from '$lib/components/docs/preview/RefreshButton.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
+	import { theme } from '$lib/theme.svelte';
+	import Radar, { type RadarMode } from '$lib/components/library/Backgrounds/Radar/Radar.svelte';
 	import source from '$lib/components/library/Backgrounds/Radar/Radar.svelte?raw';
+	import { DEFAULT_PROPS, PRESET_OPTIONS, presetProps } from './presets/Radar';
 
-	const D = {
-		speed: 1,
-		scale: 0.5,
-		ringCount: 10,
-		spokeCount: 10,
-		ringThickness: 0.05,
-		spokeThickness: 0.01,
-		sweepSpeed: 1,
-		sweepWidth: 2,
-		sweepLobes: 1,
-		color: '#ff8a3d',
-		brightness: 1,
-		enableMouseInteraction: true
-	};
+	const MODE_OPTIONS = [
+		{ value: 'sweep', label: 'Sweep' },
+		{ value: 'pulse', label: 'Pulse' }
+	];
 
-	let speed = $state(D.speed);
-	let scale = $state(D.scale);
-	let ringCount = $state(D.ringCount);
-	let spokeCount = $state(D.spokeCount);
-	let ringThickness = $state(D.ringThickness);
-	let spokeThickness = $state(D.spokeThickness);
-	let sweepSpeed = $state(D.sweepSpeed);
-	let sweepWidth = $state(D.sweepWidth);
-	let sweepLobes = $state(D.sweepLobes);
-	let color = $state(D.color);
-	let brightness = $state(D.brightness);
-	let enableMouseInteraction = $state(D.enableMouseInteraction);
-	let showContent = $state(true);
+	const propData: PropRow[] = [
+		{ name: 'color', type: 'string', default: "'#3ef09a'", description: 'Color of the sweep and the contacts.' },
+		{
+			name: 'backgroundColor',
+			type: 'string',
+			default: "'transparent'",
+			description: 'Fills the canvas behind the radar. Leave it transparent to let the page show through.'
+		},
+		{
+			name: 'mode',
+			type: "'sweep' | 'pulse'",
+			default: "'sweep'",
+			description: 'A rotating beam, or sonar rings that expand from the center.'
+		},
+		{
+			name: 'speed',
+			type: 'number',
+			default: '1',
+			description: 'Speed of the sweep. Negative values sweep counterclockwise.'
+		},
+		{
+			name: 'trail',
+			type: 'number',
+			default: '0.35',
+			description: 'How long the afterglow lingers behind the sweep, from 0 to 1.'
+		},
+		{
+			name: 'scale',
+			type: 'number',
+			default: '0.9',
+			description: 'Size of the radar, relative to the shorter side of the view.'
+		},
+		{ name: 'ringCount', type: 'number', default: '6', description: 'Number of range rings.' },
+		{ name: 'spokeCount', type: 'number', default: '12', description: 'Number of faint bearing lines. 0 hides them.' },
+		{ name: 'ticks', type: 'boolean', default: 'true', description: 'Shows the bearing scale around the edge.' },
+		{
+			name: 'targets',
+			type: 'number',
+			default: '6',
+			description: 'Number of moving contacts the sweep picks up, up to 16.'
+		},
+		{
+			name: 'clutter',
+			type: 'number',
+			default: '0.35',
+			description: 'Amount of speckled returns the sweep lights up, from 0 to 1.'
+		},
+		{
+			name: 'glow',
+			type: 'number',
+			default: '1',
+			description: 'Strength of the soft light around the beam and contacts.'
+		},
+		{ name: 'brightness', type: 'number', default: '1', description: 'Overall brightness.' },
+		{
+			name: 'gridOpacity',
+			type: 'number',
+			default: '1',
+			description: 'Opacity of the rings, ticks and lines, from 0 to 2.'
+		},
+		{ name: 'lineWidth', type: 'number', default: '1', description: 'Width of the grid lines in px.' },
+		{
+			name: 'tilt',
+			type: 'number',
+			default: '0',
+			description: 'Tilts the radar back in perspective like a floor, in degrees.'
+		},
+		{
+			name: 'centerX',
+			type: 'number',
+			default: '0.5',
+			description: 'Horizontal position of the radar center, from 0 to 1.'
+		},
+		{
+			name: 'centerY',
+			type: 'number',
+			default: '0.5',
+			description: 'Vertical position of the radar center, from 0 at the top to 1 at the bottom.'
+		},
+		{
+			name: 'mouseInteraction',
+			type: 'boolean',
+			default: 'true',
+			description: 'Lights up the grid near the cursor, and the sweep picks the cursor up as a contact.'
+		},
+		{ name: 'intro', type: 'boolean', default: 'true', description: 'Draws the rings in and starts the sweep on mount.' },
+		{ name: 'grain', type: 'number', default: '0.03', description: 'Strength of the film grain.' },
+		{ name: 'fade', type: 'number', default: '0', description: 'Fades the edges into the page, from 0 to 1.' },
+		{ name: 'opacity', type: 'number', default: '1', description: 'Opacity of the whole effect.' },
+		{
+			name: 'lightMode',
+			type: 'boolean',
+			default: 'false',
+			description: 'Draws the radar as ink for light backgrounds.'
+		},
+		{ name: 'paused', type: 'boolean', default: 'false', description: 'Freezes the animation.' },
+		{ name: 'dpr', type: 'number', default: 'auto', description: 'Maximum device pixel ratio, capped at 2.' },
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the container.' }
+	];
 
-	const sO = '<' + 'script lang="ts">';
-	const sC = '</' + 'script>';
-
-	const hasChanges = $derived(
-		speed !== D.speed ||
-			scale !== D.scale ||
-			ringCount !== D.ringCount ||
-			spokeCount !== D.spokeCount ||
-			ringThickness !== D.ringThickness ||
-			spokeThickness !== D.spokeThickness ||
-			sweepSpeed !== D.sweepSpeed ||
-			sweepWidth !== D.sweepWidth ||
-			sweepLobes !== D.sweepLobes ||
-			color !== D.color ||
-			brightness !== D.brightness ||
-			enableMouseInteraction !== D.enableMouseInteraction
-	);
-
-	function reset() {
-		speed = D.speed;
-		scale = D.scale;
-		ringCount = D.ringCount;
-		spokeCount = D.spokeCount;
-		ringThickness = D.ringThickness;
-		spokeThickness = D.spokeThickness;
-		sweepSpeed = D.sweepSpeed;
-		sweepWidth = D.sweepWidth;
-		sweepLobes = D.sweepLobes;
-		color = D.color;
-		brightness = D.brightness;
-		enableMouseInteraction = D.enableMouseInteraction;
-	}
-
-	const usage = $derived(`${sO}
+	const usage = `<script lang="ts">
   import Radar from '$lib/components/Radar.svelte';
-${sC}
+</${'script'}>
 
 <div style="width: 100%; height: 600px; position: relative;">
-  <Radar color="${color}" speed={${speed}} />
-</div>`);
+  <Radar
+    color="#3ef09a"
+    mode="sweep"
+    speed={1}
+    trail={0.35}
+    scale={0.9}
+    ringCount={6}
+    spokeCount={12}
+    targets={6}
+    clutter={0.35}
+    mouseInteraction={true}
+  />
+</div>`;
 
-	const props: PropRow[] = [
-		{ name: 'speed', type: 'number', default: '1', description: 'Animation speed.' },
-		{ name: 'scale', type: 'number', default: '0.5', description: 'Pattern scale.' },
-		{ name: 'ringCount', type: 'number', default: '10', description: 'Number of rings.' },
-		{ name: 'spokeCount', type: 'number', default: '10', description: 'Number of spokes.' },
-		{ name: 'ringThickness', type: 'number', default: '0.05', description: 'Ring thickness.' },
-		{ name: 'spokeThickness', type: 'number', default: '0.01', description: 'Spoke thickness.' },
-		{ name: 'sweepSpeed', type: 'number', default: '1', description: 'Sweep speed.' },
-		{ name: 'sweepWidth', type: 'number', default: '2', description: 'Sweep width.' },
-		{ name: 'sweepLobes', type: 'number', default: '1', description: 'Sweep lobes.' },
-		{ name: 'color', type: 'string', default: '"#9f29ff"', description: 'Foreground color.' },
-		{ name: 'backgroundColor', type: 'string', default: '"#000000"', description: 'Background color.' },
-		{ name: 'falloff', type: 'number', default: '2', description: 'Edge falloff.' },
-		{ name: 'brightness', type: 'number', default: '1', description: 'Brightness.' },
-		{ name: 'enableMouseInteraction', type: 'boolean', default: 'true', description: 'Mouse interaction.' },
-		{ name: 'mouseInfluence', type: 'number', default: '0.1', description: 'Mouse influence.' }
-	];
+	const demo = createComponentProps(DEFAULT_PROPS);
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, ...rest } = settings;
+		return rest;
+	});
+	let key = $state(0);
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value, { light: theme.isLight, defaults: demo.defaultProps }), preset: value });
+	};
 </script>
 
-<svelte:head><title>Radar - svelte-bits</title></svelte:head>
-
-<h1 class="sub-category">Radar</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="Radar" {usage} {source} {props}>
-	{#snippet preview()}
-		<div class="relative h-[500px] w-full overflow-hidden rounded-[14px]">
-			<Radar
-				{speed}
-				{scale}
-				{ringCount}
-				{spokeCount}
-				{ringThickness}
-				{spokeThickness}
-				{sweepSpeed}
-				{sweepWidth}
-				{sweepLobes}
-				{color}
-				{brightness}
-				{enableMouseInteraction}
-			/>
-			<BackgroundContentToggle {showContent} onToggle={(v) => (showContent = v)} />
+<TabsLayout propsState={demo} componentName="Radar" {usage} {source} {propData} demoOnlyProps={['preset']}>
+	{#snippet previewTab()}
+		<div class="demo-container" style="position: relative; height: 500px; padding: 0; overflow: hidden;">
+			{#key key}
+				<Radar {...componentProps} />
+			{/key}
+			<BackgroundContent headline="Catch every signal on the first sweep." />
+			<RefreshButton onClick={() => key++} />
 		</div>
-	{/snippet}
-	{#snippet code()}<DemoCodeTab slug="radar" {usage} {source} />{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewColorPicker title="Color" value={color} onChange={(v) => (color = v)} />
-			<PreviewSlider title="Speed" min={0} max={5} step={0.05} value={speed} onChange={(v) => (speed = v)} />
-			<PreviewSlider title="Scale" min={0.1} max={2} step={0.05} value={scale} onChange={(v) => (scale = v)} />
-			<PreviewSlider title="Ring Count" min={1} max={30} step={1} value={ringCount} onChange={(v) => (ringCount = v)} />
-			<PreviewSlider title="Spoke Count" min={1} max={30} step={1} value={spokeCount} onChange={(v) => (spokeCount = v)} />
-			<PreviewSlider title="Ring Thickness" min={0.005} max={0.2} step={0.005} value={ringThickness} onChange={(v) => (ringThickness = v)} />
-			<PreviewSlider title="Spoke Thickness" min={0.001} max={0.05} step={0.001} value={spokeThickness} onChange={(v) => (spokeThickness = v)} />
-			<PreviewSlider title="Sweep Speed" min={0} max={5} step={0.05} value={sweepSpeed} onChange={(v) => (sweepSpeed = v)} />
-			<PreviewSlider title="Sweep Width" min={0.5} max={10} step={0.1} value={sweepWidth} onChange={(v) => (sweepWidth = v)} />
-			<PreviewSlider title="Sweep Lobes" min={1} max={6} step={1} value={sweepLobes} onChange={(v) => (sweepLobes = v)} />
-			<PreviewSlider title="Brightness" min={0} max={3} step={0.05} value={brightness} onChange={(v) => (brightness = v)} />
-			<PreviewSwitch title="Mouse Interaction" checked={enableMouseInteraction} onChange={(v) => (enableMouseInteraction = v)} />
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewColorPickerCustom
+				title="Color"
+				color={settings.color}
+				onChange={(value) => demo.updateProp('color', value)}
+			/>
+			<PreviewSelect
+				title="Mode"
+				options={MODE_OPTIONS}
+				value={settings.mode}
+				onChange={(value) => demo.updateProp('mode', value as RadarMode)}
+			/>
+			<PreviewSlider
+				title="Speed"
+				min={-2}
+				max={3}
+				step={0.05}
+				value={settings.speed}
+				onChange={(value) => demo.updateProp('speed', value)}
+			/>
+			<PreviewSlider
+				title="Trail"
+				min={0.05}
+				max={1}
+				step={0.01}
+				value={settings.trail}
+				onChange={(value) => demo.updateProp('trail', value)}
+			/>
+			<PreviewSlider
+				title="Scale"
+				min={0.3}
+				max={2.5}
+				step={0.05}
+				value={settings.scale}
+				onChange={(value) => demo.updateProp('scale', value)}
+			/>
+			<PreviewSlider
+				title="Ring Count"
+				min={1}
+				max={16}
+				step={1}
+				value={settings.ringCount}
+				onChange={(value) => demo.updateProp('ringCount', value)}
+			/>
+			<PreviewSlider
+				title="Spoke Count"
+				min={0}
+				max={36}
+				step={1}
+				value={settings.spokeCount}
+				onChange={(value) => demo.updateProp('spokeCount', value)}
+			/>
+			<PreviewSlider
+				title="Targets"
+				min={0}
+				max={16}
+				step={1}
+				value={settings.targets}
+				onChange={(value) => demo.updateProp('targets', value)}
+			/>
+			<PreviewSlider
+				title="Clutter"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.clutter}
+				onChange={(value) => demo.updateProp('clutter', value)}
+			/>
+			<PreviewSlider
+				title="Glow"
+				min={0}
+				max={2}
+				step={0.05}
+				value={settings.glow}
+				onChange={(value) => demo.updateProp('glow', value)}
+			/>
+			<PreviewSlider
+				title="Brightness"
+				min={0.2}
+				max={2}
+				step={0.05}
+				value={settings.brightness}
+				onChange={(value) => demo.updateProp('brightness', value)}
+			/>
+			<PreviewSlider
+				title="Grid Opacity"
+				min={0}
+				max={2}
+				step={0.05}
+				value={settings.gridOpacity}
+				onChange={(value) => demo.updateProp('gridOpacity', value)}
+			/>
+			<PreviewSlider
+				title="Line Width"
+				min={0.5}
+				max={3}
+				step={0.25}
+				valueUnit="px"
+				value={settings.lineWidth}
+				onChange={(value) => demo.updateProp('lineWidth', value)}
+			/>
+			<PreviewSlider
+				title="Tilt"
+				min={0}
+				max={75}
+				step={1}
+				valueUnit="°"
+				value={settings.tilt}
+				onChange={(value) => demo.updateProp('tilt', value)}
+			/>
+			<PreviewSlider
+				title="Center X"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.centerX}
+				onChange={(value) => demo.updateProp('centerX', value)}
+			/>
+			<PreviewSlider
+				title="Center Y"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.centerY}
+				onChange={(value) => demo.updateProp('centerY', value)}
+			/>
+			<PreviewSlider
+				title="Grain"
+				min={0}
+				max={0.15}
+				step={0.01}
+				value={settings.grain}
+				onChange={(value) => demo.updateProp('grain', value)}
+			/>
+			<PreviewSlider
+				title="Fade"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.fade}
+				onChange={(value) => demo.updateProp('fade', value)}
+			/>
+			<PreviewSlider
+				title="Opacity"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.opacity}
+				onChange={(value) => demo.updateProp('opacity', value)}
+			/>
+			<PreviewSwitch
+				title="Ticks"
+				isChecked={settings.ticks}
+				onChange={(value) => demo.updateProp('ticks', value)}
+			/>
+			<PreviewSwitch
+				title="Mouse Interaction"
+				isChecked={settings.mouseInteraction}
+				onChange={(value) => demo.updateProp('mouseInteraction', value)}
+			/>
+			<PreviewSwitch
+				title="Intro"
+				isChecked={settings.intro}
+				onChange={(value) => demo.updateProp('intro', value)}
+			/>
+			<PreviewSwitch
+				title="Light Mode"
+				isChecked={settings.lightMode}
+				onChange={(value) => demo.updateProp('lightMode', value)}
+			/>
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}<PropTable rows={props} />{/snippet}
+	{#snippet codeTab()}
+		<CodeExample />
+	{/snippet}
 </TabsLayout>

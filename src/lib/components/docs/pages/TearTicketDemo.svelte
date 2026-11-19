@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { theme } from '$lib/theme.svelte';
 	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import TearTicket, {
@@ -104,7 +104,6 @@
 		background,
 		color,
 		border,
-		borderColor,
 		borderWidth,
 		recenter,
 		disabled,
@@ -119,8 +118,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedBackground = $derived(background);
-	const renderedColor = $derived(color);
+	const renderedBackground = $derived(theme.isLight ? (background === DEFAULT_PROPS.background ? '#f6f6f6' : background) : background);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
 	const propData: PropRow[] = [
 		{
 			name: 'children',
@@ -482,8 +481,6 @@
 				No. 284619
 			</span>
 		</div>{/if}{/snippet}
-<svelte:head><title>Tear Ticket - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Tear Ticket</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -500,7 +497,7 @@
 						class="flex w-full justify-center px-8"
 					>
 						<TearTicket
-							{...props}
+							{...props} background={renderedBackground} color={renderedColor}
 							image={IMAGE}
 							imageAlt="Abstract artwork"
 							imageRadius={innerRadius}
@@ -673,16 +670,16 @@
 				valueUnit="px"
 				onChange={(val) => updateProp('perspective', val)}
 			></PreviewSlider>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Background"
-				value={renderedBackground}
+				color={renderedBackground}
 				onChange={(val) => updateProp('background', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Color"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSwitch title="Border" checked={border} onChange={(val) => updateProp('border', val)}
 			></PreviewSwitch>
 			<PreviewSlider

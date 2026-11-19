@@ -1,1106 +1,1153 @@
 <!-- @svelte-bits
 {
   "title": "Hyperspeed",
-  "description": "Three.js hyperspeed road background with bloom, SMAA, distortion presets, animated light trails, and hold-to-accelerate interaction.",
-  "dependencies": ["three", "postprocessing"]
+  "description": "Night highway of glowing light trails on a winding road that warps into hyperspace while you hold.",
+  "dependencies": ["three"]
 }
 -->
 <script module lang="ts">
-	import {
-		BloomEffect,
-		EffectComposer,
-		EffectPass,
-		RenderPass,
-		SMAAEffect,
-		SMAAPreset
-	} from 'postprocessing';
 	import * as THREE from 'three';
 
-	type Distortion = {
-		uniforms: Record<string, { value: unknown }>;
-		getDistortion: string;
-		getJS?: (progress: number, time: number) => THREE.Vector3;
+	export type HyperspeedCurve = 'straight' | 'gentle' | 'winding' | 'hills' | 'racing' | 'deep';
+
+	export type HyperspeedProps = {
+		curve?: HyperspeedCurve;
+		curvature?: number;
+		speed?: number;
+		boost?: number;
+		fov?: number;
+		boostFov?: number;
+		lanes?: number;
+		roadWidth?: number;
+		medianWidth?: number;
+		density?: number;
+		trailLength?: number;
+		lightSize?: number;
+		poles?: number;
+		poleHeight?: number;
+		dust?: number;
+		glow?: number;
+		reflections?: number;
+		steer?: number;
+		tailColors?: string[];
+		headColors?: string[];
+		poleColors?: string[];
+		roadColor?: string;
+		roadOpacity?: number;
+		lineColor?: string;
+		background?: string;
+		theme?: 'dark' | 'light';
+		interactive?: boolean;
+		boosting?: boolean;
+		onBoostStart?: () => void;
+		onBoostEnd?: () => void;
+		class?: string;
+		style?: string;
 	};
 
-	type Colors = {
-		roadColor: number;
-		islandColor: number;
-		background: number;
-		shoulderLines: number;
-		brokenLines: number;
-		leftCars: number[];
-		rightCars: number[];
-		sticks: number;
+	type Vec3 = [number, number, number];
+
+	type Swatches = { value: THREE.Vector3[] };
+
+	type Palette = {
+		background: string;
+		road: string;
+		lines: string;
+		tail: string[];
+		head: string[];
+		poles: string[];
+		dust: string;
 	};
 
-	export type HyperspeedOptions = {
-		onSpeedUp?: (ev: MouseEvent | TouchEvent) => void;
-		onSlowDown?: (ev: MouseEvent | TouchEvent) => void;
-		distortion?: string | Distortion;
-		length: number;
-		roadWidth: number;
-		islandWidth: number;
-		lanesPerRoad: number;
+	type Settings = {
+		light: boolean;
+		curve: HyperspeedCurve;
+		curvature: number;
+		speed: number;
+		boost: number;
 		fov: number;
-		fovSpeedUp: number;
-		speedUp: number;
-		carLightsFade: number;
-		totalSideLightSticks: number;
-		lightPairsPerRoadWay: number;
-		shoulderLinesWidthPercentage: number;
-		brokenLinesWidthPercentage: number;
-		brokenLinesLengthPercentage: number;
-		lightStickWidth: [number, number];
-		lightStickHeight: [number, number];
-		movingAwaySpeed: [number, number];
-		movingCloserSpeed: [number, number];
-		carLightsLength: [number, number];
-		carLightsRadius: [number, number];
-		carWidthPercentage: [number, number];
-		carShiftX: [number, number];
-		carFloorSeparation: [number, number];
-		colors: Colors;
-		isHyper?: boolean;
+		boostFov: number;
+		lanes: number;
+		roadWidth: number;
+		medianWidth: number;
+		density: number;
+		trailLength: number;
+		lightSize: number;
+		poles: number;
+		poleHeight: number;
+		dust: number;
+		glow: number;
+		reflections: number;
+		steer: number;
+		tailColors: string[];
+		headColors: string[];
+		poleColors: string[];
+		roadColor: string;
+		roadOpacity: number;
+		lineColor: string;
+		background: string;
+		dustColor: string;
+		interactive: boolean;
+		boosting: boolean;
 	};
 
-	export const hyperspeedPresets: Record<string, HyperspeedOptions> = {
-		one: {
-			onSpeedUp: () => {},
-			onSlowDown: () => {},
-			distortion: 'turbulentDistortion',
-			length: 400,
-			roadWidth: 10,
-			islandWidth: 2,
-			lanesPerRoad: 3,
-			fov: 90,
-			fovSpeedUp: 150,
-			speedUp: 2,
-			carLightsFade: 0.4,
-			totalSideLightSticks: 20,
-			lightPairsPerRoadWay: 40,
-			shoulderLinesWidthPercentage: 0.05,
-			brokenLinesWidthPercentage: 0.1,
-			brokenLinesLengthPercentage: 0.5,
-			lightStickWidth: [0.12, 0.5],
-			lightStickHeight: [1.3, 1.7],
-			movingAwaySpeed: [60, 80],
-			movingCloserSpeed: [-120, -160],
-			carLightsLength: [400 * 0.03, 400 * 0.2],
-			carLightsRadius: [0.05, 0.14],
-			carWidthPercentage: [0.3, 0.5],
-			carShiftX: [-0.8, 0.8],
-			carFloorSeparation: [0, 5],
-			colors: {
-				roadColor: 0x080808,
-				islandColor: 0x0a0a0a,
-				background: 0x000000,
-				shoulderLines: 0x131318,
-				brokenLines: 0x131318,
-				leftCars: [0xd856bf, 0x6750a2, 0xc247ac],
-				rightCars: [0x03b3c3, 0x0e5ea5, 0x324555],
-				sticks: 0x03b3c3
-			}
+	const TRAVEL = 400;
+	const MAX_CARS = 160;
+	const MAX_POLES = 80;
+	const MAX_DUST = 1500;
+	const MAX_COLORS = 8;
+	const CURVES: HyperspeedCurve[] = ['straight', 'gentle', 'winding', 'hills', 'racing', 'deep'];
+
+	const THEMES: Record<'dark' | 'light', Palette> = {
+		dark: {
+			background: 'transparent',
+			road: '#0a0908',
+			lines: '#2b2724',
+			tail: ['#ff8a4c', '#b8441a', '#ff3e00'],
+			head: ['#03b3c3', '#0e5ea5', '#324555'],
+			poles: ['#03b3c3'],
+			dust: '#ffffff'
 		},
-		two: {
-			onSpeedUp: () => {},
-			onSlowDown: () => {},
-			distortion: 'mountainDistortion',
-			length: 400,
-			roadWidth: 9,
-			islandWidth: 2,
-			lanesPerRoad: 3,
-			fov: 90,
-			fovSpeedUp: 150,
-			speedUp: 2,
-			carLightsFade: 0.4,
-			totalSideLightSticks: 50,
-			lightPairsPerRoadWay: 50,
-			shoulderLinesWidthPercentage: 0.05,
-			brokenLinesWidthPercentage: 0.1,
-			brokenLinesLengthPercentage: 0.5,
-			lightStickWidth: [0.12, 0.5],
-			lightStickHeight: [1.3, 1.7],
-			movingAwaySpeed: [60, 80],
-			movingCloserSpeed: [-120, -160],
-			carLightsLength: [400 * 0.05, 400 * 0.15],
-			carLightsRadius: [0.05, 0.14],
-			carWidthPercentage: [0.3, 0.5],
-			carShiftX: [-0.2, 0.2],
-			carFloorSeparation: [0.05, 1],
-			colors: {
-				roadColor: 0x080808,
-				islandColor: 0x0a0a0a,
-				background: 0x000000,
-				shoulderLines: 0x131318,
-				brokenLines: 0x131318,
-				leftCars: [0xff102a, 0xeb383e, 0xff102a],
-				rightCars: [0xdadafa, 0xbebae3, 0x8f97e4],
-				sticks: 0xdadafa
-			}
-		},
-		three: {
-			onSpeedUp: () => {},
-			onSlowDown: () => {},
-			distortion: 'xyDistortion',
-			length: 400,
-			roadWidth: 9,
-			islandWidth: 2,
-			lanesPerRoad: 3,
-			fov: 90,
-			fovSpeedUp: 150,
-			speedUp: 3,
-			carLightsFade: 0.4,
-			totalSideLightSticks: 50,
-			lightPairsPerRoadWay: 30,
-			shoulderLinesWidthPercentage: 0.05,
-			brokenLinesWidthPercentage: 0.1,
-			brokenLinesLengthPercentage: 0.5,
-			lightStickWidth: [0.02, 0.05],
-			lightStickHeight: [0.3, 0.7],
-			movingAwaySpeed: [20, 50],
-			movingCloserSpeed: [-150, -230],
-			carLightsLength: [400 * 0.05, 400 * 0.2],
-			carLightsRadius: [0.03, 0.08],
-			carWidthPercentage: [0.1, 0.5],
-			carShiftX: [-0.5, 0.5],
-			carFloorSeparation: [0, 0.1],
-			colors: {
-				roadColor: 0x080808,
-				islandColor: 0x0a0a0a,
-				background: 0x000000,
-				shoulderLines: 0x131318,
-				brokenLines: 0x131318,
-				leftCars: [0x7d0d1b, 0xa90519, 0xff102a],
-				rightCars: [0xf1eece, 0xe6e2b1, 0xdfd98a],
-				sticks: 0xf1eece
-			}
-		},
-		four: {
-			onSpeedUp: () => {},
-			onSlowDown: () => {},
-			distortion: 'LongRaceDistortion',
-			length: 400,
-			roadWidth: 10,
-			islandWidth: 5,
-			lanesPerRoad: 2,
-			fov: 90,
-			fovSpeedUp: 150,
-			speedUp: 2,
-			carLightsFade: 0.4,
-			totalSideLightSticks: 50,
-			lightPairsPerRoadWay: 70,
-			shoulderLinesWidthPercentage: 0.05,
-			brokenLinesWidthPercentage: 0.1,
-			brokenLinesLengthPercentage: 0.5,
-			lightStickWidth: [0.12, 0.5],
-			lightStickHeight: [1.3, 1.7],
-			movingAwaySpeed: [60, 80],
-			movingCloserSpeed: [-120, -160],
-			carLightsLength: [400 * 0.05, 400 * 0.15],
-			carLightsRadius: [0.05, 0.14],
-			carWidthPercentage: [0.3, 0.5],
-			carShiftX: [-0.2, 0.2],
-			carFloorSeparation: [0.05, 1],
-			colors: {
-				roadColor: 0x080808,
-				islandColor: 0x0a0a0a,
-				background: 0x000000,
-				shoulderLines: 0x131318,
-				brokenLines: 0x131318,
-				leftCars: [0xff5f73, 0xe74d60, 0xff102a],
-				rightCars: [0xa4e3e6, 0x80d1d4, 0x53c2c6],
-				sticks: 0xa4e3e6
-			}
-		},
-		five: {
-			onSpeedUp: () => {},
-			onSlowDown: () => {},
-			distortion: 'turbulentDistortion',
-			length: 400,
-			roadWidth: 9,
-			islandWidth: 2,
-			lanesPerRoad: 3,
-			fov: 90,
-			fovSpeedUp: 150,
-			speedUp: 2,
-			carLightsFade: 0.4,
-			totalSideLightSticks: 50,
-			lightPairsPerRoadWay: 50,
-			shoulderLinesWidthPercentage: 0.05,
-			brokenLinesWidthPercentage: 0.1,
-			brokenLinesLengthPercentage: 0.5,
-			lightStickWidth: [0.12, 0.5],
-			lightStickHeight: [1.3, 1.7],
-			movingAwaySpeed: [60, 80],
-			movingCloserSpeed: [-120, -160],
-			carLightsLength: [400 * 0.05, 400 * 0.15],
-			carLightsRadius: [0.05, 0.14],
-			carWidthPercentage: [0.3, 0.5],
-			carShiftX: [-0.2, 0.2],
-			carFloorSeparation: [0.05, 1],
-			colors: {
-				roadColor: 0x080808,
-				islandColor: 0x0a0a0a,
-				background: 0x000000,
-				shoulderLines: 0x131318,
-				brokenLines: 0x131318,
-				leftCars: [0xdc5b20, 0xdca320, 0xdc2020],
-				rightCars: [0x334bf7, 0xe5e6ed, 0xbfc6f3],
-				sticks: 0xc5e8eb
-			}
-		},
-		six: {
-			onSpeedUp: () => {},
-			onSlowDown: () => {},
-			distortion: 'deepDistortion',
-			length: 400,
-			roadWidth: 18,
-			islandWidth: 2,
-			lanesPerRoad: 3,
-			fov: 90,
-			fovSpeedUp: 150,
-			speedUp: 2,
-			carLightsFade: 0.4,
-			totalSideLightSticks: 50,
-			lightPairsPerRoadWay: 50,
-			shoulderLinesWidthPercentage: 0.05,
-			brokenLinesWidthPercentage: 0.1,
-			brokenLinesLengthPercentage: 0.5,
-			lightStickWidth: [0.12, 0.5],
-			lightStickHeight: [1.3, 1.7],
-			movingAwaySpeed: [60, 80],
-			movingCloserSpeed: [-120, -160],
-			carLightsLength: [400 * 0.05, 400 * 0.15],
-			carLightsRadius: [0.05, 0.14],
-			carWidthPercentage: [0.3, 0.5],
-			carShiftX: [-0.2, 0.2],
-			carFloorSeparation: [0.05, 1],
-			colors: {
-				roadColor: 0x080808,
-				islandColor: 0x0a0a0a,
-				background: 0x000000,
-				shoulderLines: 0x131318,
-				brokenLines: 0x131318,
-				leftCars: [0xff322f, 0xa33010, 0xa81508],
-				rightCars: [0xfdfdf0, 0xf3dea0, 0xe2bb88],
-				sticks: 0xfdfdf0
-			}
+		light: {
+			background: 'transparent',
+			road: '#f0eeec',
+			lines: '#d3cfcb',
+			tail: ['#ff8a4c', '#b8441a', '#ff3e00'],
+			head: ['#03b3c3', '#0e5ea5', '#324555'],
+			poles: ['#03b3c3'],
+			dust: '#18181b'
 		}
 	};
 
-	const defaultOptions: HyperspeedOptions = {
-		onSpeedUp: () => {},
-		onSlowDown: () => {},
-		distortion: 'turbulentDistortion',
-		length: 400,
-		roadWidth: 10,
-		islandWidth: 2,
-		lanesPerRoad: 4,
-		fov: 90,
-		fovSpeedUp: 150,
-		speedUp: 2,
-		carLightsFade: 0.4,
-		totalSideLightSticks: 20,
-		lightPairsPerRoadWay: 40,
-		shoulderLinesWidthPercentage: 0.05,
-		brokenLinesWidthPercentage: 0.1,
-		brokenLinesLengthPercentage: 0.5,
-		lightStickWidth: [0.12, 0.5],
-		lightStickHeight: [1.3, 1.7],
-		movingAwaySpeed: [60, 80],
-		movingCloserSpeed: [-120, -160],
-		carLightsLength: [400 * 0.03, 400 * 0.2],
-		carLightsRadius: [0.05, 0.14],
-		carWidthPercentage: [0.3, 0.5],
-		carShiftX: [-0.8, 0.8],
-		carFloorSeparation: [0, 5],
-		colors: {
-			roadColor: 0x080808,
-			islandColor: 0x0a0a0a,
-			background: 0x000000,
-			shoulderLines: 0xffffff,
-			brokenLines: 0xffffff,
-			leftCars: [0xd856bf, 0x6750a2, 0xc247ac],
-			rightCars: [0x03b3c3, 0x0e5ea5, 0x324555],
-			sticks: 0x03b3c3
+	const BEND = `
+		uniform float uTime;
+		uniform float uCurvature;
+		uniform vec4 uCurveA;
+		uniform float uCurveB;
+		uniform float uFogNear;
+		uniform float uFogFar;
+		uniform float uPixel;
+		#define PI 3.14159265358979
+		float nsin(float v) { return sin(v) * 0.5 + 0.5; }
+		vec3 gentle(float p) {
+			return vec3(
+				cos(p * PI * 5.0 + uTime) * 25.0 - cos(0.02 * PI * 5.0 + uTime) * 25.0,
+				sin(p * PI * 2.0 + PI * 0.5 + uTime) * 15.0 - sin(0.02 * PI * 2.0 + PI * 0.5 + uTime) * 15.0,
+				0.0
+			);
 		}
+		float windX(float p) { return cos(PI * p * 4.0 + uTime) * 25.0 + pow(cos(PI * p * 8.0 + uTime * 2.0), 2.0) * 5.0; }
+		float windY(float p) { return -nsin(PI * p * 8.0 + uTime) * 10.0 - pow(nsin(PI * p + uTime / 8.0), 5.0) * 10.0; }
+		vec3 winding(float p) { return vec3(windX(p) - windX(0.0125), windY(p) - windY(0.0125), 0.0); }
+		vec3 hills(float p) {
+			return vec3(
+				cos(p * PI * 3.0 + uTime) * 30.0 - cos(0.02 * PI * 3.0 + uTime) * 30.0,
+				nsin(p * PI * 6.0 + uTime) * 30.0 - nsin(0.02 * PI * 6.0 + uTime) * 30.0,
+				nsin(p * PI * 10.0 + uTime) * 20.0 - nsin(0.02 * PI * 10.0 + uTime) * 20.0
+			);
+		}
+		vec3 racing(float p) {
+			return vec3(
+				sin(p * PI * 2.0 + uTime) * 35.0 - sin(0.0125 * PI * 2.0 + uTime) * 35.0,
+				sin(p * PI * 3.0 + uTime) * 10.0 - sin(0.0125 * PI * 3.0 + uTime) * 10.0,
+				0.0
+			);
+		}
+		float deepX(float p) { return sin(p * PI * 4.0 + uTime) * 10.0; }
+		float deepY(float p) { return pow(abs(p * 10.0), 2.0) + sin(p * PI * 8.0 + uTime) * 20.0; }
+		vec3 deep(float p) { return vec3(deepX(p) - deepX(0.02), deepY(p) - deepY(0.02), 0.0); }
+		vec3 bend(float p) {
+			vec3 d = gentle(p) * uCurveA.x + winding(p) * uCurveA.y + hills(p) * uCurveA.z + racing(p) * uCurveA.w + deep(p) * uCurveB;
+			return d * uCurvature;
+		}
+	`;
+
+	const STREAK_VERTEX = `
+		${BEND}
+		attribute vec4 aSeedA;
+		attribute vec4 aSeedB;
+		attribute float aPair;
+		attribute float aTone;
+		uniform float uTravel;
+		uniform float uRoadX;
+		uniform float uRoadWidth;
+		uniform float uLanes;
+		uniform float uDirection;
+		uniform vec2 uSpeedRange;
+		uniform float uTrail;
+		uniform float uStretch;
+		uniform float uSize;
+		uniform float uRadiusScale;
+		uniform float uMirror;
+		uniform vec3 uColors[${MAX_COLORS}];
+		uniform float uColorCount;
+		varying vec2 vUv;
+		varying vec3 vNormal;
+		varying vec3 vView;
+		varying vec3 vColor;
+		varying float vFog;
+		varying float vAbove;
+		varying float vThin;
+		void main() {
+			float laneWidth = uRoadWidth / uLanes;
+			float lane = min(floor(aSeedA.x * uLanes), uLanes - 1.0);
+			float laneX = (lane + 0.5) * laneWidth - uRoadWidth * 0.5 + (aSeedA.y - 0.5) * 0.5 * laneWidth;
+			float carWidth = mix(0.3, 0.5, aSeedA.z) * laneWidth;
+			float radius = mix(0.05, 0.14, aSeedA.w) * uSize;
+			float len = mix(0.03, 0.2, aSeedB.x) * uTravel * uTrail * (1.0 + uStretch);
+			float speed = mix(uSpeedRange.x, uSpeedRange.y, aSeedB.y) * uDirection;
+			vec3 center = vec3(
+				uRoadX + laneX + aPair * carWidth,
+				aSeedB.w * 0.8 + radius * 1.3,
+				position.z * len + len - mod(uTime * speed + aSeedB.z * uTravel, uTravel)
+			);
+			vAbove = center.y;
+			center.y = mix(center.y, -center.y * 1.8, uMirror);
+			center += bend(abs(center.z / uTravel));
+			float depth = max(0.1, -(modelViewMatrix * vec4(center, 1.0)).z);
+			float wanted = radius * uRadiusScale;
+			float shown = max(wanted, depth * uPixel * 0.75);
+			vThin = wanted / shown;
+			vec3 p = center + vec3(position.x * shown, position.y * shown * mix(1.0, 2.2, uMirror), 0.0);
+			vec4 mv = modelViewMatrix * vec4(p, 1.0);
+			gl_Position = projectionMatrix * mv;
+			vec3 n = normal;
+			n.y *= 1.0 - 2.0 * uMirror;
+			vNormal = normalize(normalMatrix * n);
+			vView = -mv.xyz;
+			vUv = uv;
+			vColor = uColors[int(min(floor(aTone * uColorCount), uColorCount - 1.0))];
+			vFog = smoothstep(uFogNear, uFogFar, -mv.z);
+		}
+	`;
+
+	const STREAK_FRAGMENT = `
+		uniform vec2 uFade;
+		uniform float uIntensity;
+		uniform float uSharp;
+		uniform float uCore;
+		uniform float uMirror;
+		varying vec2 vUv;
+		varying vec3 vNormal;
+		varying vec3 vView;
+		varying vec3 vColor;
+		varying float vFog;
+		varying float vAbove;
+		varying float vThin;
+		void main() {
+			float facing = abs(dot(normalize(vNormal), normalize(vView)));
+			float alpha = pow(facing, uSharp) * smoothstep(uFade.x, uFade.y, vUv.x) * uIntensity * vThin * (1.0 - vFog);
+			alpha *= mix(1.0, exp(-vAbove * 0.9), uMirror);
+			if (alpha < 0.003) discard;
+			gl_FragColor = vec4(mix(vColor, vec3(1.0), pow(facing, 12.0) * uCore), min(alpha, 1.0));
+		}
+	`;
+
+	const POLE_VERTEX = `
+		${BEND}
+		attribute vec4 aSeed;
+		attribute float aIndex;
+		attribute float aSide;
+		uniform float uTravel;
+		uniform float uCount;
+		uniform float uEdge;
+		uniform float uHeight;
+		uniform float uRadiusScale;
+		uniform float uMirror;
+		uniform vec3 uColors[${MAX_COLORS}];
+		uniform float uColorCount;
+		varying vec3 vNormal;
+		varying vec3 vView;
+		varying vec3 vColor;
+		varying float vFog;
+		varying float vAbove;
+		varying float vHeight;
+		varying float vThin;
+		void main() {
+			vHeight = position.y + 0.5;
+			float width = mix(0.08, 0.22, aSeed.y);
+			float height = mix(1.3, 1.9, aSeed.z) * uHeight;
+			float spacing = uTravel / max(uCount, 1.0);
+			vec3 center = vec3(
+				aSide * uEdge,
+				vHeight * height,
+				-uTravel + mod(uTime * 120.0 + (aIndex + aSeed.x * 0.6) * spacing, uTravel)
+			);
+			vAbove = center.y;
+			center.y = mix(center.y, -center.y * 1.6, uMirror);
+			center += bend(abs(center.z / uTravel));
+			float depth = max(0.1, -(modelViewMatrix * vec4(center, 1.0)).z);
+			float wanted = width * uRadiusScale;
+			float shown = max(wanted, depth * uPixel * 0.75);
+			vThin = wanted / shown;
+			vec3 p = center + vec3(position.x * shown, 0.0, position.z * shown);
+			vec4 mv = modelViewMatrix * vec4(p, 1.0);
+			gl_Position = projectionMatrix * mv;
+			vNormal = normalize(normalMatrix * normal);
+			vView = -mv.xyz;
+			vColor = uColors[int(min(floor(aSeed.w * uColorCount), uColorCount - 1.0))];
+			vFog = smoothstep(uFogNear, uFogFar, -mv.z);
+		}
+	`;
+
+	const POLE_FRAGMENT = `
+		uniform float uIntensity;
+		uniform float uSharp;
+		uniform float uCore;
+		uniform float uMirror;
+		varying vec3 vNormal;
+		varying vec3 vView;
+		varying vec3 vColor;
+		varying float vFog;
+		varying float vAbove;
+		varying float vHeight;
+		varying float vThin;
+		void main() {
+			float facing = abs(dot(normalize(vNormal), normalize(vView)));
+			float ends = smoothstep(0.0, 0.08, vHeight) * smoothstep(1.0, 0.9, vHeight);
+			float alpha = pow(facing, uSharp) * ends * uIntensity * vThin * (1.0 - vFog);
+			alpha *= mix(1.0, exp(-vAbove * 0.6), uMirror);
+			if (alpha < 0.003) discard;
+			gl_FragColor = vec4(mix(vColor, vec3(1.0), pow(facing, 12.0) * uCore), min(alpha, 1.0));
+		}
+	`;
+
+	const DUST_VERTEX = `
+		${BEND}
+		attribute vec4 aSeed;
+		attribute float aEnd;
+		uniform float uTravel;
+		uniform float uStretch;
+		uniform float uSpread;
+		varying float vAlpha;
+		void main() {
+			float x = (aSeed.x - 0.5) * uSpread;
+			float y = mix(1.0, 42.0, aSeed.y * aSeed.y);
+			float speed = mix(140.0, 260.0, aSeed.w);
+			float z = -uTravel + mod(uTime * speed + aSeed.z * uTravel, uTravel);
+			float len = (0.6 + uStretch * 7.0) * mix(0.6, 1.4, aSeed.w);
+			vec3 p = vec3(x, y, z + aEnd * len);
+			p += bend(abs(p.z / uTravel));
+			vec4 mv = modelViewMatrix * vec4(p, 1.0);
+			gl_Position = projectionMatrix * mv;
+			vAlpha = aEnd * (1.0 - smoothstep(uFogNear, uFogFar, -mv.z));
+		}
+	`;
+
+	const DUST_FRAGMENT = `
+		uniform vec3 uColor;
+		uniform float uIntensity;
+		varying float vAlpha;
+		void main() {
+			gl_FragColor = vec4(uColor, vAlpha * uIntensity);
+		}
+	`;
+
+	const ROAD_VERTEX = `
+		${BEND}
+		uniform float uTravel;
+		uniform float uWidth;
+		varying vec2 vRoad;
+		varying float vFog;
+		void main() {
+			vec3 p = position;
+			p.x *= uWidth;
+			vRoad = vec2(p.x, p.z);
+			p += bend(abs(p.z / uTravel));
+			vec4 mv = modelViewMatrix * vec4(p, 1.0);
+			gl_Position = projectionMatrix * mv;
+			vFog = smoothstep(uFogNear, uFogFar, -mv.z);
+		}
+	`;
+
+	const ROAD_FRAGMENT = `
+		uniform float uTime;
+		uniform vec3 uRoadColor;
+		uniform vec3 uLineColor;
+		uniform vec3 uBackground;
+		uniform float uRoadWidth;
+		uniform float uMedian;
+		uniform float uLanes;
+		uniform float uTransparent;
+		uniform float uOpacity;
+		varying vec2 vRoad;
+		varying float vFog;
+		float stripe(float d, float w) {
+			float aa = fwidth(d) * 1.2;
+			return 1.0 - smoothstep(w - aa, w + aa, d);
+		}
+		void main() {
+			float rx = abs(vRoad.x) - uMedian * 0.5;
+			vec3 color = rx < 0.0 ? mix(uRoadColor, uLineColor, 0.12) : uRoadColor;
+			if (rx >= 0.0) {
+				float laneWidth = uRoadWidth / uLanes;
+				float shoulder = max(stripe(abs(rx - 0.3), 0.07), stripe(abs(rx - (uRoadWidth - 0.3)), 0.07));
+				float nearest = floor(rx / laneWidth + 0.5);
+				float inner = step(0.5, nearest) * step(nearest, uLanes - 0.5);
+				float dash = step(0.5, fract((vRoad.y - uTime * 120.0) / 14.0));
+				float marks = max(shoulder, stripe(abs(rx - nearest * laneWidth), 0.06) * inner * dash);
+				color = mix(color, uLineColor, marks);
+			}
+			float alpha = mix(1.0, 1.0 - vFog, uTransparent) * uOpacity;
+			gl_FragColor = vec4(mix(color, uBackground, vFog * (1.0 - uTransparent)), alpha);
+		}
+	`;
+
+	const QUAD_VERTEX = `
+		varying vec2 vUv;
+		void main() {
+			vUv = uv;
+			gl_Position = vec4(position.xy, 0.0, 1.0);
+		}
+	`;
+
+	const DOWN_FRAGMENT = `
+		uniform sampler2D uTexture;
+		uniform vec2 uTexel;
+		varying vec2 vUv;
+		vec4 tap(vec2 offset) {
+			return min(texture2D(uTexture, vUv + uTexel * offset), vec4(1.0));
+		}
+		void main() {
+			vec4 sum = tap(vec2(0.0)) * 4.0 + tap(vec2(-1.0, -1.0)) + tap(vec2(1.0, -1.0)) + tap(vec2(-1.0, 1.0)) + tap(vec2(1.0, 1.0));
+			gl_FragColor = sum * 0.125;
+		}
+	`;
+
+	const TENT = `
+		uniform sampler2D uTexture;
+		uniform vec2 uTexel;
+		varying vec2 vUv;
+		vec4 tent() {
+			vec4 sum = texture2D(uTexture, vUv + uTexel * vec2(-1.0, 0.0));
+			sum += texture2D(uTexture, vUv + uTexel * vec2(1.0, 0.0));
+			sum += texture2D(uTexture, vUv + uTexel * vec2(0.0, -1.0));
+			sum += texture2D(uTexture, vUv + uTexel * vec2(0.0, 1.0));
+			sum += texture2D(uTexture, vUv + uTexel * vec2(-0.5, -0.5)) * 2.0;
+			sum += texture2D(uTexture, vUv + uTexel * vec2(0.5, -0.5)) * 2.0;
+			sum += texture2D(uTexture, vUv + uTexel * vec2(-0.5, 0.5)) * 2.0;
+			sum += texture2D(uTexture, vUv + uTexel * vec2(0.5, 0.5)) * 2.0;
+			return sum / 12.0;
+		}
+	`;
+
+	const UP_FRAGMENT = `
+		${TENT}
+		void main() {
+			gl_FragColor = tent();
+		}
+	`;
+
+	const BLOOM_FRAGMENT = `
+		${TENT}
+		uniform float uStrength;
+		uniform float uCeiling;
+		uniform float uLight;
+		void main() {
+			vec4 color = tent() * uStrength;
+			float peak = max(uLight > 0.5 ? color.a : max(color.r, max(color.g, color.b)), 0.0001);
+			color *= uCeiling * (1.0 - exp(-peak / uCeiling)) / peak;
+			gl_FragColor = uLight > 0.5 ? color : vec4(color.rgb, 0.0);
+		}
+	`;
+
+	let colorContext: CanvasRenderingContext2D | null = null;
+
+	const toRgb = (color: string): Vec3 => {
+		colorContext = colorContext ?? document.createElement('canvas').getContext('2d');
+		if (!colorContext) return [1, 1, 1];
+		colorContext.fillStyle = '#000000';
+		colorContext.fillStyle = color;
+		const value = String(colorContext.fillStyle);
+		if (value.startsWith('#')) {
+			const hex = parseInt(value.slice(1, 7), 16);
+			return [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
+		}
+		const parts = value.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0];
+		return [parts[0] / 255, parts[1] / 255, parts[2] / 255];
 	};
 
-	function nsin(val: number) {
-		return Math.sin(val) * 0.5 + 0.5;
-	}
-
-	const mountainUniforms = { uFreq: { value: new THREE.Vector3(3, 6, 10) }, uAmp: { value: new THREE.Vector3(30, 30, 20) } };
-	const xyUniforms = { uFreq: { value: new THREE.Vector2(5, 2) }, uAmp: { value: new THREE.Vector2(25, 15) } };
-	const LongRaceUniforms = { uFreq: { value: new THREE.Vector2(2, 3) }, uAmp: { value: new THREE.Vector2(35, 10) } };
-	const turbulentUniforms = { uFreq: { value: new THREE.Vector4(4, 8, 8, 1) }, uAmp: { value: new THREE.Vector4(25, 5, 10, 10) } };
-	const deepUniforms = { uFreq: { value: new THREE.Vector2(4, 8) }, uAmp: { value: new THREE.Vector2(10, 20) }, uPowY: { value: new THREE.Vector2(20, 2) } };
-
-	const distortions: Record<string, Distortion> = {
-		mountainDistortion: {
-			uniforms: mountainUniforms,
-			getDistortion: `
-uniform vec3 uAmp;
-uniform vec3 uFreq;
-#define PI 3.14159265358979
-float nsin(float val){
-  return sin(val) * 0.5 + 0.5;
-}
-vec3 getDistortion(float progress){
-  float movementProgressFix = 0.02;
-  return vec3(
-    cos(progress * PI * uFreq.x + uTime) * uAmp.x - cos(movementProgressFix * PI * uFreq.x + uTime) * uAmp.x,
-    nsin(progress * PI * uFreq.y + uTime) * uAmp.y - nsin(movementProgressFix * PI * uFreq.y + uTime) * uAmp.y,
-    nsin(progress * PI * uFreq.z + uTime) * uAmp.z - nsin(movementProgressFix * PI * uFreq.z + uTime) * uAmp.z
-  );
-}
-`,
-			getJS: (progress, time) => {
-				const movementProgressFix = 0.02;
-				const uFreq = mountainUniforms.uFreq.value;
-				const uAmp = mountainUniforms.uAmp.value;
-				const distortion = new THREE.Vector3(
-					Math.cos(progress * Math.PI * uFreq.x + time) * uAmp.x - Math.cos(movementProgressFix * Math.PI * uFreq.x + time) * uAmp.x,
-					nsin(progress * Math.PI * uFreq.y + time) * uAmp.y - nsin(movementProgressFix * Math.PI * uFreq.y + time) * uAmp.y,
-					nsin(progress * Math.PI * uFreq.z + time) * uAmp.z - nsin(movementProgressFix * Math.PI * uFreq.z + time) * uAmp.z
-				);
-				return distortion.multiply(new THREE.Vector3(2, 2, 2)).add(new THREE.Vector3(0, 0, -5));
-			}
-		},
-		xyDistortion: {
-			uniforms: xyUniforms,
-			getDistortion: `
-uniform vec2 uFreq;
-uniform vec2 uAmp;
-#define PI 3.14159265358979
-vec3 getDistortion(float progress){
-  float movementProgressFix = 0.02;
-  return vec3(
-    cos(progress * PI * uFreq.x + uTime) * uAmp.x - cos(movementProgressFix * PI * uFreq.x + uTime) * uAmp.x,
-    sin(progress * PI * uFreq.y + PI/2. + uTime) * uAmp.y - sin(movementProgressFix * PI * uFreq.y + PI/2. + uTime) * uAmp.y,
-    0.
-  );
-}
-`,
-			getJS: (progress, time) => {
-				const movementProgressFix = 0.02;
-				const uFreq = xyUniforms.uFreq.value;
-				const uAmp = xyUniforms.uAmp.value;
-				const distortion = new THREE.Vector3(
-					Math.cos(progress * Math.PI * uFreq.x + time) * uAmp.x - Math.cos(movementProgressFix * Math.PI * uFreq.x + time) * uAmp.x,
-					Math.sin(progress * Math.PI * uFreq.y + time + Math.PI / 2) * uAmp.y - Math.sin(movementProgressFix * Math.PI * uFreq.y + time + Math.PI / 2) * uAmp.y,
-					0
-				);
-				return distortion.multiply(new THREE.Vector3(2, 0.4, 1)).add(new THREE.Vector3(0, 0, -3));
-			}
-		},
-		LongRaceDistortion: {
-			uniforms: LongRaceUniforms,
-			getDistortion: `
-uniform vec2 uFreq;
-uniform vec2 uAmp;
-#define PI 3.14159265358979
-vec3 getDistortion(float progress){
-  float camProgress = 0.0125;
-  return vec3(
-    sin(progress * PI * uFreq.x + uTime) * uAmp.x - sin(camProgress * PI * uFreq.x + uTime) * uAmp.x,
-    sin(progress * PI * uFreq.y + uTime) * uAmp.y - sin(camProgress * PI * uFreq.y + uTime) * uAmp.y,
-    0.
-  );
-}
-`,
-			getJS: (progress, time) => {
-				const camProgress = 0.0125;
-				const uFreq = LongRaceUniforms.uFreq.value;
-				const uAmp = LongRaceUniforms.uAmp.value;
-				const distortion = new THREE.Vector3(
-					Math.sin(progress * Math.PI * uFreq.x + time) * uAmp.x - Math.sin(camProgress * Math.PI * uFreq.x + time) * uAmp.x,
-					Math.sin(progress * Math.PI * uFreq.y + time) * uAmp.y - Math.sin(camProgress * Math.PI * uFreq.y + time) * uAmp.y,
-					0
-				);
-				return distortion.multiply(new THREE.Vector3(1, 1, 0)).add(new THREE.Vector3(0, 0, -5));
-			}
-		},
-		turbulentDistortion: {
-			uniforms: turbulentUniforms,
-			getDistortion: `
-uniform vec4 uFreq;
-uniform vec4 uAmp;
-float nsin(float val){
-  return sin(val) * 0.5 + 0.5;
-}
-#define PI 3.14159265358979
-float getDistortionX(float progress){
-  return (
-    cos(PI * progress * uFreq.r + uTime) * uAmp.r +
-    pow(cos(PI * progress * uFreq.g + uTime * (uFreq.g / uFreq.r)), 2.) * uAmp.g
-  );
-}
-float getDistortionY(float progress){
-  return (
-    -nsin(PI * progress * uFreq.b + uTime) * uAmp.b +
-    -pow(nsin(PI * progress * uFreq.a + uTime / (uFreq.b / uFreq.a)), 5.) * uAmp.a
-  );
-}
-vec3 getDistortion(float progress){
-  return vec3(
-    getDistortionX(progress) - getDistortionX(0.0125),
-    getDistortionY(progress) - getDistortionY(0.0125),
-    0.
-  );
-}
-`,
-			getJS: (progress, time) => {
-				const uFreq = turbulentUniforms.uFreq.value;
-				const uAmp = turbulentUniforms.uAmp.value;
-				const getX = (p: number) => Math.cos(Math.PI * p * uFreq.x + time) * uAmp.x + Math.pow(Math.cos(Math.PI * p * uFreq.y + time * (uFreq.y / uFreq.x)), 2) * uAmp.y;
-				const getY = (p: number) => -nsin(Math.PI * p * uFreq.z + time) * uAmp.z - Math.pow(nsin(Math.PI * p * uFreq.w + time / (uFreq.z / uFreq.w)), 5) * uAmp.w;
-				const distortion = new THREE.Vector3(getX(progress) - getX(progress + 0.007), getY(progress) - getY(progress + 0.007), 0);
-				return distortion.multiply(new THREE.Vector3(-2, -5, 0)).add(new THREE.Vector3(0, 0, -10));
-			}
-		},
-		deepDistortion: {
-			uniforms: deepUniforms,
-			getDistortion: `
-uniform vec4 uFreq;
-uniform vec4 uAmp;
-uniform vec2 uPowY;
-#define PI 3.14159265358979
-vec3 getDistortion(float progress){
-  return vec3(
-    sin(progress * PI * uFreq.x + uTime) * uAmp.x - sin(0.02 * PI * uFreq.x + uTime) * uAmp.x,
-    pow(abs(progress * uPowY.x), uPowY.y) + sin(progress * PI * uFreq.y + uTime) * uAmp.y - (pow(abs(0.02 * uPowY.x), uPowY.y) + sin(0.02 * PI * uFreq.y + uTime) * uAmp.y),
-    0.
-  );
-}
-`,
-			getJS: (progress, time) => {
-				const uFreq = deepUniforms.uFreq.value;
-				const uAmp = deepUniforms.uAmp.value;
-				const uPowY = deepUniforms.uPowY.value;
-				const getX = (p: number) => Math.sin(p * Math.PI * uFreq.x + time) * uAmp.x;
-				const getY = (p: number) => Math.pow(p * uPowY.x, uPowY.y) + Math.sin(p * Math.PI * uFreq.y + time) * uAmp.y;
-				const distortion = new THREE.Vector3(getX(progress) - getX(progress + 0.01), getY(progress) - getY(progress + 0.01), 0);
-				return distortion.multiply(new THREE.Vector3(-2, -4, 0)).add(new THREE.Vector3(0, 0, -10));
-			}
-		}
+	const fillPalette = (uniform: Swatches, count: { value: number }, colors: string[]) => {
+		const list = colors.length ? colors : ['#ffffff'];
+		for (let i = 0; i < MAX_COLORS; i++) uniform.value[i].fromArray(toRgb(list[i % list.length]));
+		count.value = Math.min(list.length, MAX_COLORS);
 	};
 
-	const distortionUniforms = { uDistortionX: { value: new THREE.Vector2(80, 3) }, uDistortionY: { value: new THREE.Vector2(-40, 2.5) } };
-	const distortionVertex = `
-#define PI 3.14159265358979
-uniform vec2 uDistortionX;
-uniform vec2 uDistortionY;
-float nsin(float val){
-  return sin(val) * 0.5 + 0.5;
-}
-vec3 getDistortion(float progress){
-  progress = clamp(progress, 0., 1.);
-  return vec3(
-    uDistortionX.r * nsin(progress * PI * uDistortionX.g - PI / 2.),
-    uDistortionY.r * nsin(progress * PI * uDistortionY.g - PI / 2.),
-    0.
-  );
-}
-`;
+	const instanced = (source: THREE.BufferGeometry) => {
+		const geometry = new THREE.InstancedBufferGeometry();
+		geometry.setIndex(source.index);
+		Object.entries(source.attributes).forEach(([name, attribute]) => geometry.setAttribute(name, attribute));
+		return geometry;
+	};
 
-	function random(base: number | [number, number]): number {
-		return Array.isArray(base) ? Math.random() * (base[1] - base[0]) + base[0] : Math.random() * base;
-	}
+	const nsin = (value: number) => Math.sin(value) * 0.5 + 0.5;
+	const windX = (q: number, t: number) => Math.cos(Math.PI * q * 4 + t) * 25 + Math.cos(Math.PI * q * 8 + t * 2) ** 2 * 5;
+	const windY = (q: number, t: number) => -nsin(Math.PI * q * 8 + t) * 10 - nsin(Math.PI * q + t / 8) ** 5 * 10;
+	const deepX = (q: number, t: number) => Math.sin(q * Math.PI * 4 + t) * 10;
+	const deepY = (q: number, t: number) => Math.abs(q * 10) ** 2 + Math.sin(q * Math.PI * 8 + t) * 20;
 
-	function pickRandom<T>(arr: T | T[]): T {
-		return Array.isArray(arr) ? arr[Math.floor(Math.random() * arr.length)] : arr;
-	}
+	const curveShapes = (p: number, t: number): Vec3[] => {
+		const { PI, cos, sin } = Math;
+		return [
+			[
+				cos(p * PI * 5 + t) * 25 - cos(0.02 * PI * 5 + t) * 25,
+				sin(p * PI * 2 + PI * 0.5 + t) * 15 - sin(0.02 * PI * 2 + PI * 0.5 + t) * 15,
+				0
+			],
+			[windX(p, t) - windX(0.0125, t), windY(p, t) - windY(0.0125, t), 0],
+			[
+				cos(p * PI * 3 + t) * 30 - cos(0.02 * PI * 3 + t) * 30,
+				nsin(p * PI * 6 + t) * 30 - nsin(0.02 * PI * 6 + t) * 30,
+				nsin(p * PI * 10 + t) * 20 - nsin(0.02 * PI * 10 + t) * 20
+			],
+			[
+				sin(p * PI * 2 + t) * 35 - sin(0.0125 * PI * 2 + t) * 35,
+				sin(p * PI * 3 + t) * 10 - sin(0.0125 * PI * 3 + t) * 10,
+				0
+			],
+			[deepX(p, t) - deepX(0.02, t), deepY(p, t) - deepY(0.02, t), 0]
+		];
+	};
 
-	function lerp(current: number, target: number, speed = 0.1, limit = 0.001): number {
-		let change = (target - current) * speed;
-		if (Math.abs(change) < limit) change = target - current;
-		return change;
-	}
+	const lookShapes = (t: number, curvature: number): Vec3[] => {
+		const p = 0.025;
+		const [gentle, , hills, racing] = curveShapes(p, t);
+		return [
+			[gentle[0] * curvature * 2, gentle[1] * curvature * 0.4, -3],
+			[(windX(p, t) - windX(p + 0.007, t)) * curvature * -2, (windY(p, t) - windY(p + 0.007, t)) * curvature * -5, -10],
+			[hills[0] * curvature * 2, hills[1] * curvature * 2, hills[2] * curvature * 2 - 5],
+			[racing[0] * curvature, racing[1] * curvature, -5],
+			[(deepX(p, t) - deepX(p + 0.01, t)) * curvature * -2, (deepY(p, t) - deepY(p + 0.01, t)) * curvature * -4, -10]
+		];
+	};
 
-	const carLightsFragment = `
-#define USE_FOG;
-${THREE.ShaderChunk['fog_pars_fragment']}
-varying vec3 vColor;
-varying vec2 vUv;
-uniform vec2 uFade;
-void main() {
-  vec3 color = vec3(vColor);
-  float alpha = smoothstep(uFade.x, uFade.y, vUv.x);
-  gl_FragColor = vec4(color, alpha);
-  if (gl_FragColor.a < 0.0001) discard;
-  ${THREE.ShaderChunk['fog_fragment']}
-  gl_FragColor.a *= max(max(gl_FragColor.r, gl_FragColor.g), gl_FragColor.b);
-}
-`;
-	const carLightsVertex = `
-#define USE_FOG;
-${THREE.ShaderChunk['fog_pars_vertex']}
-attribute vec3 aOffset;
-attribute vec3 aMetrics;
-attribute vec3 aColor;
-uniform float uTravelLength;
-uniform float uTime;
-varying vec2 vUv;
-varying vec3 vColor;
-#include <getDistortion_vertex>
-void main() {
-  vec3 transformed = position.xyz;
-  float radius = aMetrics.r;
-  float myLength = aMetrics.g;
-  float speed = aMetrics.b;
-  transformed.xy *= radius;
-  transformed.z *= myLength;
-  transformed.z += myLength - mod(uTime * speed + aOffset.z, uTravelLength);
-  transformed.xy += aOffset.xy;
-  float progress = abs(transformed.z / uTravelLength);
-  transformed.xyz += getDistortion(progress);
-  vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.);
-  gl_Position = projectionMatrix * mvPosition;
-  vUv = uv;
-  vColor = aColor;
-  ${THREE.ShaderChunk['fog_vertex']}
-}
-`;
-
-	class CarLights {
-		webgl: App;
-		options: HyperspeedOptions;
-		colors: number[] | THREE.Color;
-		speed: [number, number];
-		fade: THREE.Vector2;
-		mesh!: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
-
-		constructor(webgl: App, options: HyperspeedOptions, colors: number[] | THREE.Color, speed: [number, number], fade: THREE.Vector2) {
-			this.webgl = webgl;
-			this.options = options;
-			this.colors = colors;
-			this.speed = speed;
-			this.fade = fade;
-		}
-
-		init() {
-			const options = this.options;
-			const curve = new THREE.LineCurve3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1));
-			const geometry = new THREE.TubeGeometry(curve, 40, 1, 8, false);
-			const instanced = new THREE.InstancedBufferGeometry().copy(
-				geometry as unknown as THREE.InstancedBufferGeometry
-			) as THREE.InstancedBufferGeometry;
-			instanced.instanceCount = options.lightPairsPerRoadWay * 2;
-			const laneWidth = options.roadWidth / options.lanesPerRoad;
-			const aOffset: number[] = [];
-			const aMetrics: number[] = [];
-			const aColor: number[] = [];
-			const colorArray = Array.isArray(this.colors) ? this.colors.map((c) => new THREE.Color(c)) : [new THREE.Color(this.colors)];
-
-			for (let i = 0; i < options.lightPairsPerRoadWay; i++) {
-				const radius = random(options.carLightsRadius);
-				const length = random(options.carLightsLength);
-				const spd = random(this.speed);
-				const carLane = i % options.lanesPerRoad;
-				let laneX = carLane * laneWidth - options.roadWidth / 2 + laneWidth / 2;
-				const carWidth = random(options.carWidthPercentage) * laneWidth;
-				laneX += random(options.carShiftX) * laneWidth;
-				const offsetY = random(options.carFloorSeparation) + radius * 1.3;
-				const offsetZ = -random(options.length);
-				aOffset.push(laneX - carWidth / 2, offsetY, offsetZ, laneX + carWidth / 2, offsetY, offsetZ);
-				aMetrics.push(radius, length, spd, radius, length, spd);
-				const color = pickRandom<THREE.Color>(colorArray);
-				aColor.push(color.r, color.g, color.b, color.r, color.g, color.b);
-			}
-
-			instanced.setAttribute('aOffset', new THREE.InstancedBufferAttribute(new Float32Array(aOffset), 3, false));
-			instanced.setAttribute('aMetrics', new THREE.InstancedBufferAttribute(new Float32Array(aMetrics), 3, false));
-			instanced.setAttribute('aColor', new THREE.InstancedBufferAttribute(new Float32Array(aColor), 3, false));
-			const material = new THREE.ShaderMaterial({
-				fragmentShader: carLightsFragment,
-				vertexShader: carLightsVertex,
-				transparent: true,
-				uniforms: Object.assign({ uTime: { value: 0 }, uTravelLength: { value: options.length }, uFade: { value: this.fade } }, this.webgl.fogUniforms, typeof options.distortion === 'object' ? options.distortion.uniforms : {})
-			});
-			material.onBeforeCompile = (shader) => {
-				shader.vertexShader = shader.vertexShader.replace('#include <getDistortion_vertex>', typeof options.distortion === 'object' ? options.distortion.getDistortion : '');
-			};
-			this.mesh = new THREE.Mesh(instanced, material);
-			this.mesh.frustumCulled = false;
-			this.webgl.scene.add(this.mesh);
-		}
-
-		update(time: number) {
-			this.mesh.material.uniforms.uTime.value = time;
-		}
-	}
-
-	const sideSticksVertex = `
-#define USE_FOG;
-${THREE.ShaderChunk['fog_pars_vertex']}
-attribute float aOffset;
-attribute vec3 aColor;
-attribute vec2 aMetrics;
-uniform float uTravelLength;
-uniform float uTime;
-varying vec3 vColor;
-mat4 rotationY( in float angle ) {
-  return mat4(
-    cos(angle), 0, sin(angle), 0,
-    0, 1.0, 0, 0,
-    -sin(angle), 0, cos(angle), 0,
-    0, 0, 0, 1
-  );
-}
-#include <getDistortion_vertex>
-void main(){
-  vec3 transformed = position.xyz;
-  float width = aMetrics.x;
-  float height = aMetrics.y;
-  transformed.xy *= vec2(width, height);
-  float time = mod(uTime * 60. * 2. + aOffset, uTravelLength);
-  transformed = (rotationY(3.14/2.) * vec4(transformed,1.)).xyz;
-  transformed.z += - uTravelLength + time;
-  float progress = abs(transformed.z / uTravelLength);
-  transformed.xyz += getDistortion(progress);
-  transformed.y += height / 2.;
-  transformed.x += -width / 2.;
-  vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.);
-  gl_Position = projectionMatrix * mvPosition;
-  vColor = aColor;
-  ${THREE.ShaderChunk['fog_vertex']}
-}
-`;
-	const sideSticksFragment = `
-#define USE_FOG;
-${THREE.ShaderChunk['fog_pars_fragment']}
-varying vec3 vColor;
-void main(){
-  vec3 color = vec3(vColor);
-  gl_FragColor = vec4(color,1.);
-  ${THREE.ShaderChunk['fog_fragment']}
-  gl_FragColor.a = max(max(gl_FragColor.r, gl_FragColor.g), gl_FragColor.b);
-}
-`;
-
-	class LightsSticks {
-		webgl: App;
-		options: HyperspeedOptions;
-		mesh!: THREE.Mesh<THREE.InstancedBufferGeometry, THREE.ShaderMaterial>;
-
-		constructor(webgl: App, options: HyperspeedOptions) {
-			this.webgl = webgl;
-			this.options = options;
-		}
-
-		init() {
-			const options = this.options;
-			const geometry = new THREE.PlaneGeometry(1, 1);
-			const instanced = new THREE.InstancedBufferGeometry().copy(
-				geometry as unknown as THREE.InstancedBufferGeometry
-			) as THREE.InstancedBufferGeometry;
-			const totalSticks = options.totalSideLightSticks;
-			instanced.instanceCount = totalSticks;
-			const stickoffset = options.length / (totalSticks - 1);
-			const aOffset: number[] = [];
-			const aColor: number[] = [];
-			const aMetrics: number[] = [];
-			const colorArray = Array.isArray(options.colors.sticks) ? options.colors.sticks.map((c) => new THREE.Color(c)) : [new THREE.Color(options.colors.sticks)];
-			for (let i = 0; i < totalSticks; i++) {
-				const width = random(options.lightStickWidth);
-				const height = random(options.lightStickHeight);
-				aOffset.push((i - 1) * stickoffset * 2 + stickoffset * Math.random());
-				const color = pickRandom<THREE.Color>(colorArray);
-				aColor.push(color.r, color.g, color.b);
-				aMetrics.push(width, height);
-			}
-			instanced.setAttribute('aOffset', new THREE.InstancedBufferAttribute(new Float32Array(aOffset), 1, false));
-			instanced.setAttribute('aColor', new THREE.InstancedBufferAttribute(new Float32Array(aColor), 3, false));
-			instanced.setAttribute('aMetrics', new THREE.InstancedBufferAttribute(new Float32Array(aMetrics), 2, false));
-			const material = new THREE.ShaderMaterial({
-				fragmentShader: sideSticksFragment,
-				vertexShader: sideSticksVertex,
-				side: THREE.DoubleSide,
-				transparent: true,
-				uniforms: Object.assign({ uTravelLength: { value: options.length }, uTime: { value: 0 } }, this.webgl.fogUniforms, typeof options.distortion === 'object' ? options.distortion.uniforms : {})
-			});
-			material.onBeforeCompile = (shader) => {
-				shader.vertexShader = shader.vertexShader.replace('#include <getDistortion_vertex>', typeof options.distortion === 'object' ? options.distortion.getDistortion : '');
-			};
-			this.mesh = new THREE.Mesh(instanced, material);
-			this.mesh.frustumCulled = false;
-			this.webgl.scene.add(this.mesh);
-		}
-
-		update(time: number) {
-			this.mesh.material.uniforms.uTime.value = time;
-		}
-	}
-
-	const roadMarkingsVars = `
-uniform float uLanes;
-uniform vec3 uBrokenLinesColor;
-uniform vec3 uShoulderLinesColor;
-uniform float uShoulderLinesWidthPercentage;
-uniform float uBrokenLinesWidthPercentage;
-uniform float uBrokenLinesLengthPercentage;
-highp float random(vec2 co) {
-  highp float a = 12.9898;
-  highp float b = 78.233;
-  highp float c = 43758.5453;
-  highp float dt = dot(co.xy, vec2(a, b));
-  highp float sn = mod(dt, 3.14);
-  return fract(sin(sn) * c);
-}
-`;
-	const roadMarkingsFragment = `
-uv.y = mod(uv.y + uTime * 0.05, 1.);
-float laneWidth = 1.0 / uLanes;
-float brokenLineWidth = laneWidth * uBrokenLinesWidthPercentage;
-float laneEmptySpace = 1. - uBrokenLinesLengthPercentage;
-float brokenLines = step(1.0 - brokenLineWidth, fract(uv.x * 2.0)) * step(laneEmptySpace, fract(uv.y * 10.0));
-float sideLines = step(1.0 - brokenLineWidth, fract((uv.x - laneWidth * (uLanes - 1.0)) * 2.0)) + step(brokenLineWidth, uv.x);
-brokenLines = mix(brokenLines, sideLines, uv.x);
-`;
-	const roadBaseFragment = `
-#define USE_FOG;
-varying vec2 vUv;
-uniform vec3 uColor;
-uniform float uTime;
-#include <roadMarkings_vars>
-${THREE.ShaderChunk['fog_pars_fragment']}
-void main() {
-  vec2 uv = vUv;
-  vec3 color = vec3(uColor);
-  #include <roadMarkings_fragment>
-  gl_FragColor = vec4(color, 1.);
-  ${THREE.ShaderChunk['fog_fragment']}
-  gl_FragColor.a = max(max(gl_FragColor.r, gl_FragColor.g), gl_FragColor.b);
-}
-`;
-	const islandFragment = roadBaseFragment.replace('#include <roadMarkings_fragment>', '').replace('#include <roadMarkings_vars>', '');
-	const roadFragment = roadBaseFragment.replace('#include <roadMarkings_fragment>', roadMarkingsFragment).replace('#include <roadMarkings_vars>', roadMarkingsVars);
-	const roadVertex = `
-#define USE_FOG;
-uniform float uTime;
-${THREE.ShaderChunk['fog_pars_vertex']}
-uniform float uTravelLength;
-varying vec2 vUv;
-#include <getDistortion_vertex>
-void main() {
-  vec3 transformed = position.xyz;
-  vec3 distortion = getDistortion((transformed.y + uTravelLength / 2.) / uTravelLength);
-  transformed.x += distortion.x;
-  transformed.z += distortion.y;
-  transformed.y += -1. * distortion.z;
-  vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.);
-  gl_Position = projectionMatrix * mvPosition;
-  vUv = uv;
-  ${THREE.ShaderChunk['fog_vertex']}
-}
-`;
-
-	class Road {
-		webgl: App;
-		options: HyperspeedOptions;
-		uTime = { value: 0 };
-		leftRoadWay!: THREE.Mesh;
-		rightRoadWay!: THREE.Mesh;
-		island!: THREE.Mesh;
-
-		constructor(webgl: App, options: HyperspeedOptions) {
-			this.webgl = webgl;
-			this.options = options;
-		}
-
-		createPlane(side: number, isRoad: boolean) {
-			const options = this.options;
-			const geometry = new THREE.PlaneGeometry(isRoad ? options.roadWidth : options.islandWidth, options.length, 20, 100);
-			let uniforms: Record<string, { value: unknown }> = { uTravelLength: { value: options.length }, uColor: { value: new THREE.Color(isRoad ? options.colors.roadColor : options.colors.islandColor) }, uTime: this.uTime };
-			if (isRoad) {
-				uniforms = Object.assign(uniforms, {
-					uLanes: { value: options.lanesPerRoad },
-					uBrokenLinesColor: { value: new THREE.Color(options.colors.brokenLines) },
-					uShoulderLinesColor: { value: new THREE.Color(options.colors.shoulderLines) },
-					uShoulderLinesWidthPercentage: { value: options.shoulderLinesWidthPercentage },
-					uBrokenLinesLengthPercentage: { value: options.brokenLinesLengthPercentage },
-					uBrokenLinesWidthPercentage: { value: options.brokenLinesWidthPercentage }
-				});
-			}
-			const material = new THREE.ShaderMaterial({
-				fragmentShader: isRoad ? roadFragment : islandFragment,
-				vertexShader: roadVertex,
-				side: THREE.DoubleSide,
-				transparent: true,
-				uniforms: Object.assign(uniforms, this.webgl.fogUniforms, typeof options.distortion === 'object' ? options.distortion.uniforms : {})
-			});
-			material.onBeforeCompile = (shader) => {
-				shader.vertexShader = shader.vertexShader.replace('#include <getDistortion_vertex>', typeof options.distortion === 'object' ? options.distortion.getDistortion : '');
-			};
-			const mesh = new THREE.Mesh(geometry, material);
-			mesh.rotation.x = -Math.PI / 2;
-			mesh.position.z = -options.length / 2;
-			mesh.position.x += (options.islandWidth / 2 + options.roadWidth / 2) * side;
-			this.webgl.scene.add(mesh);
-			return mesh;
-		}
-
-		init() {
-			this.leftRoadWay = this.createPlane(-1, true);
-			this.rightRoadWay = this.createPlane(1, true);
-			this.island = this.createPlane(0, false);
-		}
-
-		update(time: number) {
-			this.uTime.value = time;
-		}
-	}
-
-	function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer, setSize: (width: number, height: number, updateStyle: boolean) => void) {
-		const canvas = renderer.domElement;
-		const width = canvas.clientWidth;
-		const height = canvas.clientHeight;
-		if (width <= 0 || height <= 0) return false;
-		const needResize = canvas.width !== width || canvas.height !== height;
-		if (needResize) setSize(width, height, false);
-		return needResize;
-	}
-
-	class App {
-		container: HTMLElement;
-		options: HyperspeedOptions;
-		renderer: THREE.WebGLRenderer;
-		composer: EffectComposer;
-		camera: THREE.PerspectiveCamera;
-		scene: THREE.Scene;
-		renderPass!: RenderPass;
-		bloomPass!: EffectPass;
-		clock = new THREE.Clock();
-		assets: Record<string, unknown> = {};
-		disposed = false;
-		road: Road;
-		leftCarLights: CarLights;
-		rightCarLights: CarLights;
-		leftSticks: LightsSticks;
-		fogUniforms: Record<string, { value: unknown }>;
-		fovTarget: number;
-		speedUpTarget = 0;
-		speedUp = 0;
-		timeOffset = 0;
-		hasValidSize: boolean;
-
-		constructor(container: HTMLElement, options: HyperspeedOptions) {
-			this.options = options;
-			if (!this.options.distortion) this.options.distortion = { uniforms: distortionUniforms, getDistortion: distortionVertex };
-			this.container = container;
-			this.hasValidSize = false;
-			const initW = Math.max(1, container.offsetWidth);
-			const initH = Math.max(1, container.offsetHeight);
-			this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
-			this.renderer.setClearColor(0x000000, 0);
-			this.renderer.setSize(initW, initH, false);
-			this.renderer.setPixelRatio(window.devicePixelRatio);
-			this.renderer.domElement.style.position = 'absolute';
-			this.renderer.domElement.style.inset = '0';
-			this.renderer.domElement.style.width = '100%';
-			this.renderer.domElement.style.height = '100%';
-			this.renderer.domElement.style.display = 'block';
-			this.composer = new EffectComposer(this.renderer);
-			container.appendChild(this.renderer.domElement);
-			this.camera = new THREE.PerspectiveCamera(options.fov, initW / initH, 0.1, 10000);
-			this.camera.position.set(0, 8, -5);
-			this.scene = new THREE.Scene();
-			this.scene.background = null;
-			const fog = new THREE.Fog(options.colors.background, options.length * 0.2, options.length * 500);
-			this.scene.fog = fog;
-			this.fogUniforms = { fogColor: { value: fog.color }, fogNear: { value: fog.near }, fogFar: { value: fog.far } };
-			this.road = new Road(this, options);
-			this.leftCarLights = new CarLights(this, options, options.colors.leftCars, options.movingAwaySpeed, new THREE.Vector2(0, 1 - options.carLightsFade));
-			this.rightCarLights = new CarLights(this, options, options.colors.rightCars, options.movingCloserSpeed, new THREE.Vector2(1, options.carLightsFade));
-			this.leftSticks = new LightsSticks(this, options);
-			this.fovTarget = options.fov;
-			window.addEventListener('resize', this.onWindowResize);
-			if (container.offsetWidth > 0 && container.offsetHeight > 0) this.hasValidSize = true;
-		}
-
-		onWindowResize = () => {
-			const width = this.container.offsetWidth;
-			const height = this.container.offsetHeight;
-			if (width <= 0 || height <= 0) {
-				this.hasValidSize = false;
-				return;
-			}
-			this.renderer.setSize(width, height);
-			this.camera.aspect = width / height;
-			this.camera.updateProjectionMatrix();
-			this.composer.setSize(width, height);
-			this.hasValidSize = true;
-		};
-
-		initPasses() {
-			this.renderPass = new RenderPass(this.scene, this.camera);
-			this.bloomPass = new EffectPass(this.camera, new BloomEffect({ luminanceThreshold: 0.2, luminanceSmoothing: 0, resolutionScale: 1 }));
-			const smaaPass = new EffectPass(this.camera, new SMAAEffect({ preset: SMAAPreset.MEDIUM }));
-			this.renderPass.renderToScreen = false;
-			this.bloomPass.renderToScreen = false;
-			smaaPass.renderToScreen = true;
-			this.composer.addPass(this.renderPass);
-			this.composer.addPass(this.bloomPass);
-			this.composer.addPass(smaaPass);
-		}
-
-		loadAssets(): Promise<void> {
-			const assets = this.assets as Record<string, Record<string, HTMLImageElement>>;
-			return new Promise((resolve) => {
-				const manager = new THREE.LoadingManager(resolve);
-				const searchImage = new Image();
-				const areaImage = new Image();
-				assets.smaa = {};
-				searchImage.addEventListener('load', function () { assets.smaa.search = this as HTMLImageElement; manager.itemEnd('smaa-search'); });
-				areaImage.addEventListener('load', function () { assets.smaa.area = this as HTMLImageElement; manager.itemEnd('smaa-area'); });
-				manager.itemStart('smaa-search');
-				manager.itemStart('smaa-area');
-				searchImage.src = SMAAEffect.searchImageDataURL;
-				areaImage.src = SMAAEffect.areaImageDataURL;
-			});
-		}
-
-		init() {
-			this.initPasses();
-			const options = this.options;
-			this.road.init();
-			this.leftCarLights.init();
-			this.leftCarLights.mesh.position.setX(-options.roadWidth / 2 - options.islandWidth / 2);
-			this.rightCarLights.init();
-			this.rightCarLights.mesh.position.setX(options.roadWidth / 2 + options.islandWidth / 2);
-			this.leftSticks.init();
-			this.leftSticks.mesh.position.setX(-(options.roadWidth + options.islandWidth / 2));
-			this.container.addEventListener('mousedown', this.onMouseDown);
-			this.container.addEventListener('mouseup', this.onMouseUp);
-			this.container.addEventListener('mouseout', this.onMouseUp);
-			this.container.addEventListener('touchstart', this.onTouchStart, { passive: true });
-			this.container.addEventListener('touchend', this.onTouchEnd, { passive: true });
-			this.container.addEventListener('touchcancel', this.onTouchEnd, { passive: true });
-			this.container.addEventListener('contextmenu', this.onContextMenu);
-			this.tick();
-		}
-
-		onMouseDown = (ev: MouseEvent) => { this.options.onSpeedUp?.(ev); this.fovTarget = this.options.fovSpeedUp; this.speedUpTarget = this.options.speedUp; };
-		onMouseUp = (ev: MouseEvent) => { this.options.onSlowDown?.(ev); this.fovTarget = this.options.fov; this.speedUpTarget = 0; };
-		onTouchStart = (ev: TouchEvent) => { this.options.onSpeedUp?.(ev); this.fovTarget = this.options.fovSpeedUp; this.speedUpTarget = this.options.speedUp; };
-		onTouchEnd = (ev: TouchEvent) => { this.options.onSlowDown?.(ev); this.fovTarget = this.options.fov; this.speedUpTarget = 0; };
-		onContextMenu = (ev: MouseEvent) => ev.preventDefault();
-
-		update(delta: number) {
-			const lerpPercentage = Math.exp(-(-60 * Math.log2(1 - 0.1)) * delta);
-			this.speedUp += lerp(this.speedUp, this.speedUpTarget, lerpPercentage, 0.00001);
-			this.timeOffset += this.speedUp * delta;
-			const time = this.clock.elapsedTime + this.timeOffset;
-			this.rightCarLights.update(time);
-			this.leftCarLights.update(time);
-			this.leftSticks.update(time);
-			this.road.update(time);
-			let updateCamera = false;
-			const fovChange = lerp(this.camera.fov, this.fovTarget, lerpPercentage);
-			if (fovChange !== 0) {
-				this.camera.fov += fovChange * delta * 6;
-				updateCamera = true;
-			}
-			if (typeof this.options.distortion === 'object' && this.options.distortion.getJS) {
-				const distortion = this.options.distortion.getJS(0.025, time);
-				this.camera.lookAt(new THREE.Vector3(this.camera.position.x + distortion.x, this.camera.position.y + distortion.y, this.camera.position.z + distortion.z));
-				updateCamera = true;
-			}
-			if (updateCamera) this.camera.updateProjectionMatrix();
-		}
-
-		dispose() {
-			this.disposed = true;
-			this.scene.traverse((object) => {
-				const obj = object as THREE.Mesh;
-				if (!obj.isMesh) return;
-				obj.geometry?.dispose();
-				if (Array.isArray(obj.material)) obj.material.forEach((material) => material.dispose());
-				else obj.material?.dispose();
-			});
-			this.scene.clear();
-			this.renderer.dispose();
-			this.renderer.forceContextLoss();
-			this.renderer.domElement.parentNode?.removeChild(this.renderer.domElement);
-			this.composer.dispose();
-			window.removeEventListener('resize', this.onWindowResize);
-			this.container.removeEventListener('mousedown', this.onMouseDown);
-			this.container.removeEventListener('mouseup', this.onMouseUp);
-			this.container.removeEventListener('mouseout', this.onMouseUp);
-			this.container.removeEventListener('touchstart', this.onTouchStart);
-			this.container.removeEventListener('touchend', this.onTouchEnd);
-			this.container.removeEventListener('touchcancel', this.onTouchEnd);
-			this.container.removeEventListener('contextmenu', this.onContextMenu);
-		}
-
-		setSize = (width: number, height: number, updateStyles: boolean) => this.composer.setSize(width, height, updateStyles);
-
-		tick = () => {
-			if (this.disposed) return;
-			if (!this.hasValidSize) {
-				const w = this.container.offsetWidth;
-				const h = this.container.offsetHeight;
-				if (w > 0 && h > 0) {
-					this.renderer.setSize(w, h, false);
-					this.camera.aspect = w / h;
-					this.camera.updateProjectionMatrix();
-					this.composer.setSize(w, h);
-					this.hasValidSize = true;
-				} else {
-					requestAnimationFrame(this.tick);
-					return;
-				}
-			}
-			if (resizeRendererToDisplaySize(this.renderer, this.setSize)) {
-				const canvas = this.renderer.domElement;
-				if (this.hasValidSize) {
-					this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
-					this.camera.updateProjectionMatrix();
-				}
-			}
-			if (this.hasValidSize) {
-				const delta = this.clock.getDelta();
-				this.composer.render(delta);
-				this.update(delta);
-			}
-			requestAnimationFrame(this.tick);
-		};
-	}
-
-	function resolveOptions(effectOptions: Partial<HyperspeedOptions>): HyperspeedOptions {
-		const options = { ...defaultOptions, ...effectOptions, colors: { ...defaultOptions.colors, ...effectOptions.colors } } as HyperspeedOptions;
-		if (typeof options.distortion === 'string') options.distortion = distortions[options.distortion];
-		return options;
-	}
+	const ROOT =
+		'absolute inset-0 overflow-hidden touch-pan-y select-none [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [&>canvas]:block [&>canvas]:h-full [&>canvas]:w-full';
 </script>
 
 <script lang="ts">
-	type Props = {
-		effectOptions?: Partial<HyperspeedOptions>;
-		class?: string;
-	};
+	import { onMount } from 'svelte';
 
-	let { effectOptions = {}, class: className = '' }: Props = $props();
-	let container: HTMLDivElement;
+	let {
+		curve = 'winding',
+		curvature = 1,
+		speed = 1,
+		boost = 3,
+		fov = 90,
+		boostFov = 130,
+		lanes = 3,
+		roadWidth = 10,
+		medianWidth = 2,
+		density = 40,
+		trailLength = 1,
+		lightSize = 1,
+		poles = 20,
+		poleHeight = 1,
+		dust = 100,
+		glow = 0.6,
+		reflections = 0.5,
+		steer = 0.35,
+		tailColors,
+		headColors,
+		poleColors,
+		roadColor,
+		roadOpacity = 0.1,
+		lineColor,
+		background,
+		theme = 'dark',
+		interactive = true,
+		boosting = false,
+		onBoostStart,
+		onBoostEnd,
+		class: className = '',
+		style
+	}: HyperspeedProps = $props();
 
-	$effect(() => {
-		const currentContainer = container;
-		if (!currentContainer) return;
-		while (currentContainer.firstChild) currentContainer.removeChild(currentContainer.firstChild);
+	let containerEl = $state<HTMLDivElement>();
 
-		const app = new App(currentContainer, resolveOptions(effectOptions));
-		let cancelled = false;
-		app.loadAssets().then(() => {
-			if (!cancelled) app.init();
+	const settings: Settings = $derived.by(() => {
+		const palette = THEMES[theme] ?? THEMES.dark;
+		return {
+			light: theme === 'light',
+			curve: CURVES.includes(curve) ? curve : 'winding',
+			curvature: Math.max(0, curvature),
+			speed: Math.max(0, speed),
+			boost: Math.max(1, boost),
+			fov: Math.min(170, Math.max(20, fov)),
+			boostFov: Math.min(170, Math.max(20, boostFov)),
+			lanes: Math.max(1, Math.round(lanes)),
+			roadWidth: Math.max(1, roadWidth),
+			medianWidth: Math.max(0, medianWidth),
+			density: Math.min(MAX_CARS, Math.max(0, Math.round(density))),
+			trailLength: Math.max(0.05, trailLength),
+			lightSize: Math.max(0.1, lightSize),
+			poles: Math.min(MAX_POLES, Math.max(0, Math.round(poles))),
+			poleHeight: Math.max(0.1, poleHeight),
+			dust: Math.min(MAX_DUST, Math.max(0, Math.round(dust))),
+			glow: Math.max(0, glow),
+			reflections: Math.max(0, reflections),
+			steer: Math.max(0, steer),
+			tailColors: tailColors?.length ? tailColors : palette.tail,
+			headColors: headColors?.length ? headColors : palette.head,
+			poleColors: poleColors?.length ? poleColors : palette.poles,
+			roadColor: roadColor ?? palette.road,
+			roadOpacity: Math.min(1, Math.max(0, roadOpacity)),
+			lineColor: lineColor ?? palette.lines,
+			background: background ?? palette.background,
+			dustColor: palette.dust,
+			interactive,
+			boosting
+		};
+	});
+
+	onMount(() => {
+		const container = containerEl;
+		if (!container) return;
+
+		const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+		const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+		renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+		renderer.autoClear = false;
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+		container.appendChild(renderer.domElement);
+
+		const scene = new THREE.Scene();
+		const camera = new THREE.PerspectiveCamera(settings.fov, 1, 0.1, 10000);
+		camera.position.set(0, 8, -5);
+
+		const shared = {
+			uTime: { value: 0 },
+			uCurvature: { value: 1 },
+			uCurveA: { value: new THREE.Vector4() },
+			uCurveB: { value: 0 },
+			uFogNear: { value: TRAVEL * 0.22 },
+			uFogFar: { value: TRAVEL * 0.95 },
+			uTravel: { value: TRAVEL },
+			uStretch: { value: 0 },
+			uPixel: { value: 0.001 }
+		};
+		const disposables: { dispose: () => void }[] = [];
+		const effectMaterials: THREE.ShaderMaterial[] = [];
+
+		const material = (
+			vertexShader: string,
+			fragmentShader: string,
+			uniforms: Record<string, THREE.IUniform>,
+			options: THREE.ShaderMaterialParameters = {}
+		) => {
+			const created = new THREE.ShaderMaterial({
+				vertexShader,
+				fragmentShader,
+				uniforms: { ...shared, ...uniforms },
+				transparent: true,
+				depthWrite: false,
+				...options
+			});
+			disposables.push(created);
+			return created;
+		};
+
+		const swatches = (): Swatches => ({
+			value: Array.from({ length: MAX_COLORS }, () => new THREE.Vector3(1, 1, 1))
 		});
 
+		const roadGeometry = new THREE.PlaneGeometry(1, TRAVEL, 1, 220);
+		roadGeometry.rotateX(-Math.PI / 2);
+		roadGeometry.translate(0, 0, -TRAVEL / 2);
+		disposables.push(roadGeometry);
+		const roadUniforms = {
+			uWidth: { value: 1 },
+			uRoadColor: { value: new THREE.Vector3() },
+			uLineColor: { value: new THREE.Vector3() },
+			uBackground: { value: new THREE.Vector3() },
+			uRoadWidth: { value: 10 },
+			uMedian: { value: 2 },
+			uLanes: { value: 3 },
+			uTransparent: { value: 0 },
+			uOpacity: { value: 1 }
+		};
+		const roadMaterial = material(ROAD_VERTEX, ROAD_FRAGMENT, roadUniforms, { transparent: true, depthWrite: true });
+		const road = new THREE.Mesh(roadGeometry, roadMaterial);
+		road.frustumCulled = false;
+		road.renderOrder = 0;
+		road.layers.enable(1);
+		scene.add(road);
+
+		const tube = new THREE.TubeGeometry(
+			new THREE.LineCurve3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)),
+			24,
+			1,
+			7,
+			false
+		);
+		disposables.push(tube);
+
+		const streakGroup = (direction: number, fade: [number, number], speedRange: [number, number]) => {
+			const geometry = instanced(tube);
+			const seedA = new Float32Array(MAX_CARS * 2 * 4);
+			const seedB = new Float32Array(MAX_CARS * 2 * 4);
+			const pair = new Float32Array(MAX_CARS * 2);
+			const tone = new Float32Array(MAX_CARS * 2);
+			for (let i = 0; i < MAX_CARS; i++) {
+				const a = [Math.random(), Math.random(), Math.random(), Math.random()];
+				const b = [Math.random(), Math.random(), Math.random(), Math.random() * Math.random()];
+				const shade = Math.random();
+				for (let side = 0; side < 2; side++) {
+					const index = i * 2 + side;
+					seedA.set(a, index * 4);
+					seedB.set(b, index * 4);
+					pair[index] = side ? 0.5 : -0.5;
+					tone[index] = shade;
+				}
+			}
+			geometry.setAttribute('aSeedA', new THREE.InstancedBufferAttribute(seedA, 4));
+			geometry.setAttribute('aSeedB', new THREE.InstancedBufferAttribute(seedB, 4));
+			geometry.setAttribute('aPair', new THREE.InstancedBufferAttribute(pair, 1));
+			geometry.setAttribute('aTone', new THREE.InstancedBufferAttribute(tone, 1));
+			geometry.instanceCount = 0;
+			disposables.push(geometry);
+			const uniforms = {
+				uRoadX: { value: 0 },
+				uRoadWidth: { value: 10 },
+				uLanes: { value: 3 },
+				uDirection: { value: direction },
+				uSpeedRange: { value: new THREE.Vector2(...speedRange) },
+				uTrail: { value: 1 },
+				uSize: { value: 1 },
+				uColors: swatches(),
+				uColorCount: { value: 1 },
+				uFade: { value: new THREE.Vector2(...fade) }
+			};
+			const layer = (radiusScale: number, sharp: number, mirror: number, order: number) => {
+				const layerMaterial = material(
+					STREAK_VERTEX,
+					STREAK_FRAGMENT,
+					{
+						...uniforms,
+						uRadiusScale: { value: radiusScale },
+						uSharp: { value: sharp },
+						uMirror: { value: mirror },
+						uIntensity: { value: 1 },
+						uCore: { value: 0 }
+					},
+					{ depthTest: !mirror }
+				);
+				effectMaterials.push(layerMaterial);
+				const mesh = new THREE.Mesh(geometry, layerMaterial);
+				mesh.frustumCulled = false;
+				mesh.renderOrder = order;
+				if (!mirror) mesh.layers.enable(1);
+				scene.add(mesh);
+				return layerMaterial;
+			};
+			return {
+				geometry,
+				uniforms,
+				reflection: layer(2.1, 1.2, 1, 1),
+				core: layer(1, 0.85, 0, 3)
+			};
+		};
+
+		const tail = streakGroup(1, [0, 0.6], [60, 80]);
+		const head = streakGroup(-1, [1, 0.4], [120, 160]);
+
+		const cylinder = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true);
+		disposables.push(cylinder);
+		const poleGeometry = instanced(cylinder);
+		const poleSeed = new Float32Array(MAX_POLES * 2 * 4);
+		const poleIndex = new Float32Array(MAX_POLES * 2);
+		const poleSide = new Float32Array(MAX_POLES * 2);
+		for (let i = 0; i < MAX_POLES; i++) {
+			for (let side = 0; side < 2; side++) {
+				const index = i * 2 + side;
+				poleSeed.set([Math.random(), Math.random(), Math.random(), Math.random()], index * 4);
+				poleIndex[index] = i + (side ? 0.5 : 0);
+				poleSide[index] = side ? 1 : -1;
+			}
+		}
+		poleGeometry.setAttribute('aSeed', new THREE.InstancedBufferAttribute(poleSeed, 4));
+		poleGeometry.setAttribute('aIndex', new THREE.InstancedBufferAttribute(poleIndex, 1));
+		poleGeometry.setAttribute('aSide', new THREE.InstancedBufferAttribute(poleSide, 1));
+		poleGeometry.instanceCount = 0;
+		disposables.push(poleGeometry);
+		const poleUniforms = {
+			uCount: { value: 20 },
+			uEdge: { value: 11 },
+			uHeight: { value: 1 },
+			uColors: swatches(),
+			uColorCount: { value: 1 }
+		};
+		const poleLayer = (radiusScale: number, sharp: number, mirror: number, order: number) => {
+			const layerMaterial = material(
+				POLE_VERTEX,
+				POLE_FRAGMENT,
+				{
+					...poleUniforms,
+					uRadiusScale: { value: radiusScale },
+					uSharp: { value: sharp },
+					uMirror: { value: mirror },
+					uIntensity: { value: 1 },
+					uCore: { value: 0 }
+				},
+				{ depthTest: !mirror }
+			);
+			effectMaterials.push(layerMaterial);
+			const mesh = new THREE.Mesh(poleGeometry, layerMaterial);
+			mesh.frustumCulled = false;
+			mesh.renderOrder = order;
+			if (!mirror) mesh.layers.enable(1);
+			scene.add(mesh);
+			return layerMaterial;
+		};
+		const polesLayers = {
+			reflection: poleLayer(2.4, 1.2, 1, 1),
+			core: poleLayer(1, 0.8, 0, 3)
+		};
+
+		const dustGeometry = new THREE.BufferGeometry();
+		const dustSeed = new Float32Array(MAX_DUST * 2 * 4);
+		const dustEnd = new Float32Array(MAX_DUST * 2);
+		for (let i = 0; i < MAX_DUST; i++) {
+			const seed = [Math.random(), Math.random(), Math.random(), Math.random()];
+			dustSeed.set(seed, i * 8);
+			dustSeed.set(seed, i * 8 + 4);
+			dustEnd[i * 2 + 1] = 1;
+		}
+		dustGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_DUST * 2 * 3), 3));
+		dustGeometry.setAttribute('aSeed', new THREE.BufferAttribute(dustSeed, 4));
+		dustGeometry.setAttribute('aEnd', new THREE.BufferAttribute(dustEnd, 1));
+		dustGeometry.setDrawRange(0, 0);
+		disposables.push(dustGeometry);
+		const dustUniforms = {
+			uSpread: { value: 140 },
+			uColor: { value: new THREE.Vector3(1, 1, 1) },
+			uIntensity: { value: 0.5 }
+		};
+		const dustMaterial = material(DUST_VERTEX, DUST_FRAGMENT, dustUniforms);
+		effectMaterials.push(dustMaterial);
+		const dustLines = new THREE.LineSegments(dustGeometry, dustMaterial);
+		dustLines.frustumCulled = false;
+		dustLines.renderOrder = 4;
+		scene.add(dustLines);
+
+		const floatTargets =
+			renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
+		const levels = Array.from({ length: 5 }, (_, index) => {
+			const target = new THREE.WebGLRenderTarget(1, 1, {
+				type: floatTargets ? THREE.HalfFloatType : THREE.UnsignedByteType,
+				depthBuffer: index === 0
+			});
+			disposables.push(target);
+			return target;
+		});
+		const quadScene = new THREE.Scene();
+		const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+		const quadGeometry = new THREE.PlaneGeometry(2, 2);
+		disposables.push(quadGeometry);
+		const quad = new THREE.Mesh(quadGeometry);
+		quad.frustumCulled = false;
+		quadScene.add(quad);
+		const blur = (fragmentShader: string, options: THREE.ShaderMaterialParameters) => {
+			const created = new THREE.ShaderMaterial({
+				vertexShader: QUAD_VERTEX,
+				fragmentShader,
+				uniforms: {
+					uTexture: { value: null },
+					uTexel: { value: new THREE.Vector2() },
+					uStrength: { value: 1 },
+					uCeiling: { value: 1 },
+					uLight: { value: 0 }
+				},
+				depthTest: false,
+				depthWrite: false,
+				...options
+			});
+			disposables.push(created);
+			return created;
+		};
+		const downMaterial = blur(DOWN_FRAGMENT, { blending: THREE.NoBlending });
+		const upMaterial = blur(UP_FRAGMENT, {
+			blending: THREE.CustomBlending,
+			blendSrc: THREE.OneFactor,
+			blendDst: THREE.OneFactor,
+			blendSrcAlpha: THREE.OneFactor,
+			blendDstAlpha: THREE.OneFactor
+		});
+		const bloomMaterial = blur(BLOOM_FRAGMENT, { blending: THREE.CustomBlending, blendSrc: THREE.OneFactor });
+		const pass = (
+			passMaterial: THREE.ShaderMaterial,
+			source: THREE.WebGLRenderTarget,
+			target: THREE.WebGLRenderTarget | null
+		) => {
+			quad.material = passMaterial;
+			passMaterial.uniforms.uTexture.value = source.texture;
+			passMaterial.uniforms.uTexel.value.set(1 / source.width, 1 / source.height);
+			renderer.setRenderTarget(target);
+			renderer.render(quadScene, quadCamera);
+		};
+		const clearColor = new THREE.Color();
+		let clearAlpha = 0;
+
+		const state = {
+			boost: 0,
+			held: false,
+			boosted: false,
+			fov: settings.fov,
+			fovVelocity: 0,
+			steerX: 0,
+			steerY: 0,
+			pointerX: 0,
+			pointerY: 0,
+			weights: [0, 0, 0, 0, 0],
+			visible: true
+		};
+		const keys = { tail: '', head: '', poles: '', surface: '', light: null as boolean | null };
+		const lookTarget = new THREE.Vector3();
+		let raf = 0;
+		let last = performance.now();
+		let alive = true;
+
+		const syncColors = (s: Settings) => {
+			const tailKey = s.tailColors.join();
+			if (tailKey !== keys.tail) {
+				keys.tail = tailKey;
+				fillPalette(tail.uniforms.uColors, tail.uniforms.uColorCount, s.tailColors);
+			}
+			const headKey = s.headColors.join();
+			if (headKey !== keys.head) {
+				keys.head = headKey;
+				fillPalette(head.uniforms.uColors, head.uniforms.uColorCount, s.headColors);
+			}
+			const poleKey = s.poleColors.join();
+			if (poleKey !== keys.poles) {
+				keys.poles = poleKey;
+				fillPalette(poleUniforms.uColors, poleUniforms.uColorCount, s.poleColors);
+			}
+			const surfaceKey = [s.roadColor, s.lineColor, s.background, s.dustColor].join();
+			if (surfaceKey !== keys.surface) {
+				keys.surface = surfaceKey;
+				roadUniforms.uRoadColor.value.fromArray(toRgb(s.roadColor));
+				roadUniforms.uLineColor.value.fromArray(toRgb(s.lineColor));
+				dustUniforms.uColor.value.fromArray(toRgb(s.dustColor));
+				const transparent = s.background === 'transparent';
+				const backdrop: Vec3 = transparent ? [0, 0, 0] : toRgb(s.background);
+				roadUniforms.uBackground.value.fromArray(backdrop);
+				roadUniforms.uTransparent.value = transparent ? 1 : 0;
+				clearColor.setRGB(...backdrop, THREE.LinearSRGBColorSpace);
+				clearAlpha = transparent ? 0 : 1;
+			}
+			if (keys.light !== s.light) {
+				keys.light = s.light;
+				effectMaterials.forEach(item => {
+					item.blending = s.light ? THREE.NormalBlending : THREE.AdditiveBlending;
+					item.needsUpdate = true;
+				});
+				bloomMaterial.blendDst = s.light ? THREE.OneMinusSrcAlphaFactor : THREE.OneFactor;
+				bloomMaterial.blendSrcAlpha = s.light ? THREE.OneFactor : THREE.ZeroFactor;
+				bloomMaterial.blendDstAlpha = s.light ? THREE.OneMinusSrcAlphaFactor : THREE.OneFactor;
+				bloomMaterial.uniforms.uLight.value = s.light ? 1 : 0;
+			}
+		};
+
+		let resizePending = false;
+		const applyResize = () => {
+			const width = Math.max(1, container.clientWidth);
+			const height = Math.max(1, container.clientHeight);
+			renderer.setSize(width, height, false);
+			levels.forEach((target, index) =>
+				target.setSize(
+					Math.max(1, Math.round(width / 2 ** (index + 1))),
+					Math.max(1, Math.round(height / 2 ** (index + 1)))
+				)
+			);
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+		};
+
+		const resize = () => {
+			resizePending = true;
+			wake();
+		};
+
+		const frame = (now: number) => {
+			raf = 0;
+			if (resizePending) {
+				resizePending = false;
+				applyResize();
+			}
+			if (!alive) return;
+			const s = settings;
+			const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
+			last = now;
+			syncColors(s);
+
+			const wanted = (state.held && s.interactive) || s.boosting ? 1 : 0;
+			state.boost += (wanted - state.boost) * (1 - Math.exp(-dt / (wanted > state.boost ? 0.28 : 0.85)));
+			const pace = s.speed * (reduce ? 0.3 : 1) * (1 + (s.boost - 1) * state.boost);
+			shared.uTime.value += dt * pace;
+			shared.uStretch.value = state.boost * 1.1;
+			shared.uCurvature.value = s.curvature;
+
+			const target = CURVES.indexOf(s.curve) - 1;
+			const blend = 1 - Math.exp(-dt / 0.6);
+			state.weights = state.weights.map((weight, index) => weight + ((index === target ? 1 : 0) - weight) * blend);
+			shared.uCurveA.value.set(state.weights[0], state.weights[1], state.weights[2], state.weights[3]);
+			shared.uCurveB.value = state.weights[4];
+
+			const halfRoad = s.roadWidth / 2 + s.medianWidth / 2;
+			const surface = 0.45 + 0.55 * s.roadOpacity;
+			[tail, head].forEach((group, index) => {
+				group.geometry.instanceCount = s.density * 2;
+				group.uniforms.uRoadX.value = index ? halfRoad : -halfRoad;
+				group.uniforms.uRoadWidth.value = s.roadWidth;
+				group.uniforms.uLanes.value = s.lanes;
+				group.uniforms.uTrail.value = s.trailLength;
+				group.uniforms.uSize.value = s.lightSize;
+				group.core.uniforms.uIntensity.value = s.light ? 0.95 : 1 + 0.35 * state.boost;
+				group.core.uniforms.uCore.value = s.light ? 0 : 0.75;
+				group.reflection.uniforms.uIntensity.value = s.reflections * (s.light ? 0.22 : 0.42) * surface;
+			});
+
+			poleGeometry.instanceCount = s.poles * 2;
+			poleUniforms.uCount.value = Math.max(1, s.poles);
+			poleUniforms.uEdge.value = s.roadWidth + s.medianWidth / 2 + 0.8;
+			poleUniforms.uHeight.value = s.poleHeight;
+			polesLayers.core.uniforms.uIntensity.value = s.light ? 0.9 : 1;
+			polesLayers.core.uniforms.uCore.value = s.light ? 0 : 0.6;
+			polesLayers.reflection.uniforms.uIntensity.value = s.reflections * (s.light ? 0.2 : 0.38) * surface;
+
+			dustGeometry.setDrawRange(0, s.dust * 2);
+			dustUniforms.uIntensity.value = (s.light ? 0.35 : 0.45) * (1 + state.boost);
+			dustUniforms.uSpread.value = (s.roadWidth * 2 + s.medianWidth) * 5;
+
+			roadUniforms.uWidth.value = s.roadWidth * 2 + s.medianWidth + 3;
+			roadUniforms.uRoadWidth.value = s.roadWidth;
+			roadUniforms.uMedian.value = s.medianWidth;
+			roadUniforms.uLanes.value = s.lanes;
+			roadUniforms.uOpacity.value = s.roadOpacity;
+			roadMaterial.depthWrite = s.roadOpacity > 0.5;
+
+			const fovTarget = reduce ? s.fov : s.fov + (s.boostFov - s.fov) * state.boost;
+			state.fovVelocity += ((fovTarget - state.fov) * 90 - state.fovVelocity * 13) * dt;
+			state.fov += state.fovVelocity * dt;
+			camera.fov = state.fov;
+			shared.uPixel.value = (2 * Math.tan((state.fov * Math.PI) / 360)) / Math.max(1, renderer.domElement.height);
+
+			const steerBlend = 1 - Math.exp(-dt / 0.35);
+			const follow = s.interactive ? s.steer : 0;
+			state.steerX += (state.pointerX * follow - state.steerX) * steerBlend;
+			state.steerY += (state.pointerY * follow - state.steerY) * steerBlend;
+			camera.position.set(state.steerX * s.roadWidth * 0.45, 8 - state.steerY * 2.5, -5);
+
+			const looks = lookShapes(shared.uTime.value, s.curvature);
+			const straight = 1 - state.weights.reduce((sum, weight) => sum + weight, 0);
+			lookTarget.set(0, 0, -10 * straight);
+			looks.forEach((look, index) => {
+				lookTarget.x += look[0] * state.weights[index];
+				lookTarget.y += look[1] * state.weights[index];
+				lookTarget.z += look[2] * state.weights[index];
+			});
+			lookTarget.x += state.steerX * 2.5;
+			lookTarget.add(camera.position);
+			camera.lookAt(lookTarget);
+			camera.updateProjectionMatrix();
+
+			renderer.setRenderTarget(null);
+			renderer.setClearColor(clearColor, clearAlpha);
+			renderer.clear();
+			renderer.render(scene, camera);
+
+			if (s.glow > 0) {
+				const pixel = shared.uPixel.value;
+				shared.uPixel.value = pixel * (renderer.domElement.height / levels[0].height);
+				camera.layers.set(1);
+				roadMaterial.colorWrite = false;
+				renderer.setRenderTarget(levels[0]);
+				renderer.setClearColor(0x000000, 0);
+				renderer.clear();
+				renderer.render(scene, camera);
+				roadMaterial.colorWrite = true;
+				camera.layers.set(0);
+				shared.uPixel.value = pixel;
+				for (let i = 1; i < levels.length; i++) pass(downMaterial, levels[i - 1], levels[i]);
+				for (let i = levels.length - 1; i > 1; i--) pass(upMaterial, levels[i], levels[i - 1]);
+				bloomMaterial.uniforms.uStrength.value = s.glow * (s.light ? 0.5 : 1.4);
+				bloomMaterial.uniforms.uCeiling.value = s.glow * (s.light ? 0.3 : 0.5);
+				pass(bloomMaterial, levels[1], null);
+			}
+
+			if (state.visible) raf = requestAnimationFrame(frame);
+		};
+
+		const wake = () => {
+			if (raf || !alive || !state.visible) return;
+			last = performance.now();
+			raf = requestAnimationFrame(frame);
+		};
+
+		const setHeld = (held: boolean) => {
+			if (state.held === held) return;
+			state.held = held;
+			if (!settings.interactive) return;
+			if (held) onBoostStart?.();
+			else onBoostEnd?.();
+		};
+
+		const onDown = (event: PointerEvent) => {
+			if (event.button !== 0 && event.pointerType === 'mouse') return;
+			setHeld(true);
+		};
+		const onUp = () => setHeld(false);
+		const onMove = (event: PointerEvent) => {
+			const rect = container.getBoundingClientRect();
+			state.pointerX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+			state.pointerY = ((event.clientY - rect.top) / rect.height) * 2 - 1;
+		};
+		const onLeave = () => {
+			state.pointerX = 0;
+			state.pointerY = 0;
+		};
+		const onMenu = (event: MouseEvent) => {
+			if (settings.interactive) event.preventDefault();
+		};
+
+		const resizeObserver = new ResizeObserver(resize);
+		resizeObserver.observe(container);
+		const visibility = new IntersectionObserver(entries => {
+			state.visible = entries.some(entry => entry.isIntersecting);
+			if (state.visible) wake();
+		});
+		visibility.observe(container);
+		container.addEventListener('pointerdown', onDown);
+		container.addEventListener('pointermove', onMove);
+		container.addEventListener('pointerleave', onLeave);
+		container.addEventListener('contextmenu', onMenu);
+		window.addEventListener('pointerup', onUp);
+		window.addEventListener('pointercancel', onUp);
+		window.addEventListener('blur', onUp);
+		resize();
+
 		return () => {
-			cancelled = true;
-			app.dispose();
-			while (currentContainer.firstChild) currentContainer.removeChild(currentContainer.firstChild);
+			alive = false;
+			cancelAnimationFrame(raf);
+			resizeObserver.disconnect();
+			visibility.disconnect();
+			container.removeEventListener('pointerdown', onDown);
+			container.removeEventListener('pointermove', onMove);
+			container.removeEventListener('pointerleave', onLeave);
+			container.removeEventListener('contextmenu', onMenu);
+			window.removeEventListener('pointerup', onUp);
+			window.removeEventListener('pointercancel', onUp);
+			window.removeEventListener('blur', onUp);
+			disposables.forEach(item => item.dispose());
+			renderer.dispose();
+			renderer.domElement.remove();
 		};
 	});
 </script>
 
-<div bind:this={container} class="relative h-full w-full overflow-hidden {className}"></div>
+<div
+	bind:this={containerEl}
+	class={[ROOT, className].filter(Boolean).join(' ')}
+	{style}
+></div>

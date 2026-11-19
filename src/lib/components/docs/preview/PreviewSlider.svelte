@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { ScrubGesture } from './lib/scrubGesture.svelte';
+
 	type Props = {
 		title?: string;
 		min?: number;
@@ -10,6 +12,7 @@
 		displayValue?: (v: number) => string;
 		onChange?: (v: number) => void;
 	};
+
 	let {
 		title = '',
 		min = 0,
@@ -22,36 +25,34 @@
 		onChange
 	}: Props = $props();
 
+	const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+	const stepDecimals = (s: number) => {
+		const str = s.toString();
+		const dot = str.indexOf('.');
+		return dot === -1 ? 0 : str.length - dot - 1;
+	};
+	const roundToStep = (v: number, s: number, lo: number) => {
+		const raw = Math.round((v - lo) / s) * s + lo;
+		const decimals = Math.max(stepDecimals(s), stepDecimals(lo));
+		return Number(raw.toFixed(decimals));
+	};
+
 	let trackEl: HTMLDivElement | null = $state(null);
-	let isDragging = $state(false);
 	let isHovering = $state(false);
 	let isHoverDevice = $state(false);
 
 	const range = $derived(max - min);
 	const percentage = $derived(range > 0 ? ((value - min) / range) * 100 : 0);
-	const isActive = $derived(isDragging || (isHoverDevice && isHovering));
 
 	$effect(() => {
 		const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
 		isHoverDevice = mq.matches;
-		const onChange = (e: MediaQueryListEvent) => (isHoverDevice = e.matches);
-		mq.addEventListener('change', onChange);
-		return () => mq.removeEventListener('change', onChange);
+		const handle = (e: MediaQueryListEvent) => (isHoverDevice = e.matches);
+		mq.addEventListener('change', handle);
+		return () => mq.removeEventListener('change', handle);
 	});
 
-	const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
-	function stepDecimals(s: number) {
-		const str = s.toString();
-		const dot = str.indexOf('.');
-		return dot === -1 ? 0 : str.length - dot - 1;
-	}
-	function roundToStep(v: number, s: number, lo: number) {
-		const raw = Math.round((v - lo) / s) * s + lo;
-		const decimals = Math.max(stepDecimals(s), stepDecimals(lo));
-		return Number(raw.toFixed(decimals));
-	}
-
-	function compute(clientX: number): number {
+	function computeValue(clientX: number) {
 		if (!trackEl) return value;
 		const rect = trackEl.getBoundingClientRect();
 		const ratio = clamp((clientX - rect.left) / rect.width, 0, 1);
@@ -59,23 +60,18 @@
 		return clamp(roundToStep(raw, step, min), min, max);
 	}
 
-	function onPointerDown(e: PointerEvent) {
-		if (isDisabled) return;
-		e.preventDefault();
-		trackEl?.setPointerCapture(e.pointerId);
-		isDragging = true;
-		onChange?.(compute(e.clientX));
-	}
-	function onPointerMove(e: PointerEvent) {
-		if (!isDragging) return;
-		onChange?.(compute(e.clientX));
-	}
-	function onPointerUp() {
-		isDragging = false;
-	}
+	const gesture = new ScrubGesture({
+		track: () => trackEl,
+		computeValue: (x) => computeValue(x),
+		onChange: (v) => onChange?.(v),
+		isDisabled: () => isDisabled
+	});
+
+	const isActive = $derived(gesture.isDragging || (isHoverDevice && isHovering));
+
 	function onKeyDown(e: KeyboardEvent) {
 		if (isDisabled) return;
-		let next: number | undefined;
+		let next: number;
 		switch (e.key) {
 			case 'ArrowRight':
 			case 'ArrowUp':
@@ -99,8 +95,8 @@
 	}
 
 	const ticks = 9;
-	const formatted = $derived(
-		displayValue ? displayValue(value) : `${Number(value.toFixed(stepDecimals(step)))}${valueUnit}`
+	const formattedValue = $derived(
+		displayValue ? displayValue(value) : `${Number(Number(value).toFixed(stepDecimals(step)))}${valueUnit}`
 	);
 </script>
 
@@ -115,12 +111,13 @@
 		aria-valuenow={value}
 		aria-disabled={isDisabled}
 		tabindex={isDisabled ? -1 : 0}
-		data-dragging={isDragging}
+		data-dragging={gesture.isDragging}
 		data-disabled={isDisabled}
 		data-active={isActive}
-		onpointerdown={onPointerDown}
-		onpointermove={onPointerMove}
-		onpointerup={onPointerUp}
+		onpointerdown={gesture.onPointerDown}
+		onpointermove={gesture.onPointerMove}
+		onpointerup={gesture.onPointerUp}
+		onpointercancel={gesture.onPointerCancel}
 		onmouseenter={() => (isHovering = true)}
 		onmouseleave={() => (isHovering = false)}
 		onkeydown={onKeyDown}
@@ -135,6 +132,6 @@
 			<div class="scrubber-thumb"></div>
 		</div>
 		<div class="scrubber-label">{title}</div>
-		<div class="scrubber-value">{formatted}</div>
+		<div class="scrubber-value">{formattedValue}</div>
 	</div>
 </div>

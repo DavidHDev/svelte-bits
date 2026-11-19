@@ -1,211 +1,752 @@
 <!-- @svelte-bits
 {
   "title": "Stack",
-  "description": "Draggable card stack with spring rotation and send-to-back interaction.",
+  "description": "Pile of cards you can drag, flick or click through, with thrown cards tucking underneath.",
   "dependencies": ["motion"]
 }
 -->
 <script module lang="ts">
-	export type StackCard = { id: number; image?: string; alt?: string };
-</script>
+	import type { Snippet } from 'svelte';
+	import type { MotionValue, ValueAnimationTransition } from 'motion';
 
-<script lang="ts">
-	import { onMount } from 'svelte';
-	import { motionValue, animate } from 'motion';
+	export type StackLayout = 'fan' | 'cascade' | 'deck' | 'pile';
 
-	type Props = {
-		randomRotation?: boolean;
-		sensitivity?: number;
+	export interface StackProps {
+		cards?: Snippet[];
+		layout?: StackLayout;
+		visible?: number;
+		spread?: number;
+		depth?: number;
+		radius?: number;
+		frame?: number;
+		frameColor?: string;
+		shadow?: boolean;
+		tilt?: number;
+		threshold?: number;
+		speed?: number;
 		sendToBackOnClick?: boolean;
-		cardsData?: StackCard[];
-		cardDimensions?: { width: number; height: number };
-		animationConfig?: { stiffness: number; damping: number };
 		autoplay?: boolean;
 		autoplayDelay?: number;
 		pauseOnHover?: boolean;
-		mobileClickOnly?: boolean;
-		mobileBreakpoint?: number;
+		onChange?: (index: number) => void;
+		class?: string;
+		style?: string;
+	}
+
+	type Vector = [number, number];
+	type Sample = [number, number, number];
+	type SpringKind = 'place' | 'settle' | 'tuck' | 'face' | 'lean' | 'press' | 'fling';
+
+	interface PlaceOptions {
+		delay?: number;
+		lift?: number;
+		kind?: SpringKind;
+		velocity?: Vector | null;
+		keepZ?: boolean;
+	}
+
+	interface PlaceAllOptions {
+		stagger?: number;
+		lift?: number;
+		released?: number;
+		velocity?: Vector | null;
+		kind?: SpringKind;
+	}
+
+	interface Placement {
+		x: number;
+		y: number;
+		rotate: number;
+		scale: number;
+	}
+
+	interface CardValues {
+		x: MotionValue<number>;
+		y: MotionValue<number>;
+		rotate: MotionValue<number>;
+		scale: MotionValue<number>;
+		tiltX: MotionValue<number>;
+		tiltY: MotionValue<number>;
+		spin: MotionValue<number>;
+		lift: MotionValue<number>;
+		grabX: MotionValue<number>;
+		grabY: MotionValue<number>;
+		z: MotionValue<number>;
+		opacity: MotionValue<number>;
+		shade: MotionValue<number>;
+	}
+
+	interface Settings {
+		layout: StackLayout;
+		visible: number;
+		spread: number;
+		depth: number;
+		tilt: number;
+		threshold: number;
+		speed: number;
+		sendToBackOnClick: boolean;
+		count: number;
+		reduceMotion: boolean;
+	}
+
+	interface DragState {
+		card: number;
+		id: number;
+		element: HTMLDivElement;
+		startX: number;
+		startY: number;
+		originX: number;
+		originY: number;
+		homeX: number;
+		homeY: number;
+		vx: number;
+		vy: number;
+		idle: ReturnType<typeof setTimeout> | 0;
+		moved: boolean;
+		progress: number;
+		capture?: boolean;
+		samples: Sample[];
+	}
+
+	type CardPart = 'card' | 'face' | 'shade';
+
+	interface CardElements {
+		card?: HTMLDivElement;
+		face?: HTMLDivElement;
+		shade?: HTMLDivElement;
+		render?: () => void;
+	}
+
+	const DEFAULT_IMAGES = [
+		'https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?q=80&w=500&auto=format',
+		'https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=500&auto=format',
+		'https://images.unsplash.com/photo-1452626212852-811d58933cae?q=80&w=500&auto=format',
+		'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=500&auto=format'
+	];
+
+	const ORIGINS: Record<StackLayout, Vector> = {
+		fan: [0.9, 0.9],
+		cascade: [0.5, 0.5],
+		deck: [0.5, 0],
+		pile: [0.5, 0.5]
+	};
+	const EXITS: Partial<Record<StackLayout, Vector>> = { fan: [1, -0.3], cascade: [0.8, 0.6], deck: [0, 1] };
+	const SHADOW = '0 14px 34px -10px rgba(0, 0, 0, 0.45), 0 3px 8px -2px rgba(0, 0, 0, 0.18)';
+	const CLICK_SLOP = 6;
+	const FLICK_SPEED = 650;
+	const LEAN_SPEED = 1300;
+	const LEAN_REACH = 260;
+	const PRESS_SCALE = 1.035;
+	const SPRINGS: Record<SpringKind, Vector> = {
+		place: [260, 24],
+		settle: [320, 34],
+		tuck: [240, 28],
+		face: [240, 30],
+		lean: [240, 28],
+		press: [420, 34],
+		fling: [650, 42]
 	};
 
+	const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+	const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+
+	const noise = (seed: number) => {
+		const value = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+		return value - Math.floor(value);
+	};
+
+	const placement = (layout: StackLayout, position: number, card: number, spread: number, depth: number): Placement => {
+		if (layout === 'cascade') {
+			return { x: -position * spread * 28, y: -position * spread * 28, rotate: 0, scale: 1 - position * depth * 0.07 };
+		}
+		if (layout === 'deck') {
+			return { x: 0, y: -position * spread * 32, rotate: 0, scale: 1 - position * depth * 0.1 };
+		}
+		if (layout === 'pile') {
+			return {
+				x: (noise(card + 1) - 0.5) * spread * 56,
+				y: (noise(card + 2) - 0.5) * spread * 44,
+				rotate: (noise(card + 3) - 0.5) * spread * 40,
+				scale: 1 - position * depth * 0.03
+			};
+		}
+		return { x: 0, y: 0, rotate: position * spread * 8, scale: 1 - position * depth * 0.12 };
+	};
+
+	const releaseVelocity = (samples: Sample[], time: number): Vector => {
+		const recent = samples.filter((sample) => time - sample[2] <= 100);
+		if (recent.length < 2) return [0, 0];
+		const first = recent[0];
+		const last = recent[recent.length - 1];
+		const elapsed = Math.max((last[2] - first[2]) / 1000, 0.008);
+		return [(last[0] - first[0]) / elapsed, (last[1] - first[1]) / elapsed];
+	};
+</script>
+
+<script lang="ts">
+	import { onMount, untrack } from 'svelte';
+	import { animate, cancelFrame, frame as frameloop, motionValue } from 'motion';
+
 	let {
-		randomRotation = false,
-		sensitivity = 200,
+		cards,
+		layout = 'fan',
+		visible = 4,
+		spread = 0.5,
+		depth = 0.5,
+		radius = 16,
+		frame = 0,
+		frameColor = '#ffffff',
+		shadow = true,
+		tilt = 30,
+		threshold = 90,
+		speed = 1,
 		sendToBackOnClick = false,
-		cardsData,
-		cardDimensions = { width: 208, height: 208 },
-		animationConfig = { stiffness: 260, damping: 20 },
 		autoplay = false,
 		autoplayDelay = 3000,
 		pauseOnHover = false,
-		mobileClickOnly = false,
-		mobileBreakpoint = 768
-	}: Props = $props();
+		onChange,
+		class: className = '',
+		style
+	}: StackProps = $props();
 
-	const DEFAULT_CARDS: StackCard[] = [
-		{ id: 1, image: 'https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?q=80&w=500&auto=format', alt: 'card-1' },
-		{ id: 2, image: 'https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=500&auto=format', alt: 'card-2' },
-		{ id: 3, image: 'https://images.unsplash.com/photo-1452626212852-811d58933cae?q=80&w=500&auto=format', alt: 'card-3' },
-		{ id: 4, image: 'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=500&auto=format', alt: 'card-4' }
-	];
+	const items = $derived<{ snippet?: Snippet; src?: string }[]>(
+		cards && cards.length ? cards.map((snippet) => ({ snippet })) : DEFAULT_IMAGES.map((src) => ({ src }))
+	);
+	const count = $derived(items.length);
+	const shape = $derived<StackLayout>(layout in ORIGINS ? layout : 'fan');
 
-	let stack = $state<StackCard[]>(cardsData?.length ? cardsData.slice() : DEFAULT_CARDS.slice());
-	let isMobile = $state(false);
-	let isPaused = $state(false);
+	const motionQuery =
+		typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+	let reduceMotion = $state(motionQuery?.matches ?? false);
+	let rootEl = $state<HTMLDivElement | null>(null);
+	let order = $state.raw<number[]>(untrack(() => Array.from({ length: count }, (_, index) => index)));
+	let dragging = $state(false);
+	let hovered = $state(false);
+	let orderRef = untrack(() => order);
+	const valuesMap = new Map<number, CardValues>();
+	const elementsMap = new Map<number, CardElements>();
+	const flyingMap = new Map<number, { turned: boolean }>();
+	let dragRef: DragState | null = null;
+	let alive = true;
+	let mounted = false;
+	const unsubscribers: (() => void)[] = [];
+
+	const settings = (): Settings => ({
+		layout: shape,
+		visible: clamp(Math.round(visible), 1, Math.max(count, 1)),
+		spread: clamp(spread, 0, 2),
+		depth: clamp(depth, 0, 1),
+		tilt: clamp(tilt, 0, 89),
+		threshold: Math.max(threshold, 0),
+		speed: clamp(speed, 0.2, 4),
+		sendToBackOnClick,
+		count,
+		reduceMotion
+	});
+
+	const elementsFor = (index: number): CardElements => {
+		let entry = elementsMap.get(index);
+		if (!entry) {
+			entry = {};
+			elementsMap.set(index, entry);
+		}
+		return entry;
+	};
+
+	const renderCard = (index: number) => {
+		const values = valuesMap.get(index);
+		const entry = elementsMap.get(index);
+		if (!values || !entry) return;
+		const [originX, originY] = ORIGINS[untrack(() => shape)];
+		if (entry.card) {
+			const cardStyle = entry.card.style;
+			cardStyle.transform = `translateX(${values.x.get()}px) translateY(${values.y.get()}px) scale(${values.scale.get()}) rotate(${values.rotate.get()}deg)`;
+			cardStyle.transformOrigin = `${originX * 100}% ${originY * 100}% 0`;
+			cardStyle.zIndex = String(Math.round(values.z.get()));
+			cardStyle.opacity = String(values.opacity.get());
+		}
+		if (entry.face) {
+			const faceStyle = entry.face.style;
+			faceStyle.transform = `perspective(800px) scale(${values.lift.get()}) rotate(${values.spin.get()}deg) rotateX(${values.tiltX.get()}deg) rotateY(${values.tiltY.get()}deg)`;
+			faceStyle.transformOrigin = `${values.grabX.get() * 100}% ${values.grabY.get() * 100}% 0`;
+		}
+		if (entry.shade) entry.shade.style.opacity = String(values.shade.get());
+	};
+
+	const valuesFor = (index: number): CardValues => {
+		let values = valuesMap.get(index);
+		if (!values) {
+			const s = settings();
+			const position = Math.max(0, orderRef.indexOf(index));
+			const start = placement(
+				s.layout,
+				s.reduceMotion ? Math.min(position, s.visible - 1) : 0,
+				index,
+				s.spread,
+				s.depth
+			);
+			values = {
+				x: motionValue(start.x),
+				y: motionValue(start.y),
+				rotate: motionValue(start.rotate),
+				scale: motionValue(start.scale),
+				tiltX: motionValue(0),
+				tiltY: motionValue(0),
+				spin: motionValue(0),
+				lift: motionValue(1),
+				grabX: motionValue(0.5),
+				grabY: motionValue(0.5),
+				z: motionValue(s.count - position),
+				opacity: motionValue(position < s.visible ? 1 : 0),
+				shade: motionValue(0)
+			};
+			valuesMap.set(index, values);
+			const entry = elementsFor(index);
+			entry.render = () => renderCard(index);
+			const schedule = () => {
+				if (entry.render) frameloop.render(entry.render);
+			};
+			Object.values(values).forEach((value) => unsubscribers.push(value.on('change', schedule)));
+		}
+		return values;
+	};
+
+	const cardPart = (element: HTMLDivElement, params: { index: number; part: CardPart }) => {
+		let current = params;
+		const attach = () => {
+			elementsFor(current.index)[current.part] = element;
+			untrack(() => {
+				valuesFor(current.index);
+				renderCard(current.index);
+			});
+		};
+		const detach = () => {
+			const entry = elementsMap.get(current.index);
+			if (entry && entry[current.part] === element) delete entry[current.part];
+		};
+		attach();
+		return {
+			update(next: { index: number; part: CardPart }) {
+				if (next.index === current.index && next.part === current.part) return;
+				detach();
+				current = next;
+				attach();
+			},
+			destroy: detach
+		};
+	};
+
+	const springFor = (
+		s: Settings,
+		kind: SpringKind,
+		extra: ValueAnimationTransition<number> = {}
+	): ValueAnimationTransition<number> => {
+		if (s.reduceMotion) return { duration: 0.2, ease: 'easeOut', delay: extra.delay || 0 };
+		const [stiffness, damping] = SPRINGS[kind];
+		return {
+			type: 'spring',
+			stiffness: stiffness * s.speed * s.speed,
+			damping: damping * s.speed,
+			restDelta: 0.01,
+			restSpeed: 0.5,
+			...extra
+		};
+	};
+
+	const settleFace = (values: CardValues, s: Settings, delay = 0) => {
+		const transition = springFor(s, 'face', { delay });
+		animate(values.tiltX, 0, transition);
+		animate(values.tiltY, 0, transition);
+		animate(values.spin, 0, transition);
+		animate(values.lift, 1, transition);
+	};
+
+	const placeCard = (
+		index: number,
+		position: number,
+		{ delay = 0, lift = 0, kind = 'place', velocity = null, keepZ = false }: PlaceOptions = {}
+	) => {
+		const s = settings();
+		const values = valuesFor(index);
+		const shown = Math.min(position, s.visible - 1);
+		const target = placement(s.layout, shown, index, s.spread, s.depth);
+		if (lift > 0 && shown > 0) {
+			const ahead = placement(s.layout, shown - 1, index, s.spread, s.depth);
+			target.x = mix(target.x, ahead.x, lift);
+			target.y = mix(target.y, ahead.y, lift);
+			target.rotate = mix(target.rotate, ahead.rotate, lift);
+			target.scale = mix(target.scale, ahead.scale, lift);
+		}
+		const motionSpring = springFor(s, kind, { delay });
+		const fade: ValueAnimationTransition<number> = {
+			duration: s.reduceMotion ? 0.2 : 0.35 / s.speed,
+			ease: 'easeOut',
+			delay
+		};
+		if (!keepZ) values.z.set(s.count - position);
+		animate(values.x, target.x, velocity ? { ...motionSpring, velocity: velocity[0] } : motionSpring);
+		animate(values.y, target.y, velocity ? { ...motionSpring, velocity: velocity[1] } : motionSpring);
+		animate(values.rotate, target.rotate, motionSpring);
+		animate(values.scale, target.scale, motionSpring);
+		settleFace(values, s, delay);
+		animate(values.opacity, position < s.visible ? 1 : 0, fade);
+		animate(values.shade, Math.min(0.6, shown * s.depth * 0.14 * (1 - lift)), fade);
+	};
+
+	const placeAll = ({
+		stagger = 0,
+		lift = 0,
+		released = -1,
+		velocity = null,
+		kind = 'place'
+	}: PlaceAllOptions = {}) => {
+		const drag = dragRef;
+		orderRef.forEach((index, position) => {
+			const flight = flyingMap.get(index);
+			if (flight && !flight.turned) return;
+			if (drag && drag.moved && drag.card === index) return;
+			const isReleased = index === released;
+			placeCard(index, position, {
+				delay: position * stagger,
+				lift: position > 0 ? lift : 0,
+				kind: flight ? 'tuck' : isReleased ? 'settle' : kind,
+				velocity: isReleased ? velocity : null,
+				keepZ: !!flight
+			});
+		});
+	};
+
+	const commit = (next: number[]) => {
+		orderRef = next;
+		order = next;
+	};
+
+	const sendToBack = (direction: Vector | null, velocity: Vector | null = null) => {
+		const s = settings();
+		const current = orderRef;
+		if (current.length < 2) return;
+		const top = current[0];
+		if (flyingMap.has(top)) return;
+		const next = [...current.slice(1), top];
+		if (s.reduceMotion) {
+			commit(next);
+			return;
+		}
+		let [dx, dy] = direction ||
+			EXITS[s.layout] || [Math.cos(noise(top + 9) * 6.283), Math.sin(noise(top + 9) * 6.283)];
+		const length = Math.hypot(dx, dy) || 1;
+		dx /= length;
+		dy /= length;
+		const bounds = rootEl?.getBoundingClientRect();
+		const width = bounds?.width || 240;
+		const height = bounds?.height || 240;
+		const clearance = Math.min(width / Math.max(Math.abs(dx), 0.01), height / Math.max(Math.abs(dy), 0.01));
+		const home = placement(s.layout, 0, top, s.spread, s.depth);
+		const travel = clearance * 1.12 + 40;
+		const out: Vector = [home.x + dx * travel, home.y + dy * travel];
+		const values = valuesFor(top);
+		const launch = springFor(s, 'fling');
+		const flight = { turned: false };
+		flyingMap.set(top, flight);
+		values.z.set(s.count + 1);
+		animate(values.x, out[0], velocity ? { ...launch, velocity: velocity[0] } : launch);
+		animate(values.y, out[1], velocity ? { ...launch, velocity: velocity[1] } : launch);
+		settleFace(values, s);
+		commit(next);
+		const span = Math.max(Math.hypot(out[0] - values.x.get(), out[1] - values.y.get()), 1);
+		let landed = false;
+		const turn = () => {
+			flight.turned = true;
+			const position = orderRef.indexOf(top);
+			if (position >= 0) placeCard(top, position, { kind: 'tuck', keepZ: !landed });
+		};
+		const land = () => {
+			landed = true;
+			if (flyingMap.get(top) === flight) flyingMap.delete(top);
+			const position = orderRef.indexOf(top);
+			if (position >= 0) values.z.set(settings().count - position);
+		};
+		const fallback = setTimeout(() => {
+			if (!flight.turned) turn();
+			if (!landed) land();
+		}, 1500 / s.speed);
+		const clearOfPile = () => {
+			const element = elementsMap.get(top)?.card;
+			if (!element) return true;
+			const mine = element.getBoundingClientRect();
+			for (const [index, entry] of elementsMap) {
+				const other = entry.card;
+				if (!other || index === top || flyingMap.has(index) || valuesFor(index).opacity.get() < 0.5) continue;
+				const box = other.getBoundingClientRect();
+				if (mine.left < box.right && mine.right > box.left && mine.top < box.bottom && mine.bottom > box.top) {
+					return false;
+				}
+			}
+			return true;
+		};
+		const watchFlight = () => {
+			if (!alive || (flight.turned && landed)) {
+				clearTimeout(fallback);
+				return;
+			}
+			const x = values.x.get();
+			const y = values.y.get();
+			const outward = values.x.getVelocity() * dx + values.y.getVelocity() * dy;
+			if (!flight.turned && (Math.hypot(out[0] - x, out[1] - y) <= span * 0.06 || outward < 0)) turn();
+			if (!landed && (clearOfPile() || (flight.turned && outward < 0))) land();
+			requestAnimationFrame(watchFlight);
+		};
+		requestAnimationFrame(watchFlight);
+	};
+
+	const lean = (drag: DragState) => {
+		const s = settings();
+		if (s.reduceMotion) return;
+		const values = valuesFor(drag.card);
+		const offsetX = values.x.get() - drag.homeX;
+		const offsetY = values.y.get() - drag.homeY;
+		const sideways = clamp(drag.vx / LEAN_SPEED, -1, 1) * 0.7 + clamp(offsetX / LEAN_REACH, -1, 1) * 0.3;
+		const upward = clamp(-drag.vy / LEAN_SPEED, -1, 1) * 0.7 + clamp(-offsetY / LEAN_REACH, -1, 1) * 0.3;
+		const follow = springFor(s, 'lean');
+		animate(values.tiltY, sideways * s.tilt, follow);
+		animate(values.tiltX, upward * s.tilt, follow);
+		animate(values.spin, clamp(offsetX / LEAN_REACH, -1, 1) * 6, follow);
+	};
+
+	const onMove = (event: PointerEvent) => {
+		const drag = dragRef;
+		if (!drag || event.pointerId !== drag.id) return;
+		const s = settings();
+		const dx = event.clientX - drag.startX;
+		const dy = event.clientY - drag.startY;
+		const values = valuesFor(drag.card);
+		if (!drag.moved) {
+			if (Math.hypot(dx, dy) < CLICK_SLOP) return;
+			drag.moved = true;
+			values.x.stop();
+			values.y.stop();
+			drag.originX = values.x.get() - dx;
+			drag.originY = values.y.get() - dy;
+			try {
+				drag.element.setPointerCapture(drag.id);
+			} catch {
+				drag.capture = false;
+			}
+			dragging = true;
+		}
+		values.x.set(drag.originX + dx);
+		values.y.set(drag.originY + dy);
+		drag.samples.push([event.clientX, event.clientY, event.timeStamp]);
+		if (drag.samples.length > 12) drag.samples.shift();
+		[drag.vx, drag.vy] = releaseVelocity(drag.samples, event.timeStamp);
+		lean(drag);
+		clearTimeout(drag.idle);
+		drag.idle = setTimeout(() => {
+			if (dragRef !== drag) return;
+			drag.vx = 0;
+			drag.vy = 0;
+			lean(drag);
+		}, 70);
+		const progress = clamp(Math.hypot(dx, dy) / Math.max(s.threshold, 1), 0, 1);
+		if (Math.abs(progress - drag.progress) > 0.02) {
+			drag.progress = progress;
+			placeAll({ lift: progress * 0.4, kind: 'settle' });
+		}
+	};
+
+	const onUp = (event: PointerEvent) => {
+		const drag = dragRef;
+		if (!drag || event.pointerId !== drag.id) return;
+		dragRef = null;
+		clearTimeout(drag.idle);
+		window.removeEventListener('pointermove', onMove);
+		window.removeEventListener('pointerup', onUp);
+		window.removeEventListener('pointercancel', onUp);
+		try {
+			drag.element.releasePointerCapture(drag.id);
+		} catch {
+			drag.capture = false;
+		}
+		const s = settings();
+		if (!drag.moved) {
+			if (event.type === 'pointerup' && s.sendToBackOnClick) sendToBack(null);
+			else settleFace(valuesFor(drag.card), s);
+			return;
+		}
+		dragging = false;
+		const dx = event.clientX - drag.startX;
+		const dy = event.clientY - drag.startY;
+		const [vx, vy] = releaseVelocity(drag.samples, event.timeStamp);
+		const distance = Math.hypot(dx, dy);
+		const pace = Math.hypot(vx, vy);
+		const flick = pace > FLICK_SPEED && distance > 16 && vx * dx + vy * dy > 0;
+		if (event.type === 'pointerup' && s.count > 1 && (distance > s.threshold || flick)) {
+			sendToBack(pace > 300 ? [vx, vy] : [dx, dy], [vx, vy]);
+		} else {
+			placeAll({ released: drag.card, velocity: [clamp(vx, -3000, 3000), clamp(vy, -3000, 3000)] });
+		}
+	};
+
+	const onDown = (event: PointerEvent, index: number) => {
+		if (event.button !== 0 || dragRef) return;
+		if (orderRef[0] !== index || flyingMap.has(index)) return;
+		const element = event.currentTarget as HTMLDivElement;
+		const s = settings();
+		const values = valuesFor(index);
+		const home = placement(s.layout, 0, index, s.spread, s.depth);
+		const bounds = element.getBoundingClientRect();
+		values.grabX.set(clamp((event.clientX - bounds.left) / Math.max(bounds.width, 1), 0, 1));
+		values.grabY.set(clamp((event.clientY - bounds.top) / Math.max(bounds.height, 1), 0, 1));
+		if (!s.reduceMotion) animate(values.lift, PRESS_SCALE, springFor(s, 'press'));
+		dragRef = {
+			card: index,
+			id: event.pointerId,
+			element,
+			startX: event.clientX,
+			startY: event.clientY,
+			originX: 0,
+			originY: 0,
+			homeX: home.x,
+			homeY: home.y,
+			vx: 0,
+			vy: 0,
+			idle: 0,
+			moved: false,
+			progress: 0,
+			samples: [[event.clientX, event.clientY, event.timeStamp]]
+		};
+		if (event.pointerType === 'mouse') event.preventDefault();
+		window.addEventListener('pointermove', onMove);
+		window.addEventListener('pointerup', onUp);
+		window.addEventListener('pointercancel', onUp);
+	};
+
+	const onKeyDown = (event: KeyboardEvent) => {
+		if (event.target !== event.currentTarget) return;
+		if (['ArrowRight', 'ArrowDown', 'Enter', ' '].includes(event.key)) {
+			event.preventDefault();
+			sendToBack(null);
+		}
+	};
+
+	$effect.pre(() => {
+		const total = count;
+		untrack(() => {
+			const current = order;
+			if (current.length !== total || current.some((index) => index >= total)) {
+				const next = current.filter((index) => index < total);
+				for (let index = 0; index < total; index++) if (!next.includes(index)) next.push(index);
+				commit(next);
+			}
+		});
+	});
 
 	$effect(() => {
-		if (cardsData?.length) stack = cardsData.slice();
+		void [order, shape, visible, spread, depth, speed, count];
+		untrack(() => {
+			orderRef = order;
+			placeAll({ stagger: mounted ? 0 : 0.06 });
+			mounted = true;
+		});
 	});
 
-	const shouldDisableDrag = $derived(mobileClickOnly && isMobile);
-	const shouldEnableClick = $derived(sendToBackOnClick || shouldDisableDrag);
+	$effect(() => {
+		void shape;
+		untrack(() => elementsMap.forEach((entry) => entry.render?.()));
+	});
 
-	// Per-card motion values (indexed by card id)
-	const mvMap = new Map<number, { x: ReturnType<typeof motionValue<number>>; y: ReturnType<typeof motionValue<number>>; xv: number; yv: number }>();
-	let positions = $state<Record<number, { x: number; y: number }>>({});
+	const top = $derived(order[0]);
+	let changed = false;
+	$effect(() => {
+		const current = top;
+		untrack(() => {
+			if (!changed) {
+				changed = true;
+				return;
+			}
+			if (current !== undefined) onChange?.(current);
+		});
+	});
 
-	function getMV(id: number) {
-		let m = mvMap.get(id);
-		if (!m) {
-			const x = motionValue(0);
-			const y = motionValue(0);
-			m = { x, y, xv: 0, yv: 0 };
-			x.on('change', (v) => {
-				m!.xv = v;
-				positions = { ...positions, [id]: { x: v, y: m!.yv } };
-			});
-			y.on('change', (v) => {
-				m!.yv = v;
-				positions = { ...positions, [id]: { x: m!.xv, y: v } };
-			});
-			mvMap.set(id, m);
-			positions[id] = { x: 0, y: 0 };
-		}
-		return m;
-	}
-
-	const randomRot = new Map<number, number>();
-	function rotFor(id: number) {
-		if (!randomRotation) return 0;
-		if (!randomRot.has(id)) randomRot.set(id, Math.random() * 10 - 5);
-		return randomRot.get(id)!;
-	}
-
-	function sendToBack(id: number) {
-		const idx = stack.findIndex((c) => c.id === id);
-		if (idx < 0) return;
-		const next = [...stack];
-		const [card] = next.splice(idx, 1);
-		next.unshift(card);
-		stack = next;
-		const m = getMV(id);
-		animate(m.x, 0, { type: 'spring', stiffness: animationConfig.stiffness, damping: animationConfig.damping });
-		animate(m.y, 0, { type: 'spring', stiffness: animationConfig.stiffness, damping: animationConfig.damping });
-	}
-
-	// Drag
-	let dragId: number | null = null;
-	let dragStartX = 0;
-	let dragStartY = 0;
-
-	function endDrag(commit: boolean) {
-		if (dragId == null) return;
-		const id = dragId;
-		const m = getMV(id);
-		const dx = m.xv;
-		const dy = m.yv;
-		dragId = null;
-		window.removeEventListener('pointermove', onWindowPointerMove);
-		window.removeEventListener('pointerup', onWindowPointerUp);
-		window.removeEventListener('pointercancel', onWindowPointerUp);
-		if (commit && (Math.abs(dx) > sensitivity || Math.abs(dy) > sensitivity)) {
-			sendToBack(id);
-		} else {
-			animate(m.x, 0, { type: 'spring', stiffness: 400, damping: 30 });
-			animate(m.y, 0, { type: 'spring', stiffness: 400, damping: 30 });
-		}
-	}
-
-	function onWindowPointerMove(e: PointerEvent) {
-		if (dragId == null) return;
-		const m = getMV(dragId);
-		// dragElastic 0.6
-		m.x.set((e.clientX - dragStartX) * 0.6);
-		m.y.set((e.clientY - dragStartY) * 0.6);
-	}
-
-	function onWindowPointerUp() {
-		endDrag(true);
-	}
-
-	function onPointerDown(e: PointerEvent, id: number) {
-		if (shouldDisableDrag) return;
-		// If a previous drag never cleaned up, end it first.
-		if (dragId != null) endDrag(false);
-		dragId = id;
-		dragStartX = e.clientX;
-		dragStartY = e.clientY;
-		window.addEventListener('pointermove', onWindowPointerMove);
-		window.addEventListener('pointerup', onWindowPointerUp);
-		window.addEventListener('pointercancel', onWindowPointerUp);
-	}
-
-	function transformFor(id: number) {
-		const p = positions[id] ?? { x: 0, y: 0 };
-		// useTransform(y,[-100,100],[60,-60]) -> linear, clamped at endpoints
-		const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-		const rotateX = clamp(-p.y * 0.6, -60, 60);
-		const rotateY = clamp(p.x * 0.6, -60, 60);
-		return { rotateX, rotateY, ...p };
-	}
+	$effect(() => {
+		void order;
+		if (!autoplay || count < 2 || dragging || (pauseOnHover && hovered)) return;
+		const timer = setTimeout(() => sendToBack(null), Math.max(300, autoplayDelay));
+		return () => clearTimeout(timer);
+	});
 
 	onMount(() => {
-		const check = () => (isMobile = window.innerWidth < mobileBreakpoint);
-		check();
-		window.addEventListener('resize', check);
-
-		let interval: ReturnType<typeof setInterval> | null = null;
-		const tick = () => {
-			if (autoplay && stack.length > 1 && !isPaused) {
-				const top = stack[stack.length - 1];
-				if (top) sendToBack(top.id);
-			}
+		alive = true;
+		const onMotionPreference = (event: MediaQueryListEvent) => {
+			reduceMotion = event.matches;
 		};
-		if (autoplay) interval = setInterval(tick, autoplayDelay);
+		motionQuery?.addEventListener('change', onMotionPreference);
 		return () => {
-			window.removeEventListener('resize', check);
-			if (interval) clearInterval(interval);
+			alive = false;
+			motionQuery?.removeEventListener('change', onMotionPreference);
+			if (dragRef) clearTimeout(dragRef.idle);
+			window.removeEventListener('pointermove', onMove);
+			window.removeEventListener('pointerup', onUp);
+			window.removeEventListener('pointercancel', onUp);
+			elementsMap.forEach((entry) => {
+				if (entry.render) cancelFrame(entry.render);
+				entry.render = undefined;
+			});
+			unsubscribers.forEach((unsubscribe) => unsubscribe());
+			valuesMap.forEach((group) => Object.values(group).forEach((value) => value.stop()));
 		};
 	});
+
+	const innerRadius = $derived(Math.max(0, radius - frame));
 </script>
 
 <div
-	class="relative"
-	style="perspective:600px;width:{cardDimensions.width}px;height:{cardDimensions.height}px;"
-	role="presentation"
-	onmouseenter={() => pauseOnHover && (isPaused = true)}
-	onmouseleave={() => pauseOnHover && (isPaused = false)}
+	bind:this={rootEl}
+	class="group relative h-full w-full outline-none {className}"
+	{style}
+	tabindex="0"
+	role="group"
+	aria-label="Card stack"
+	onkeydown={onKeyDown}
+	onmouseenter={() => (hovered = true)}
+	onmouseleave={() => (hovered = false)}
 >
-	{#each stack as card, index (card.id)}
-		{@const t = transformFor(card.id)}
-		{@const rotZ = (stack.length - index - 1) * 4 + rotFor(card.id)}
-		{@const sc = 1 + index * 0.06 - stack.length * 0.06}
+	{#each items as item, index (index)}
+		{@const isTop = order[0] === index}
 		<div
-			class="absolute inset-0 {shouldDisableDrag ? 'cursor-pointer' : 'cursor-grab'}"
-			style="transform: translate({t.x}px, {t.y}px) rotateX({t.rotateX}deg) rotateY({t.rotateY}deg);"
-			onpointerdown={(e) => onPointerDown(e, card.id)}
-			onpointermove={onPointerMove}
-			onpointerup={(e) => onPointerUp(e, card.id)}
-			onpointercancel={(e) => onPointerUp(e, card.id)}
+			use:cardPart={{ index, part: 'card' }}
+			class="absolute inset-0 select-none will-change-transform [-webkit-tap-highlight-color:transparent]"
+			data-top={isTop ? '' : undefined}
+			aria-hidden={isTop ? undefined : true}
+			style:cursor={isTop ? (dragging ? 'grabbing' : 'grab') : 'default'}
+			style:touch-action={isTop ? 'pan-y' : 'auto'}
+			onpointerdown={(event) => onDown(event, index)}
 		>
 			<div
-				class="rounded-2xl overflow-hidden w-full h-full transition-transform"
-				style="transform: rotate({rotZ}deg) scale({sc}); transform-origin:90% 90%; transition: transform {1000 / animationConfig.stiffness * 10}ms cubic-bezier(0.25, 0.1, 0.25, 1);"
-				role="presentation"
-				onclick={() => shouldEnableClick && sendToBack(card.id)}
+				use:cardPart={{ index, part: 'face' }}
+				class="absolute inset-0 overflow-hidden will-change-transform {isTop
+					? 'group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-4 group-focus-visible:outline-current'
+					: ''}"
+				style:border-radius="{radius}px"
+				style:padding="{frame}px"
+				style:background-color={frame > 0 ? frameColor : 'transparent'}
+				style:box-shadow={shadow ? SHADOW : 'none'}
 			>
-				{#if card.image}
-					<img src={card.image} alt={card.alt ?? ''} class="w-full h-full object-cover pointer-events-none" />
-				{/if}
+				<div
+					class="relative h-full w-full overflow-hidden [&_img]:pointer-events-none [&_img]:block [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_img]:[-webkit-user-drag:none]"
+					style:border-radius="{innerRadius}px"
+				>
+					{#if item.snippet}
+						{@render item.snippet()}
+					{:else}
+						<img src={item.src} alt="Card {index + 1}" draggable="false" />
+					{/if}
+				</div>
+				<div
+					use:cardPart={{ index, part: 'shade' }}
+					class="pointer-events-none absolute inset-0 bg-black"
+					style:border-radius="{radius}px"
+				></div>
 			</div>
 		</div>
 	{/each}

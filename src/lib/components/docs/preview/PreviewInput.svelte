@@ -3,19 +3,13 @@
 		title?: string;
 		value?: string;
 		placeholder?: string;
+		maxLength?: number;
 		maxlength?: number;
 		isDisabled?: boolean;
 		onChange?: (v: string) => void;
 	};
 
-	let {
-		title = '',
-		value = '',
-		placeholder = '',
-		maxlength,
-		isDisabled = false,
-		onChange
-	}: Props = $props();
+	let { title = '', value = '', placeholder = '', maxLength, maxlength, isDisabled = false, onChange }: Props = $props();
 </script>
 
 <div class="scrubber">
@@ -26,10 +20,10 @@
 			type="text"
 			{value}
 			{placeholder}
-			{maxlength}
+			maxlength={maxLength ?? maxlength}
 			disabled={isDisabled}
 			aria-label={title}
-			oninput={(e) => onChange?.((e.target as HTMLInputElement).value)}
+			oninput={(e) => onChange?.((e.currentTarget as HTMLInputElement).value)}
 		/>
 	</div>
 </div>

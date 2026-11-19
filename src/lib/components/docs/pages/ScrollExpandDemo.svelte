@@ -81,9 +81,7 @@
 	];
 </script>
 
-<svelte:head><title>Scroll Expand - svelte-bits</title></svelte:head>
 
-<h1 class="sub-category">Scroll Expand</h1>
 
 <TabsLayout onreset={reset} {hasChanges} componentName="ScrollExpand" {usage} {source} {props}>
 	{#snippet preview()}

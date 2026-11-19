@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import SwipeRow, {
@@ -327,9 +326,9 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedRow = $derived(rowColor);
-	const renderedText = $derived(textColor);
-	const renderedDrawer = $derived(drawerColor);
+	const renderedRow = $derived(theme.isLight ? (rowColor === DEFAULT_PROPS.rowColor ? '#f6f6f6' : rowColor) : rowColor);
+	const renderedText = $derived(theme.isLight ? (textColor === DEFAULT_PROPS.textColor ? '#18181b' : textColor) : textColor);
+	const renderedDrawer = $derived(theme.isLight ? (drawerColor === DEFAULT_PROPS.drawerColor ? '#e4e4e7' : drawerColor) : drawerColor);
 	const propData: PropRow[] = [
 		{
 			name: 'children',
@@ -581,8 +580,6 @@
 {#snippet deleteIcon()}{@render iconSvg(Delete02Icon, 20, 2)}{/snippet}
 {#snippet archiveIcon()}{@render iconSvg(Archive02Icon, 20, 2)}{/snippet}
 {#snippet flagIcon()}{@render iconSvg(Flag02Icon, 20, 2)}{/snippet}
-<svelte:head><title>Swipe Row - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Swipe Row</h1>
 <TabsLayout onreset={reset} {hasChanges} componentName="SwipeRow" {usage} {source} props={propData}>
 	{#snippet preview()}{#key epoch}<div
 				class="demo-container relative flex items-center justify-center overflow-hidden"
@@ -591,7 +588,7 @@
 				<div class="w-[min(360px,calc(100%-48px))]">
 					{#each rows as row (row.id)}<div use:entrance={{ returning: row.returning, height }}>
 							<SwipeRow
-								{...props}
+								{...props} rowColor={renderedRow} textColor={renderedText} drawerColor={renderedDrawer}
 								label={row.title}
 								actions={ACTION_SETS[drawer as keyof typeof ACTION_SETS] ?? ACTION_SETS.two}
 								open={openId === row.id}
@@ -618,26 +615,26 @@
 				value={drawer}
 				onChange={(val) => updateProp('drawer', val)}
 			></PreviewSelect>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Action"
-				value={actionColor}
+				color={actionColor}
 				onChange={(val) => updateProp('actionColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Drawer Color"
-				value={renderedDrawer}
+				color={renderedDrawer}
 				onChange={(val) => updateProp('drawerColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Row"
-				value={renderedRow}
+				color={renderedRow}
 				onChange={(val) => updateProp('rowColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Text"
-				value={renderedText}
+				color={renderedText}
 				onChange={(val) => updateProp('textColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Height"
 				min={48}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
@@ -52,14 +53,12 @@
 	];
 </script>
 
-<svelte:head><title>Dome Gallery - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Dome Gallery</h1>
 
 <TabsLayout onreset={reset} {hasChanges} componentName="DomeGallery" {usage} {source} {props}>
 	{#snippet preview()}
 		<div class="demo-container" style="position:relative;height:600px;padding:0;overflow:hidden;background:#0a0806;">
 			{#key key}
-				<DomeGallery {fit} {minRadius} {maxVerticalRotationDeg} {segments} {dragDampening} {grayscale} />
+				<DomeGallery {fit} {minRadius} {maxVerticalRotationDeg} {segments} {dragDampening} {grayscale} overlayBlurColor={theme.isLight ? '#ffffff' : '#14110E'} />
 			{/key}
 		</div>
 	{/snippet}

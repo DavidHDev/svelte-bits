@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import DodgeField, {
@@ -77,8 +76,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedInk = $derived(inkColor);
-	const renderedContrast = $derived(contrastColor);
+	const renderedInk = $derived(theme.isLight ? (inkColor === DEFAULT_PROPS.inkColor ? '#18181b' : inkColor) : inkColor);
+	const renderedContrast = $derived(theme.isLight ? (contrastColor === DEFAULT_PROPS.contrastColor ? '#ffffff' : contrastColor) : contrastColor);
 	const propData: PropRow[] = [
 		{
 			name: 'children',
@@ -246,8 +245,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Dodge Field - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Dodge Field</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -260,20 +257,20 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				{#key epoch}<DodgeField {...props} />{/key}
+				{#key epoch}<DodgeField {...props} inkColor={renderedInk} contrastColor={renderedContrast} />{/key}
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="dodge-field" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Ink"
-				value={renderedInk}
+				color={renderedInk}
 				onChange={(val) => updateProp('inkColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Contrast"
-				value={renderedContrast}
+				color={renderedContrast}
 				onChange={(val) => updateProp('contrastColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Field Height"
 				min={120}

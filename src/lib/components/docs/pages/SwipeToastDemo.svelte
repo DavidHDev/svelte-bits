@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { theme } from '$lib/theme.svelte';
 	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
@@ -6,7 +7,7 @@
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import SwipeToast, {
@@ -106,8 +107,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedBackground = $derived(background);
-	const renderedColor = $derived(color);
+	const renderedBackground = $derived(theme.isLight ? (background === DEFAULT_PROPS.background ? '#ffffff' : background) : background);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
 	const propData: PropRow[] = [
 		{
 			name: 'title',
@@ -310,8 +311,6 @@
 		>{#each shapes as [tag, attrs]}<svelte:element this={tag} {...attrs} />{/each}</svg
 	>{/snippet}
 
-<svelte:head><title>Swipe Toast - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Swipe Toast</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -331,7 +330,7 @@
 				>
 				<div class="absolute right-6 bottom-8 left-6 flex flex-col items-end">
 					{#each toasts as toast (toast.id)}<SwipeToast
-							{...props}
+							{...props} background={renderedBackground} color={renderedColor}
 							open={toast.open}
 							onClose={() => remove(toast.id)}
 							>{#snippet icon()}{@render iconSvg(
@@ -362,21 +361,21 @@
 				maxlength={12}
 				onChange={(val) => updateProp('actionLabel', val)}
 			></PreviewInput>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Background"
-				value={renderedBackground}
+				color={renderedBackground}
 				onChange={(val) => updateProp('background', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Text"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Fuse"
-				value={fuseColor}
+				color={fuseColor}
 				onChange={(val) => updateProp('fuseColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Width"
 				min={280}

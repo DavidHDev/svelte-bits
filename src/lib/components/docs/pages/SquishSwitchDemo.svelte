@@ -1,12 +1,10 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import SquishSwitch, {
@@ -72,10 +70,10 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedTrack = $derived(trackColor);
-	const renderedTrackOn = $derived(trackOnColor);
-	const renderedThumb = $derived(thumbColor);
-	const renderedThumbOn = $derived(thumbOnColor);
+	const renderedTrack = $derived(theme.isLight ? (trackColor === DEFAULT_PROPS.trackColor ? LIGHT.trackColor : trackColor) : trackColor);
+	const renderedTrackOn = $derived(theme.isLight ? (trackOnColor === DEFAULT_PROPS.trackOnColor ? LIGHT.trackOnColor : trackOnColor) : trackOnColor);
+	const renderedThumb = $derived(theme.isLight ? (thumbColor === DEFAULT_PROPS.thumbColor ? LIGHT.thumbColor : thumbColor) : thumbColor);
+	const renderedThumbOn = $derived(theme.isLight ? (thumbOnColor === DEFAULT_PROPS.thumbOnColor ? LIGHT.thumbOnColor : thumbOnColor) : thumbOnColor);
 	const propData: PropRow[] = [
 		{
 			name: 'checked',
@@ -225,8 +223,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS) || checked);
 </script>
 
-<svelte:head><title>Squish Switch - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Squish Switch</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -239,7 +235,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				<SquishSwitch {...props} {checked} onChange={setChecked} ariaLabel="Toggle setting" />
+				<SquishSwitch {...props} trackColor={renderedTrack} trackOnColor={renderedTrackOn} thumbColor={renderedThumb} thumbOnColor={renderedThumbOn} {checked} onChange={setChecked} label="Airplane mode" />
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="squish-switch" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
@@ -249,26 +245,26 @@
 				checked={disabled}
 				onChange={(val) => updateProp('disabled', val)}
 			></PreviewSwitch>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Track"
-				value={renderedTrack}
+				color={renderedTrack}
 				onChange={(val) => updateProp('trackColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Track On"
-				value={renderedTrackOn}
+				color={renderedTrackOn}
 				onChange={(val) => updateProp('trackOnColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Thumb"
-				value={renderedThumb}
+				color={renderedThumb}
 				onChange={(val) => updateProp('thumbColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Thumb On"
-				value={renderedThumbOn}
+				color={renderedThumbOn}
 				onChange={(val) => updateProp('thumbOnColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Width"
 				min={44}

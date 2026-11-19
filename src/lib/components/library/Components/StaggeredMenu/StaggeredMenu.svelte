@@ -55,7 +55,7 @@
 	let openRef = false;
 	let textLines = $state<string[]>(['Menu', 'Close']);
 
-	let panelRef: HTMLDivElement;
+	let panelRef: HTMLElement;
 	let preLayersRef: HTMLDivElement;
 	let preLayerEls: HTMLElement[] = [];
 	let plusHRef: HTMLSpanElement;
@@ -538,6 +538,7 @@
 	}
 	@media (max-width: 1024px) {
 		:global(.staggered-menu-panel) { width: 100%; left: 0; right: 0; }
+		:global(.sm-prelayers) { width: 100%; }
 		:global(.staggered-menu-wrapper[data-open] .sm-logo-img) { filter: invert(100%); }
 	}
 	@media (max-width: 640px) {

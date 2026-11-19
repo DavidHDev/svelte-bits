@@ -1,12 +1,9 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
-	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
-	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import BranchedMenu, {
@@ -65,9 +62,9 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedColor = $derived(color);
-	const renderedAccent = $derived(accentColor);
-	const renderedLine = $derived(lineColor);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
+	const renderedAccent = $derived(theme.isLight ? (accentColor === DEFAULT_PROPS.accentColor ? '#18181b' : accentColor) : accentColor);
+	const renderedLine = $derived(theme.isLight ? (lineColor === DEFAULT_PROPS.lineColor ? '#d4d4d8' : lineColor) : lineColor);
 	const propData: PropRow[] = [
 		{
 			name: 'items',
@@ -211,8 +208,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Branched Menu - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Branched Menu</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -225,25 +220,25 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				{#key epoch}<BranchedMenu {...props} />{/key}
+				{#key epoch}<BranchedMenu {...props} color={renderedColor} accentColor={renderedAccent} lineColor={renderedLine} />{/key}
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="branched-menu" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Ink"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Accent"
-				value={renderedAccent}
+				color={renderedAccent}
 				onChange={(val) => updateProp('accentColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Lines"
-				value={renderedLine}
+				color={renderedLine}
 				onChange={(val) => updateProp('lineColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Width"
 				min={180}

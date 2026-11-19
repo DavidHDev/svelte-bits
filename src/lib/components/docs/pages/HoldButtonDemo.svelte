@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import HoldButton, {
@@ -243,8 +242,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedBackground = $derived(backgroundColor);
-	const renderedText = $derived(textColor);
+	const renderedBackground = $derived(theme.isLight ? (backgroundColor === DEFAULT_PROPS.backgroundColor ? '#f6f6f6' : backgroundColor) : backgroundColor);
+	const renderedText = $derived(theme.isLight ? (textColor === DEFAULT_PROPS.textColor ? '#333333' : textColor) : textColor);
 	const propData: PropRow[] = [
 		{
 			name: 'children',
@@ -438,8 +437,6 @@
 		aria-hidden="true"
 		>{#each shapes as [tag, attrs]}<svelte:element this={tag} {...attrs} />{/each}</svg
 	>{/snippet}
-<svelte:head><title>Hold Button - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Hold Button</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -452,7 +449,7 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				{#key action + fillDirection + epoch}<HoldButton {...props} doneLabel={current.done}
+				{#key action + fillDirection + epoch}<HoldButton {...props} backgroundColor={renderedBackground} textColor={renderedText} doneLabel={current.done}
 						>{#snippet icon()}{@render iconSvg(
 								current.icon,
 								18,
@@ -472,26 +469,26 @@
 				value={action}
 				onChange={(val) => updateProp('action', val)}
 			></PreviewSelect>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Fill"
-				value={fillColor}
+				color={fillColor}
 				onChange={(val) => updateProp('fillColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Background"
-				value={renderedBackground}
+				color={renderedBackground}
 				onChange={(val) => updateProp('backgroundColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Text"
-				value={renderedText}
+				color={renderedText}
 				onChange={(val) => updateProp('textColor', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Text On Fill"
-				value={fillTextColor}
+				color={fillTextColor}
 				onChange={(val) => updateProp('fillTextColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSelect
 				title="Size"
 				options={SIZE_OPTIONS}

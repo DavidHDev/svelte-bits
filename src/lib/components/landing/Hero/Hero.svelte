@@ -1,283 +1,345 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import DotField from '$lib/components/library/Backgrounds/DotField/DotField.svelte';
-	import HeroBand from './HeroBand.svelte';
-	import InteractiveCode, { type SnippetDef } from './InteractiveCode.svelte';
-	import { hexToHsv, hsvToHex, parseHexRgb } from '$lib/utils/color';
-	import { preloadSounds } from '$lib/utils/audio';
-	import './Hero.css';
+	import { onMount, untrack } from 'svelte';
+	import { ArrowRight02Icon, ArrowUpRight01Icon, Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+	import HugeIcon from '$lib/components/common/HugeIcon.svelte';
+	import { theme } from '$lib/theme.svelte';
+	import { GITHUB_URL } from '$lib/constants/site';
+	import { jsrepoAddSnippet } from '$lib/constants/cli';
+	import { TOTAL_COMPONENTS } from '../shared/catalog';
+	import { gradientWavesPresets, loadLibrary, type LibraryComponent } from '../shared/library';
+	import { adaptiveQuality } from '../shared/adaptiveQuality.svelte';
+	import HeroChip from './HeroChip.svelte';
+	import HeroWindow from './HeroWindow.svelte';
+	import HeroTerminal from './HeroTerminal.svelte';
+	import ScrubNumber from './ScrubNumber.svelte';
+	import ScrubColor from './ScrubColor.svelte';
+	import DotFrame from './DotFrame.svelte';
+	import GhostReveal from './GhostReveal.svelte';
+	import { DOT, dotTint, tween, type Field } from './hero';
+	import './HeroFrame.css';
 
-	const SNIPPET_DEFS: SnippetDef[] = [
-		{
-			label: 'ColorBends',
-			component: 'ColorBends',
-			props: [
-				{ name: 'color', type: 'color', default: '#FF3E00' },
-				{ name: 'speed', type: 'number', default: 0.2, min: 0.1, max: 1, step: 0.1 },
-				{ name: 'frequency', type: 'number', default: 1, min: 1, max: 3, step: 0.1 },
-				{ name: 'noise', type: 'number', default: 0.15, min: 0, max: 0.9, step: 0.01 },
-				{ name: 'bandWidth', type: 'number', default: 0.14, min: 0.1, max: 1, step: 0.01 },
-				{ name: 'rotation', type: 'number', default: 90, min: 0, max: 360, step: 1 },
-				{ name: 'fadeTop', type: 'number', default: 0.75, min: 0.4, max: 1, step: 0.05 },
-				{ name: 'iterations', type: 'number', default: 1, min: 1, max: 2, step: 1 },
-				{ name: 'intensity', type: 'number', default: 1.25, min: 0.1, max: 2, step: 0.1 }
-			]
-		},
-		{
-			label: 'DotField',
-			component: 'DotField',
-			props: [
-				{ name: 'dotRadius', type: 'number', default: 1.5, min: 1, max: 3, step: 0.1 },
-				{ name: 'dotSpacing', type: 'number', default: 14, min: 10, max: 40, step: 1 },
-				{ name: 'cursorRadius', type: 'number', default: 500, min: 50, max: 1000, step: 10 },
-				{ name: 'cursorForce', type: 'number', default: 0.1, min: 0, max: 1, step: 0.01 },
-				{ name: 'bulgeOnly', type: 'boolean', default: true },
-				{ name: 'bulgeStrength', type: 'number', default: 67, min: 1, max: 200, step: 1 },
-				{ name: 'glowRadius', type: 'number', default: 160, min: 50, max: 500, step: 10 },
-				{ name: 'sparkle', type: 'boolean', default: false },
-				{ name: 'waveAmplitude', type: 'number', default: 0, min: 0, max: 20, step: 1 }
-			]
-		}
+	const FALLBACK_LOOK = {
+		horizonColor: '#ff3e00',
+		waveColor: '#ffb089',
+		crestColor: '#ffffff',
+		lightMode: false,
+		speed: 0.4,
+		amplitude: 2.5,
+		waveScale: 0.6,
+		waveRatio: 0.9,
+		swell: 35,
+		turbulence: 20,
+		tilt: 64,
+		zoom: 1,
+		height: 5.5,
+		fogDepth: 15,
+		relief: 1,
+		lightAngle: 120,
+		sheen: 0,
+		brightness: 1,
+		opacity: 1,
+		grain: 0.2
+	};
+
+	const LOOK = gradientWavesPresets?.LOOK ?? FALLBACK_LOOK;
+	const presetProps = (value: string, options: { light: boolean; defaults: Record<string, unknown> }) =>
+		gradientWavesPresets ? gradientWavesPresets.presetProps(value, options) : { ...FALLBACK_LOOK };
+
+	const ORDER = ['ocean', 'dune', 'dusk', 'silk', 'aurora'];
+	const presetOptions = gradientWavesPresets?.PRESET_OPTIONS ?? [];
+	const OPTIONS = presetOptions.length
+		? ORDER.map((value) => presetOptions.find((option) => option.value === value)).filter(
+				(option): option is { value: string; label: string } => Boolean(option)
+			)
+		: [];
+	const FIRST = 'dusk';
+	const STAGE = { tilt: 40 };
+	const INSTALL = jsrepoAddSnippet('gradient-waves', 'npm');
+	const FIELDS: Field[] = [
+		{ name: 'waveColor', type: 'color', label: 'Wave color' },
+		{ name: 'amplitude', min: 0, max: 5, step: 0.05, label: 'Amplitude' },
+		{ name: 'swell', min: 0, max: 40, step: 0.5, label: 'Swell' },
+		{ name: 'lightAngle', min: -180, max: 180, step: 1, label: 'Light angle' },
+		{ name: 'speed', min: 0, max: 1.5, step: 0.01, label: 'Speed' }
 	];
+	const HINTS = ['amplitude', 'swell'];
+	const SWATCHES = {
+		dark: ['#fb923c', '#f9a8d4', '#ff3e00', '#38bdf8', '#34d399', '#fde68a', '#e4e4e7'],
+		light: ['#fb923c', '#f472b6', '#ff3e00', '#38bdf8', '#34d399', '#facc15', '#a1a1aa']
+	};
+	const CYCLE_MS = 6000;
+	const IDLE_MS = 2600;
 
-	function makeDefaults(): Record<string, string | number | boolean>[] {
-		return SNIPPET_DEFS.map((def) =>
-			Object.fromEntries(def.props.map((p) => [p.name, p.default]))
-		);
-	}
+	type Values = Record<string, unknown> & { horizonColor: string; waveColor: string; crestColor: string };
 
-	let activeSnippet = $state(0);
-	let dropdownOpen = $state(false);
-	let propValues = $state<Record<string, string | number | boolean>[]>(makeDefaults());
-	let dropdownEl: HTMLDivElement;
+	const lookFor = (preset: string, light: boolean) =>
+		({ ...presetProps(preset, { light, defaults: LOOK }), ...STAGE }) as unknown as Values;
 
-	function handlePropChange(name: string, value: string | number | boolean) {
-		propValues[activeSnippet] = { ...propValues[activeSnippet], [name]: value };
-	}
-
-	function resetProps() {
-		propValues = makeDefaults();
-	}
-
-	let hasChanges = $derived.by(() => {
-		const def = SNIPPET_DEFS[activeSnippet];
-		const vals = propValues[activeSnippet];
-		return def.props.some((p) => vals[p.name] !== p.default);
-	});
+	let mounted = $state(false);
+	const light = $derived(mounted && theme.isLight);
+	let preset = $state<string | null>(FIRST);
+	let values = $state<Values>(lookFor(FIRST, false));
+	let visible = $state(true);
+	let hover = $state(false);
+	const quality = adaptiveQuality(() => visible);
+	const step = $derived(quality.step);
+	let idle = $state(true);
+	let auto = $state(true);
+	let hold = $state(false);
+	let stageEl = $state<HTMLDivElement | null>(null);
+	let pointer: { x: number; y: number } | null = null;
+	let idleFlag = true;
+	let stop: (() => void) | null = null;
+	let copied = $state(false);
+	let GradientWaves = $state<LibraryComponent | null>(null);
+	let DotGrid = $state<LibraryComponent | null>(null);
 
 	onMount(() => {
-		const onClickOutside = (e: PointerEvent) => {
-			if (dropdownEl && !dropdownEl.contains(e.target as Node)) {
-				dropdownOpen = false;
-			}
-		};
-		document.addEventListener('pointerdown', onClickOutside);
-		return () => document.removeEventListener('pointerdown', onClickOutside);
+		mounted = true;
+		hover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+		loadLibrary('Backgrounds/GradientWaves').then((component) => (GradientWaves = component));
+		return () => stop?.();
 	});
 
-	let accentColor = $derived(propValues[0].color as string);
-	let accentDerived = $derived.by(() => {
-		const [ar, ag, ab] = parseHexRgb(accentColor);
-		const lum = (0.2126 * ar + 0.7152 * ag + 0.0722 * ab) / 255;
-		return {
-			accentFg: lum > 0.5 ? '#000' : '#fff',
-			dotGradientFrom: `rgba(${ar}, ${ag}, ${ab}, 0.35)`,
-			dotGradientTo: `rgba(${Math.min(ar + 12, 255)}, ${Math.min(ag + 66, 255)}, ${Math.min(ab + 16, 255)}, 0.25)`
+	$effect(() => {
+		if (!hover || step.lite || DotGrid) return;
+		loadLibrary('Backgrounds/DotGrid').then((component) => (DotGrid = component));
+	});
+
+	$effect(() => {
+		const isLight = light;
+		untrack(() => {
+			stop?.();
+			values = lookFor(preset || FIRST, isLight);
+		});
+	});
+
+	$effect(() => {
+		let timer = 0;
+		const rest = () => {
+			window.clearTimeout(timer);
+			timer = window.setTimeout(() => {
+				idleFlag = true;
+				idle = true;
+			}, IDLE_MS);
+		};
+		const move = (event: PointerEvent) => {
+			if (event.pointerType === 'touch') return;
+			pointer = { x: event.clientX, y: event.clientY };
+			if (idleFlag) {
+				idleFlag = false;
+				idle = false;
+			}
+			rest();
+		};
+		window.addEventListener('pointermove', move, { passive: true });
+		return () => {
+			window.clearTimeout(timer);
+			window.removeEventListener('pointermove', move);
 		};
 	});
 
 	$effect(() => {
-		const hsv = hexToHsv(accentColor);
-		const dark = hsvToHex(hsv.h, Math.min(hsv.s + 0.1, 1), Math.max(hsv.v * 0.7, 0));
-		const light = hsvToHex(
-			(hsv.h + 30) % 360,
-			Math.max(hsv.s * 0.8, 0),
-			Math.min(hsv.v * 1.15, 1)
-		);
-		const [r, g, b] = parseHexRgb(accentColor);
-		const root = document.documentElement;
-		const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-		root.style.setProperty('--pro-dark', dark);
-		root.style.setProperty('--pro-base', accentColor);
-		root.style.setProperty('--pro-light', light);
-		root.style.setProperty('--pro-glow', `${r}, ${g}, ${b}`);
-		root.style.setProperty('--pro-fg', lum > 0.5 ? '#000' : '#fff');
+		if (!stageEl || typeof IntersectionObserver === 'undefined') return;
+		const observer = new IntersectionObserver(([entry]) => (visible = entry.isIntersecting), { rootMargin: '80px' });
+		observer.observe(stageEl);
+		return () => observer.disconnect();
+	});
+
+	const choose = (value: string) => {
+		preset = value;
+		stop?.();
+		stop = tween($state.snapshot(values) as Values, lookFor(value, light), (next) => (values = next), 900);
+	};
+
+	const pick = (value: string) => {
+		auto = false;
+		choose(value);
+	};
+
+	const set = (name: string, value: unknown) => {
+		stop?.();
+		auto = false;
+		preset = null;
+		values = { ...values, [name]: value };
+	};
+
+	$effect(() => {
+		if (!auto || hold || !visible || !preset || OPTIONS.length === 0) return;
+		const timer = window.setTimeout(() => {
+			const index = OPTIONS.findIndex((option) => option.value === untrack(() => preset));
+			choose(OPTIONS[(index + 1) % OPTIONS.length].value);
+		}, CYCLE_MS);
+		return () => window.clearTimeout(timer);
+	});
+
+	$effect(() => {
+		const stage = stageEl;
+		if (!stage || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const state = { x: 0, y: 0, tx: 0, ty: 0, frame: 0 };
+		const tick = () => {
+			state.x += (state.tx - state.x) * 0.07;
+			state.y += (state.ty - state.y) * 0.07;
+			stage.style.setProperty('--lh-px', state.x.toFixed(4));
+			stage.style.setProperty('--lh-py', state.y.toFixed(4));
+			const moving = Math.abs(state.tx - state.x) + Math.abs(state.ty - state.y) > 0.0004;
+			state.frame = moving ? requestAnimationFrame(tick) : 0;
+		};
+		const move = (event: PointerEvent) => {
+			if (event.pointerType === 'touch') return;
+			state.tx = event.clientX / window.innerWidth - 0.5;
+			state.ty = event.clientY / window.innerHeight - 0.5;
+			if (!state.frame) state.frame = requestAnimationFrame(tick);
+		};
+		window.addEventListener('pointermove', move, { passive: true });
 		return () => {
-			root.style.removeProperty('--pro-dark');
-			root.style.removeProperty('--pro-base');
-			root.style.removeProperty('--pro-light');
-			root.style.removeProperty('--pro-glow');
-			root.style.removeProperty('--pro-fg');
+			window.removeEventListener('pointermove', move);
+			cancelAnimationFrame(state.frame);
 		};
 	});
 
-	// Cast for HeroBand spread (props[0] is ColorBends snippet props)
-	let bandProps = $derived(propValues[0] as Record<string, number | string>);
-	let dotProps = $derived(propValues[1] as Record<string, number | boolean>);
+	const presets = $derived(
+		OPTIONS.map((option) => {
+			const look = lookFor(option.value, light);
+			return {
+				...option,
+				colors: [look.horizonColor, look.waveColor, look.crestColor],
+				hint: HINTS.map((name) => `${name} ${look[name]}`).join(' · ')
+			};
+		})
+	);
+
+	const activeIndex = $derived(OPTIONS.findIndex((option) => option.value === preset));
+	const tint = $derived(dotTint(values.waveColor, light));
+
+	const copy = () => {
+		navigator.clipboard?.writeText(INSTALL);
+		copied = true;
+		window.setTimeout(() => (copied = false), 1400);
+	};
 </script>
 
-<section class="ln-hero">
-	<div class="ln-hero-dots" aria-hidden="true">
-		<DotField
-			dotRadius={dotProps.dotRadius as number}
-			dotSpacing={dotProps.dotSpacing as number}
-			cursorRadius={dotProps.cursorRadius as number}
-			cursorForce={dotProps.cursorForce as number}
-			bulgeOnly={dotProps.bulgeOnly as boolean}
-			bulgeStrength={dotProps.bulgeStrength as number}
-			glowRadius={dotProps.glowRadius as number}
-			sparkle={dotProps.sparkle as boolean}
-			waveAmplitude={dotProps.waveAmplitude as number}
-			gradientFrom={accentDerived.dotGradientFrom}
-			gradientTo={accentDerived.dotGradientTo}
-			glowColor="#14110E"
-		/>
-	</div>
-	<HeroBand
-		class="ln-hero-band"
-		color={bandProps.color as string}
-			speed={bandProps.speed as number}
-			frequency={bandProps.frequency as number}
-			noise={bandProps.noise as number}
-			bandWidth={bandProps.bandWidth as number}
-			rotation={bandProps.rotation as number}
-			fadeTop={bandProps.fadeTop as number}
-			iterations={bandProps.iterations as number}
-			intensity={bandProps.intensity as number}
-			scale={1}
-			warpStrength={1}
-			yOffset={0.3}
-			mouseInfluence={0.3}
-	/>
-	<svg class="ln-hero-bottom-fade" preserveAspectRatio="none" viewBox="0 0 1 1">
-		<defs>
-			<linearGradient id="hero-bottom-fade" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stop-color="#14110E" stop-opacity="0" />
-				<stop offset="50%" stop-color="#14110E" stop-opacity="0" />
-				<stop offset="60%" stop-color="#14110E" stop-opacity="0.03" />
-				<stop offset="68%" stop-color="#14110E" stop-opacity="0.1" />
-				<stop offset="74%" stop-color="#14110E" stop-opacity="0.22" />
-				<stop offset="80%" stop-color="#14110E" stop-opacity="0.38" />
-				<stop offset="85%" stop-color="#14110E" stop-opacity="0.55" />
-				<stop offset="90%" stop-color="#14110E" stop-opacity="0.72" />
-				<stop offset="94%" stop-color="#14110E" stop-opacity="0.87" />
-				<stop offset="97%" stop-color="#14110E" stop-opacity="0.95" />
-				<stop offset="100%" stop-color="#14110E" stop-opacity="1" />
-			</linearGradient>
-		</defs>
-		<rect width="1" height="1" fill="url(#hero-bottom-fade)" />
-	</svg>
-
-	<div class="ln-hero-content">
-		<div class="ln-hero-left">
-			<a href="/backgrounds/dot-field" class="ln-hero-tag">
-				<span
-					class="ln-hero-tag-new"
-					style="background: {accentColor}; color: {accentDerived.accentFg};"
-				>
-					New Component
-				</span>
-				DotField
-				<svg width="10" height="10" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true">
-					<path
-						d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"
-					/>
-				</svg>
-			</a>
-			<h1 class="ln-hero-headline">
-				<span class="ln-hero-headline-line">Svelte components for</span><br /><span
-					class="ln-hero-headline-line">creative developers</span
-				>
+<section class="ln-hero lh" style:--lh-accent={values.waveColor}>
+	{#if mounted && hover && !step.lite && DotGrid}
+		<div class="lh-dots" aria-hidden="true">
+			<DotGrid
+				dpr={Math.min(window.devicePixelRatio || 1, 1.5)}
+				dotSize={DOT.size}
+				gap={DOT.gap}
+				baseColor={light ? '#f5f5f5' : '#14110e'}
+				activeColor={tint}
+				proximity={DOT.radius}
+				strength={1.15}
+				bounce={0.7}
+				tension={0.35}
+				swell={1.4}
+				stretch={0.5}
+				glow={0.15}
+				opacity={0.55}
+				shockRadius={380}
+				shockStrength={4}
+				intro={false}
+				mouseInteraction={!idle}
+			/>
+		</div>
+	{/if}
+	<DotFrame color={tint} live={!idle} />
+	{#if mounted && !step.lite}
+		<GhostReveal active={idle && visible} start={() => pointer} color={tint} />
+	{/if}
+	<div class="lh-inner">
+		<header class="lh-top">
+			<HeroChip />
+			<h1 class="lh-title">
+				Animated Svelte components for <br />
+				websites people remember.
 			</h1>
-			<p class="ln-hero-description">
-				Highly customizable animated components & backgrounds that drop into your project and
-				instantly make it stand out
+			<p class="lh-lede">
+				<span>{TOTAL_COMPONENTS} animated components and backgrounds for Svelte.</span>
+				<span>Tune them yourself, or hand them to your agent.</span>
 			</p>
-			<div class="ln-hero-buttons">
-				<a
-					href="/get-started/index"
-					class="ln-hero-btn ln-hero-btn-primary"
-					style="background: {accentColor}; border-color: {accentColor}; color: {accentDerived.accentFg};"
-				>
-					Browse Components
+			<div class="lh-actions">
+				<a href="/get-started/index" class="lh-btn lh-btn--primary">
+					Browse components
+					<HugeIcon icon={ArrowRight02Icon} size={17} strokeWidth={1.8} />
+				</a>
+				<a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" class="lh-btn lh-btn--ghost">
+					Star on GitHub
 				</a>
 			</div>
-		</div>
-		<div class="ln-hero-right">
-			<div class="ln-hero-code-window" onpointerenter={preloadSounds}>
-				<div class="ln-hero-code-titlebar">
-					<div class="ln-hero-code-dots">
-						<span></span><span></span><span></span>
+		</header>
+
+		<div class="lh-stage" bind:this={stageEl}>
+			<div class="lh-art" aria-hidden="true">
+				{#if GradientWaves}
+					<div class="lh-art-layer">
+						<GradientWaves {...values} dpr={step.dpr} quality={step.quality} intro paused={!visible} />
 					</div>
-					<div class="ln-hero-code-titlebar-actions">
-						{#if hasChanges}
-							<button
-								class="ln-hero-code-reset"
-								onclick={resetProps}
-								aria-label="Reset to defaults"
-							>
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-									<path d="M3 3v5h5" />
-								</svg>
-							</button>
-						{/if}
-						<div class="ln-hero-code-dropdown" bind:this={dropdownEl}>
-							<button
-								class="ln-hero-code-dropdown-trigger"
-								onclick={() => (dropdownOpen = !dropdownOpen)}
-							>
-								{SNIPPET_DEFS[activeSnippet].label}
-								<svg
-									class="ln-hero-code-caret{dropdownOpen ? ' open' : ''}"
-									width="8"
-									height="5"
-									viewBox="0 0 8 5"
-									fill="none"
-								>
-									<path
-										d="M1 1L4 4L7 1"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-									/>
-								</svg>
-							</button>
-							<div class="ln-hero-code-dropdown-menu{dropdownOpen ? ' open' : ''}">
-								{#each SNIPPET_DEFS as def, i (def.label)}
-									<button
-										class="ln-hero-code-dropdown-item{i === activeSnippet ? ' active' : ''}"
-										onclick={() => {
-											activeSnippet = i;
-											dropdownOpen = false;
-										}}
-									>
-										{def.label}
-									</button>
-								{/each}
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="ln-hero-code-body">
-					<InteractiveCode
-						def={SNIPPET_DEFS[activeSnippet]}
-						values={propValues[activeSnippet]}
-						onChange={handlePropChange}
-					/>
-				</div>
-				<p class="ln-hero-code-hint">Drag or click values to edit</p>
+				{/if}
 			</div>
+
+			<HeroWindow title="Terminal" class="lh-terminal">
+				{#snippet action()}
+					<button type="button" class="lh-window-action" onclick={copy} aria-label="Copy install command">
+						<HugeIcon icon={copied ? Tick02Icon : Copy01Icon} size={13} strokeWidth={1.8} />
+					</button>
+				{/snippet}
+				<HeroTerminal command={INSTALL} />
+			</HeroWindow>
+
+			<HeroWindow title="Hero.svelte" class="lh-code">
+				<pre class="lh-pre"><code><span class="lh-line"><span class="lh-punc">&lt;</span><span class="lh-kw">script</span> <span class="lh-attr">lang</span><span class="lh-punc">=</span><span class="lh-str">"ts"</span><span class="lh-punc">&gt;</span></span><span class="lh-line">  <span class="lh-kw">import</span> GradientWaves <span class="lh-kw">from</span> <span class="lh-str">'./GradientWaves.svelte'</span>;</span><span class="lh-line"><span class="lh-punc">&lt;/</span><span class="lh-kw">script</span><span class="lh-punc">&gt;</span></span><span class="lh-line"> </span><span class="lh-line"><span class="lh-punc">&lt;</span>GradientWaves</span>{#each FIELDS as field (field.name)}<span class="lh-line">  <span class="lh-attr">{field.name}</span><span class="lh-punc">=</span>{#if field.type === 'color'}<ScrubColor
+										value={String(values[field.name])}
+										label={field.label}
+										swatches={SWATCHES[light ? 'light' : 'dark']}
+										onChange={(value) => set(field.name, value)}
+									/>{:else}<span class="lh-punc">{'{'}</span><ScrubNumber
+										value={Number(values[field.name])}
+										field={{ ...field, min: field.min ?? 0, max: field.max ?? 1, step: field.step ?? 1 }}
+										onChange={(value) => set(field.name, value)}
+									/><span class="lh-punc">{'}'}</span>{/if}</span>{/each}<span class="lh-line"><span class="lh-punc">/&gt;</span></span></code></pre>
+			</HeroWindow>
+
+			{#if presets.length > 0}
+				<HeroWindow
+					title="Presets"
+					class="lh-presets"
+					onpointerenter={() => (hold = true)}
+					onpointerleave={() => (hold = false)}
+				>
+					{#snippet status()}
+						<a href="/backgrounds/gradient-waves" class="lh-studio">
+							Open Gradient Waves
+							<HugeIcon icon={ArrowUpRight01Icon} size={14} strokeWidth={1.8} />
+						</a>
+					{/snippet}
+					<div class="lh-preset-list" role="radiogroup" aria-label="Presets">
+						<span
+							class="lh-preset-thumb"
+							aria-hidden="true"
+							data-hidden={activeIndex < 0 ? '' : undefined}
+							style:--i={Math.max(0, activeIndex)}
+						></span>
+						{#each presets as option (option.value)}
+							<button
+								type="button"
+								role="radio"
+								aria-checked={preset === option.value}
+								class="lh-preset"
+								onclick={() => pick(option.value)}
+							>
+								<span class="lh-preset-swatches" aria-hidden="true">
+									{#each option.colors as color, index (`${color}-${index}`)}
+										<i style:background={color}></i>
+									{/each}
+								</span>
+								<span class="lh-preset-name">{option.label}</span>
+								<span class="lh-preset-hint">{option.hint}</span>
+							</button>
+						{/each}
+					</div>
+				</HeroWindow>
+			{/if}
 		</div>
 	</div>
 </section>

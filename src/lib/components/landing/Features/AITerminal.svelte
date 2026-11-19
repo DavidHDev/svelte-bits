@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { untrack } from 'svelte';
+	import { animate } from 'motion';
+	import { fadeSlideIn, observeVisible } from '../shared/motion';
 
-	type Token = { cls: 'kw' | 'comp' | 'tag' | 'attr' | 'punc' | 'num' | 'str'; text: string };
+	type Token = { cls: string; text: string };
 
-	type Convo = { q: string; lines: Token[]; jsx: Token[] };
-
-	const AI_CONVOS: Convo[] = [
+	const AI_CONVOS: { q: string; lines: Token[]; jsx: Token[] }[] = [
 		{
 			q: 'add a glowing card',
 			lines: [
 				{ cls: 'kw', text: 'import ' },
 				{ cls: 'comp', text: 'BorderGlow' },
 				{ cls: 'kw', text: ' from ' },
-				{ cls: 'str', text: '"./BorderGlow"' }
+				{ cls: 'str', text: '"./BorderGlow.svelte"' }
 			],
 			jsx: [
 				{ cls: 'tag', text: '<' },
@@ -29,7 +29,7 @@
 				{ cls: 'kw', text: 'import ' },
 				{ cls: 'comp', text: 'SplitText' },
 				{ cls: 'kw', text: ' from ' },
-				{ cls: 'str', text: '"./SplitText"' }
+				{ cls: 'str', text: '"./SplitText.svelte"' }
 			],
 			jsx: [
 				{ cls: 'tag', text: '<' },
@@ -46,7 +46,7 @@
 				{ cls: 'kw', text: 'import ' },
 				{ cls: 'comp', text: 'Ballpit' },
 				{ cls: 'kw', text: ' from ' },
-				{ cls: 'str', text: '"./Ballpit"' }
+				{ cls: 'str', text: '"./Ballpit.svelte"' }
 			],
 			jsx: [
 				{ cls: 'tag', text: '<' },
@@ -60,42 +60,54 @@
 	];
 
 	let idx = $state(0);
+	let shownIdx = $state(0);
 	let typed = $state('');
 	let phase = $state<'prompt' | 'thinking' | 'code'>('prompt');
 	let codeLines = $state(0);
+	let visible = $state(false);
+	let root = $state<HTMLDivElement | null>(null);
+	let inner = $state<HTMLDivElement | null>(null);
+	let started = false;
 
-	let timers: ReturnType<typeof setTimeout>[] = [];
+	$effect(() => {
+		if (!root) return;
+		return observeVisible(root, (next) => (visible = next));
+	});
 
-	const conv = $derived(AI_CONVOS[idx]);
-
-	function clearTimers() {
-		timers.forEach(clearTimeout);
-		timers = [];
-	}
-
-	function schedule(fn: () => void, ms: number) {
-		const id = setTimeout(fn, ms);
-		timers.push(id);
-	}
-
-	function runConvo(i: number) {
-		const c = AI_CONVOS[i];
-		typed = '';
-		phase = 'prompt';
-		codeLines = 0;
+	$effect(() => {
+		const current = idx;
+		if (!visible || !inner) return;
+		const el = inner;
+		const timers: ReturnType<typeof setTimeout>[] = [];
+		const schedule = (fn: () => void, ms: number) => {
+			timers.push(setTimeout(fn, ms));
+		};
+		const conv = AI_CONVOS[current];
+		const enter = () => {
+			shownIdx = current;
+			typed = '';
+			phase = 'prompt';
+			codeLines = 0;
+			animate(el, { opacity: [0, 1] }, { duration: 0.3 });
+		};
+		if (!started) {
+			started = true;
+			enter();
+		} else if (current !== untrack(() => shownIdx)) {
+			animate(el, { opacity: 0 }, { duration: 0.3 });
+			schedule(enter, 300);
+		} else {
+			enter();
+		}
 
 		let delay = 300;
-		for (let k = 0; k <= c.q.length; k++) {
-			const slice = c.q.slice(0, k);
-			schedule(() => {
-				typed = slice;
-			}, delay);
+		for (let c = 0; c <= conv.q.length; c++) {
+			const slice = conv.q.slice(0, c);
+			schedule(() => (typed = slice), delay);
 			delay += 50;
 		}
 
-		schedule(() => {
-			phase = 'thinking';
-		}, delay);
+		schedule(() => (phase = 'thinking'), delay);
 		delay += 900;
 
 		schedule(() => {
@@ -103,84 +115,66 @@
 			codeLines = 1;
 		}, delay);
 		delay += 280;
-		schedule(() => {
-			codeLines = 2;
-		}, delay);
+		schedule(() => (codeLines = 2), delay);
 		delay += 280;
-		schedule(() => {
-			codeLines = 3;
-		}, delay);
+		schedule(() => (codeLines = 3), delay);
 		delay += 2400;
 
-		schedule(() => {
-			idx = (idx + 1) % AI_CONVOS.length;
-		}, delay);
-	}
+		schedule(() => (idx = (current + 1) % AI_CONVOS.length), delay);
 
-	onMount(() => {
-		runConvo(0);
+		return () => timers.forEach(clearTimeout);
 	});
 
-	onDestroy(clearTimers);
-
-	$effect(() => {
-		// Re-run sequence when idx changes (after initial mount).
-		const i = idx;
-		if (i === 0) return; // initial run handled by onMount
-		clearTimers();
-		runConvo(i);
-	});
+	const conv = $derived(AI_CONVOS[shownIdx]);
 </script>
 
-<div class="ln-feat-aichat">
-	{#key idx}
-		<div class="ln-feat-aichat-inner">
-			<div class="ln-feat-aichat-head">
-				<div class="ln-feat-aichat-dots">
-					<span></span><span></span><span></span>
-				</div>
-				<span class="ln-feat-aichat-title">Editor</span>
+<div class="ln-feat-aichat" bind:this={root}>
+	<div class="ln-feat-aichat-inner" bind:this={inner} style:opacity="0">
+		<div class="ln-feat-aichat-head">
+			<div class="ln-feat-aichat-dots">
+				<span></span>
+				<span></span>
+				<span></span>
 			</div>
+			<span class="ln-feat-aichat-title">Editor</span>
+		</div>
 
-			<div class="ln-feat-aichat-prompt-row">
-				<span class="ln-feat-aichat-chevron">$</span>
-				<span class="ln-feat-aichat-prompt">{typed}</span>
-				{#if phase === 'prompt'}
-					<span class="ln-feat-aichat-cursor"></span>
-				{/if}
-			</div>
-
-			{#if phase === 'thinking'}
-				<div class="ln-feat-aichat-thinking">
-					<span></span><span></span><span></span>
-				</div>
-			{/if}
-
-			{#if phase === 'code'}
-				<div class="ln-feat-aichat-code-block">
-					{#if codeLines >= 1}
-						<div class="ln-feat-aichat-code-line">
-							<span class="ln-feat-aichat-ln">1</span>
-							{#each conv.lines as t, j (j)}
-								<span class="ac-{t.cls}">{t.text}</span>
-							{/each}
-						</div>
-					{/if}
-					{#if codeLines >= 2}
-						<div class="ln-feat-aichat-code-line">
-							<span class="ln-feat-aichat-ln">2</span>
-						</div>
-					{/if}
-					{#if codeLines >= 3}
-						<div class="ln-feat-aichat-code-line">
-							<span class="ln-feat-aichat-ln">3</span>
-							{#each conv.jsx as t, j (j)}
-								<span class="ac-{t.cls}">{t.text}</span>
-							{/each}
-						</div>
-					{/if}
-				</div>
+		<div class="ln-feat-aichat-prompt-row">
+			<span class="ln-feat-aichat-chevron">$</span>
+			<span class="ln-feat-aichat-prompt">{typed}</span>
+			{#if phase === 'prompt'}
+				<span class="ln-feat-aichat-cursor"></span>
 			{/if}
 		</div>
-	{/key}
+
+		{#if phase === 'thinking'}
+			<div class="ln-feat-aichat-thinking">
+				<span></span>
+				<span></span>
+				<span></span>
+			</div>
+		{/if}
+
+		{#if phase === 'code'}
+			<div class="ln-feat-aichat-code-block">
+				{#if codeLines >= 1}
+					<div class="ln-feat-aichat-code-line" use:fadeSlideIn>
+						<span class="ln-feat-aichat-ln">1</span>
+						{#each conv.lines as t, j (j)}<span class="ac-{t.cls}">{t.text}</span>{/each}
+					</div>
+				{/if}
+				{#if codeLines >= 2}
+					<div class="ln-feat-aichat-code-line" use:fadeSlideIn>
+						<span class="ln-feat-aichat-ln">2</span>
+					</div>
+				{/if}
+				{#if codeLines >= 3}
+					<div class="ln-feat-aichat-code-line" use:fadeSlideIn>
+						<span class="ln-feat-aichat-ln">3</span>
+						{#each conv.jsx as t, j (j)}<span class="ac-{t.cls}">{t.text}</span>{/each}
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</div>
 </div>

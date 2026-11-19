@@ -1,7 +1,14 @@
+<!-- @svelte-bits
+{
+  "title": "PaperCrumple",
+  "description": "An image that crumples into a textured 3D sheet while you hold and drag it.",
+  "dependencies": ["three"]
+}
+-->
 <script module lang="ts">
-	type CSSProperties = Record<string, string | number | undefined | null>;
 	export type PaperCrumpleState = 'flat' | 'holding' | 'crumpled' | 'creased';
 	export type PaperCrumpleRelease = 'stay' | 'restore' | 'creased';
+
 	export interface PaperCrumpleProps {
 		src: string;
 		alt?: string;
@@ -36,13 +43,15 @@
 		resetKey?: number | string;
 		onStateChange?: (state: PaperCrumpleState) => void;
 		onError?: (error: Error) => void;
-		className?: string;
-		style?: CSSProperties;
+		class?: string;
+		style?: string;
 	}
+
 	type Spring = { value: number; target: number; velocity: number };
 	const spring = (value = 0): Spring => ({ value, target: value, velocity: 0 });
 	const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 	const finite = (value: number, fallback: number) => (Number.isFinite(value) ? value : fallback);
+
 	function advance(s: Spring, dt: number, duration: number, instant: boolean) {
 		if (instant || duration <= 0) {
 			s.value = s.target;
@@ -62,6 +71,7 @@
 		}
 		return true;
 	}
+
 	function randomSource(seed: number) {
 		let value = seed | 0;
 		return () => {
@@ -72,6 +82,7 @@
 			return ((n ^ (n >>> 14)) >>> 0) / 4294967296;
 		};
 	}
+
 	function createPaperPath(
 		rest: Float32Array,
 		triangles: number[],
@@ -79,7 +90,7 @@
 		density: number,
 		sharpness: number,
 		depth: number,
-		seed: number,
+		seed: number
 	) {
 		const count = rest.length / 3;
 		const points = Float64Array.from(rest);
@@ -91,12 +102,7 @@
 		const random = randomSource(seed);
 		const guides = Array.from({ length: density }, () => {
 			const angle = random() * Math.PI * 2;
-			return {
-				x: Math.cos(angle),
-				y: Math.sin(angle),
-				phase: random() * Math.PI * 2,
-				weight: random() * 0.6 + 0.4,
-			};
+			return { x: Math.cos(angle), y: Math.sin(angle), phase: random() * Math.PI * 2, weight: random() * 0.6 + 0.4 };
 		});
 		for (let t = 0; t < triangles.length; t += 3) {
 			for (let k = 0; k < 3; k++) {
@@ -117,9 +123,7 @@
 						my = (rest[c + 1] + rest[d + 1]) * 0.5;
 					let weakness = 0;
 					for (const guide of guides) {
-						const distance = Math.abs(
-							Math.sin(((mx * guide.x + my * guide.y) / shortSide) * 4 + guide.phase),
-						);
+						const distance = Math.abs(Math.sin(((mx * guide.x + my * guide.y) / shortSide) * 4 + guide.phase));
 						weakness = Math.max(weakness, Math.exp(-distance * distance * 80) * guide.weight);
 					}
 					hinges.push(c, d, length, 0.12 + (1 - weakness) * 0.75);
@@ -211,9 +215,7 @@
 						dz = points[p + 2] - az;
 					const distance = dx * nx + dy * ny + dz * nz;
 					const previousDistance =
-						(before[p] - before[a]) * nx +
-						(before[p + 1] - before[a + 1]) * ny +
-						(before[p + 2] - before[a + 2]) * nz;
+						(before[p] - before[a]) * nx + (before[p + 1] - before[a + 1]) * ny + (before[p + 2] - before[a + 2]) * nz;
 					const side = previousDistance >= 0 ? 1 : -1;
 					if (distance * side >= thickness || Math.abs(distance) > margin) continue;
 					const pb = dx * bx + dy * by + dz * bz,
@@ -238,15 +240,13 @@
 		for (let step = 1; step <= totalSteps; step++) {
 			const progress = step / totalSteps;
 			const compression = progress * progress * (3 - 2 * progress);
-			const radius =
-				initialRadius * (1 - compression) + shortSide * (0.19 - depth * 0.025) * compression;
+			const radius = initialRadius * (1 - compression) + shortSide * (0.19 - depth * 0.025) * compression;
 			before.set(points);
 			for (let i = 0; i < points.length; i += 3) {
 				const x = rest[i] / shortSide,
 					y = rest[i + 1] / shortSide;
 				let buckle = 0;
-				for (const guide of guides)
-					buckle += Math.sin((x * guide.x + y * guide.y) * 5 + guide.phase) * guide.weight;
+				for (const guide of guides) buckle += Math.sin((x * guide.x + y * guide.y) * 5 + guide.phase) * guide.weight;
 				for (let axis = 0; axis < 3; axis++) {
 					const velocity = (points[i + axis] - previous[i + axis]) * 0.55;
 					previous[i + axis] = points[i + axis];
@@ -274,11 +274,7 @@
 			for (let h = 0; h < hinges.length; h += 4) {
 				const a = hinges[h],
 					b = hinges[h + 1];
-				const length = Math.hypot(
-					points[a] - points[b],
-					points[a + 1] - points[b + 1],
-					points[a + 2] - points[b + 2],
-				);
+				const length = Math.hypot(points[a] - points[b], points[a + 1] - points[b + 1], points[a + 2] - points[b + 2]);
 				if (length < hinges[h + 2] * 0.86) hinges[h + 2] += (length - hinges[h + 2]) * 0.12;
 			}
 			if (step % stepsPerFrame === 0) samples.push(Float32Array.from(points));
@@ -299,30 +295,12 @@
 		const creased = Float32Array.from(points);
 		return { samples, creased };
 	}
-	function css(value: CSSProperties | undefined): string {
-		const unitless =
-			/^(opacity|zIndex|fontWeight|lineHeight|flex|flexGrow|flexShrink|order|scale|aspectRatio|strokeWidth|strokeDashoffset|strokeDasharray|fillOpacity|strokeOpacity|stopOpacity|pathLength)$/;
-		return Object.entries(value ?? {})
-			.filter(([, v]) => v !== undefined && v !== null)
-			.map(([key, value]) => {
-				const name = key.startsWith('--')
-					? key
-					: key.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase());
-				return (
-					name +
-					':' +
-					(typeof value === 'number' && value !== 0 && !key.startsWith('--') && !unitless.test(key)
-						? value + 'px'
-						: value)
-				);
-			})
-			.join(';');
-	}
 </script>
 
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import * as THREE from 'three';
+
 	let {
 		src,
 		alt = 'Crumplable image',
@@ -357,17 +335,16 @@
 		resetKey = 0,
 		onStateChange,
 		onError,
-		className = '',
-		style,
+		class: className = '',
+		style
 	}: PaperCrumpleProps = $props();
-	const pathCache = {
-		current: null as { key: string; value: ReturnType<typeof createPaperPath> } | null,
-	};
-	const rootRef = { current: null as HTMLDivElement | null };
-	const canvasRef = { current: null as HTMLCanvasElement | null };
-	const hitRef = { current: null as HTMLButtonElement | null };
-	const resetRef = { current: null as (() => void) | null };
-	const cancelRef = { current: null as (() => void) | null };
+
+	const pathCache: { current: { key: string; value: ReturnType<typeof createPaperPath> } | null } = { current: null };
+	let rootEl = $state<HTMLDivElement>();
+	let canvasEl = $state<HTMLCanvasElement>();
+	let hitEl = $state<HTMLButtonElement>();
+	const resetRef: { current: (() => void) | null } = { current: null };
+	const cancelRef: { current: (() => void) | null } = { current: null };
 	let status = $state<'loading' | 'ready' | 'error'>('loading');
 	const options = {
 		get current() {
@@ -383,34 +360,43 @@
 				returnToOrigin,
 				disabled,
 				onStateChange,
-				onError,
+				onError
 			};
-		},
+		}
 	};
+
+	const sceneKey = $derived(
+		JSON.stringify([
+			src,
+			backSrc,
+			width,
+			height,
+			imageFit,
+			foldCount,
+			foldSharpness,
+			wrinkleDepth,
+			paperColor,
+			roughness,
+			paperTexture,
+			lightIntensity,
+			lightAngle,
+			shadow,
+			shadowOpacity,
+			rotation,
+			seed,
+			detail
+		])
+	);
+	const resetToken = $derived(resetKey);
+	const isDisabled = $derived(disabled);
+
 	$effect(() => {
-		src;
-		backSrc;
-		width;
-		height;
-		imageFit;
-		foldCount;
-		foldSharpness;
-		wrinkleDepth;
-		paperColor;
-		roughness;
-		paperTexture;
-		lightIntensity;
-		lightAngle;
-		shadow;
-		shadowOpacity;
-		rotation;
-		seed;
-		detail;
+		const root = rootEl,
+			canvas = canvasEl,
+			hit = hitEl;
+		sceneKey;
+		if (!root || !canvas || !hit) return;
 		return untrack(() => {
-			const root = rootRef.current,
-				canvas = canvasRef.current,
-				hit = hitRef.current;
-			if (!root || !canvas || !hit) return;
 			status = 'loading';
 			hit.disabled = true;
 			hit.dataset.held = 'false';
@@ -421,23 +407,16 @@
 			const initialScale = Math.min(
 				1,
 				Math.max(1, initialRect.width - 48) / initialWidth,
-				Math.max(1, initialRect.height - 48) / initialHeight,
+				Math.max(1, initialRect.height - 48) / initialHeight
 			);
 			root.style.setProperty('--pc-image-width', `${initialWidth * initialScale}px`);
 			root.style.setProperty('--pc-image-height', `${initialHeight * initialScale}px`);
 			let renderer: THREE.WebGLRenderer;
 			try {
-				renderer = new THREE.WebGLRenderer({
-					canvas,
-					alpha: true,
-					antialias: true,
-					powerPreference: 'low-power',
-				});
+				renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
 			} catch (error) {
 				status = 'error';
-				options.current.onError?.(
-					error instanceof Error ? error : new Error('WebGL is unavailable.'),
-				);
+				options.current.onError?.(error instanceof Error ? error : new Error('WebGL is unavailable.'));
 				return;
 			}
 
@@ -478,27 +457,11 @@
 					}
 				}
 			}
-			const pathKey = JSON.stringify([
-				paperWidth,
-				paperHeight,
-				resolution,
-				foldTotal,
-				sharpness,
-				depth,
-				seed,
-			]);
+			const pathKey = JSON.stringify([paperWidth, paperHeight, resolution, foldTotal, sharpness, depth, seed]);
 			if (pathCache.current?.key !== pathKey) {
 				pathCache.current = {
 					key: pathKey,
-					value: createPaperPath(
-						original,
-						indices,
-						shortSide,
-						foldTotal,
-						sharpness,
-						depth,
-						finite(seed, 7),
-					),
+					value: createPaperPath(original, indices, shortSide, foldTotal, sharpness, depth, finite(seed, 7))
 				};
 			}
 			const paperPath = pathCache.current.value;
@@ -513,14 +476,8 @@
 				incidentFaces[indices[i]].push(Math.floor(i / 3) * 3);
 			}
 			const geometry = new THREE.BufferGeometry();
-			geometry.setAttribute(
-				'position',
-				new THREE.BufferAttribute(renderPositions, 3).setUsage(THREE.DynamicDrawUsage),
-			);
-			geometry.setAttribute(
-				'normal',
-				new THREE.BufferAttribute(renderNormals, 3).setUsage(THREE.DynamicDrawUsage),
-			);
+			geometry.setAttribute('position', new THREE.BufferAttribute(renderPositions, 3).setUsage(THREE.DynamicDrawUsage));
+			geometry.setAttribute('normal', new THREE.BufferAttribute(renderNormals, 3).setUsage(THREE.DynamicDrawUsage));
 			geometry.setAttribute('uv', new THREE.BufferAttribute(renderUvs, 2));
 			const grainData = new Uint8Array(128 * 128 * 4);
 			for (let i = 0; i < grainData.length; i += 4) {
@@ -541,57 +498,53 @@
 				bumpScale: clamp(finite(paperTexture, 0.08), 0, 1) * 0.32,
 				alphaTest: 0.04,
 				alphaToCoverage: true,
-				flatShading: false,
+				flatShading: false
 			};
-			const frontMaterial = new THREE.MeshStandardMaterial({
-				...materialOptions,
-				side: THREE.FrontSide,
-			});
+			const frontMaterial = new THREE.MeshStandardMaterial({ ...materialOptions, side: THREE.FrontSide });
 			const backMaterial = new THREE.MeshStandardMaterial({
 				...materialOptions,
 				side: THREE.BackSide,
-				color: backSrc ? '#FFF7F0' : paperColor,
+				color: backSrc ? '#ffffff' : paperColor
 			});
 			const lighting = { value: 0 };
 			for (const material of [frontMaterial, backMaterial]) {
-				material.onBeforeCompile = (shader) => {
+				material.onBeforeCompile = shader => {
 					shader.uniforms.paperLighting = lighting;
 					shader.fragmentShader = 'uniform float paperLighting;\n' + shader.fragmentShader;
 					shader.fragmentShader = shader.fragmentShader.replace(
 						'#include <map_fragment>',
 						`
-          #include <map_fragment>
-          #ifdef USE_MAP
-            if (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) discard;
-            ${material === backMaterial && !backSrc ? 'diffuseColor.rgb = diffuse;' : ''}
-          #endif
-        `,
+						#include <map_fragment>
+						#ifdef USE_MAP
+							if (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) discard;
+							${material === backMaterial && !backSrc ? 'diffuseColor.rgb = diffuse;' : ''}
+						#endif
+					`
 					);
 					shader.fragmentShader = shader.fragmentShader.replace(
 						'#include <opaque_fragment>',
 						`
-          outgoingLight = mix(diffuseColor.rgb, outgoingLight, paperLighting);
-          #include <opaque_fragment>
-        `,
+						outgoingLight = mix(diffuseColor.rgb, outgoingLight, paperLighting);
+						#include <opaque_fragment>
+					`
 					);
 				};
-				material.customProgramCacheKey = () =>
-					`paper-${material === backMaterial && !backSrc ? 'stock' : 'print'}`;
+				material.customProgramCacheKey = () => `paper-${material === backMaterial && !backSrc ? 'stock' : 'print'}`;
 			}
 			const depthMaterial = new THREE.MeshDepthMaterial({
 				depthPacking: THREE.RGBADepthPacking,
 				alphaTest: 0.04,
-				side: THREE.DoubleSide,
+				side: THREE.DoubleSide
 			});
-			depthMaterial.onBeforeCompile = (shader) => {
+			depthMaterial.onBeforeCompile = shader => {
 				shader.fragmentShader = shader.fragmentShader.replace(
 					'#include <map_fragment>',
 					`
-        #include <map_fragment>
-        #ifdef USE_MAP
-          if (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) discard;
-        #endif
-      `,
+					#include <map_fragment>
+					#ifdef USE_MAP
+						if (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) discard;
+					#endif
+				`
 				);
 			};
 			const sheet = new THREE.Group();
@@ -617,7 +570,7 @@
 			const floorGeometry = new THREE.PlaneGeometry(1, 1);
 			const floorMaterial = new THREE.ShadowMaterial({
 				opacity: clamp(finite(shadowOpacity, 0.08), 0, 1),
-				depthWrite: false,
+				depthWrite: false
 			});
 			const floor = new THREE.Mesh(floorGeometry, floorMaterial);
 			floor.receiveShadow = true;
@@ -755,7 +708,7 @@
 					corner.set(
 						i & 1 ? bounds.max.x : bounds.min.x,
 						i & 2 ? bounds.max.y : bounds.min.y,
-						i & 4 ? bounds.max.z : bounds.min.z,
+						i & 4 ? bounds.max.z : bounds.min.z
 					);
 					corner.applyMatrix4(sheet.matrixWorld).project(camera);
 					const x = ((corner.x + 1) * viewportWidth) / 2,
@@ -782,17 +735,9 @@
 				lastTime = time;
 				const opts = options.current;
 				let moving = false;
-				const duration = held
-					? finite(opts.crumpleDuration, 0.55)
-					: finite(opts.releaseDuration, 0.4);
+				const duration = held ? finite(opts.crumpleDuration, 0.55) : finite(opts.releaseDuration, 0.4);
 				for (const s of springs)
-					moving =
-						advance(
-							s,
-							dt,
-							s === amount || s === memory ? duration : 0.42,
-							reduceMotion || keyboard,
-						) || moving;
+					moving = advance(s, dt, s === amount || s === memory ? duration : 0.42, reduceMotion || keyboard) || moving;
 				peak = Math.max(peak, amount.value);
 				deform();
 				sheet.rotation.set(tiltX.value, tiltY.value, baseRotation);
@@ -821,7 +766,7 @@
 						corner.set(
 							i & 1 ? shadowBounds.max.x : shadowBounds.min.x,
 							i & 2 ? shadowBounds.max.y : shadowBounds.min.y,
-							i & 4 ? shadowBounds.max.z : shadowBounds.min.z,
+							i & 4 ? shadowBounds.max.z : shadowBounds.min.z
 						);
 						corner.applyMatrix4(sheet.matrixWorld);
 						backZ = Math.min(backZ, corner.z);
@@ -844,15 +789,10 @@
 				viewportHeight = Math.max(1, rect.height);
 				scale =
 					paperWidth *
-					Math.min(
-						1,
-						Math.max(1, viewportWidth - 48) / paperWidth,
-						Math.max(1, viewportHeight - 48) / paperHeight,
-					);
+					Math.min(1, Math.max(1, viewportWidth - 48) / paperWidth, Math.max(1, viewportHeight - 48) / paperHeight);
 				sheet.scale.setScalar(scale);
 				camera.aspect = viewportWidth / viewportHeight;
-				camera.position.z =
-					viewportHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+				camera.position.z = viewportHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
 				camera.updateProjectionMatrix();
 				camera.updateMatrixWorld();
 				renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -876,6 +816,7 @@
 					posY.value = posY.target = clamp(posY.value, -limitY, limitY);
 				}
 				wake();
+				renderer.render(scene, camera);
 			}
 
 			function finish(instant = false) {
@@ -886,8 +827,7 @@
 				hit!.dataset.held = 'false';
 				const captured = pointerId;
 				pointerId = null;
-				if (captured !== null && hit!.hasPointerCapture(captured))
-					hit!.releasePointerCapture(captured);
+				if (captured !== null && hit!.hasPointerCapture(captured)) hit!.releasePointerCapture(captured);
 				if (opts.releaseBehavior === 'stay') {
 					amount.target = amount.value;
 					amount.velocity = 0;
@@ -904,23 +844,18 @@
 				} else {
 					const bounds = geometry.boundingBox;
 					const spanX = opts.releaseBehavior === 'stay' && bounds ? bounds.max.x - bounds.min.x : 1;
-					const spanY =
-						opts.releaseBehavior === 'stay' && bounds ? bounds.max.y - bounds.min.y : aspect;
+					const spanY = opts.releaseBehavior === 'stay' && bounds ? bounds.max.y - bounds.min.y : aspect;
 					const halfWidth =
-						((Math.abs(Math.cos(baseRotation)) * spanX + Math.abs(Math.sin(baseRotation)) * spanY) *
-							scale) /
-						2;
+						((Math.abs(Math.cos(baseRotation)) * spanX + Math.abs(Math.sin(baseRotation)) * spanY) * scale) / 2;
 					const halfHeight =
-						((Math.abs(Math.sin(baseRotation)) * spanX + Math.abs(Math.cos(baseRotation)) * spanY) *
-							scale) /
-						2;
+						((Math.abs(Math.sin(baseRotation)) * spanX + Math.abs(Math.cos(baseRotation)) * spanY) * scale) / 2;
 					const limitX = Math.min(
 						Math.max(0, finite(opts.dragRadius, 180)),
-						Math.max(0, viewportWidth / 2 - halfWidth - 16),
+						Math.max(0, viewportWidth / 2 - halfWidth - 16)
 					);
 					const limitY = Math.min(
 						Math.max(0, finite(opts.dragRadius, 180)),
-						Math.max(0, viewportHeight / 2 - halfHeight - 16),
+						Math.max(0, viewportHeight / 2 - halfHeight - 16)
 					);
 					const coast = !reduceMotion && !keyboard && performance.now() - lastMove < 90 ? 0.06 : 0;
 					posX.target = clamp(posX.value + speedX * coast, -limitX, limitX);
@@ -933,7 +868,7 @@
 						? 'crumpled'
 						: memory.target > 0.001
 							? 'creased'
-							: 'flat',
+							: 'flat'
 				);
 				wake();
 			}
@@ -959,8 +894,7 @@
 			}
 
 			function pointerDown(event: PointerEvent) {
-				if (!ready || options.current.disabled || held || event.button !== 0 || !event.isPrimary)
-					return;
+				if (!ready || options.current.disabled || held || event.button !== 0 || !event.isPrimary) return;
 				const rect = root!.getBoundingClientRect();
 				pointerX = lastX = event.clientX - rect.left;
 				pointerY = lastY = event.clientY - rect.top;
@@ -977,13 +911,7 @@
 				a.fromBufferAttribute(attribute, face.a);
 				b.fromBufferAttribute(attribute, face.b);
 				c.fromBufferAttribute(attribute, face.c);
-				THREE.Triangle.getBarycoord(
-					sheet.worldToLocal(intersection.point.clone()),
-					a,
-					b,
-					c,
-					weights,
-				);
+				THREE.Triangle.getBarycoord(sheet.worldToLocal(intersection.point.clone()), a, b, c, weights);
 				keyboard = false;
 				pointerId = event.pointerId;
 				speedX = speedY = 0;
@@ -1052,15 +980,14 @@
 					const step = event.shiftKey ? 30 : 12;
 					const limit = Math.max(0, finite(options.current.dragRadius, 180));
 					posX.target = clamp(
-						posX.target +
-							(event.key === 'ArrowRight' ? step : event.key === 'ArrowLeft' ? -step : 0),
+						posX.target + (event.key === 'ArrowRight' ? step : event.key === 'ArrowLeft' ? -step : 0),
 						-Math.min(limit, viewportWidth / 3),
-						Math.min(limit, viewportWidth / 3),
+						Math.min(limit, viewportWidth / 3)
 					);
 					posY.target = clamp(
 						posY.target + (event.key === 'ArrowUp' ? step : event.key === 'ArrowDown' ? -step : 0),
 						-Math.min(limit, viewportHeight / 3),
-						Math.min(limit, viewportHeight / 3),
+						Math.min(limit, viewportHeight / 3)
 					);
 					wake();
 				}
@@ -1113,7 +1040,7 @@
 			canvas.addEventListener('webglcontextrestored', restoreContext);
 			const observer = new ResizeObserver(resize);
 			observer.observe(root);
-			const intersectionObserver = new IntersectionObserver((entries) => {
+			const intersectionObserver = new IntersectionObserver(entries => {
 				inView = entries[0].isIntersecting;
 				lastTime = 0;
 				if (!inView) cancel();
@@ -1129,7 +1056,7 @@
 				return new Promise((resolve, reject) => {
 					loader.load(
 						url,
-						(texture) => {
+						texture => {
 							if (disposed) {
 								texture.dispose();
 								resolve(texture);
@@ -1155,10 +1082,7 @@
 							resolve(texture);
 						},
 						undefined,
-						() =>
-							reject(
-								new Error(`Unable to load paper image: ${url}. Remote images must allow CORS.`),
-							),
+						() => reject(new Error(`Unable to load paper image: ${url}. Remote images must allow CORS.`))
 					);
 				});
 			}
@@ -1179,7 +1103,7 @@
 						hit.disabled = options.current.disabled;
 						wake();
 					})
-					.catch((error) => {
+					.catch(error => {
 						if (disposed) return;
 						status = 'error';
 						options.current.onError?.(error);
@@ -1192,8 +1116,7 @@
 			return () => {
 				disposed = true;
 				cancelAnimationFrame(frame);
-				if (pointerId !== null && hit.hasPointerCapture(pointerId))
-					hit.releasePointerCapture(pointerId);
+				if (pointerId !== null && hit.hasPointerCapture(pointerId)) hit.releasePointerCapture(pointerId);
 				resetRef.current = cancelRef.current = null;
 				observer.disconnect();
 				intersectionObserver.disconnect();
@@ -1217,62 +1140,61 @@
 				depthMaterial.dispose();
 				floorMaterial.dispose();
 				grain.dispose();
-				textures.forEach((texture) => texture.dispose());
+				textures.forEach(texture => texture.dispose());
 				light.shadow.dispose();
 				renderer.dispose();
 			};
 		});
 	});
+
 	$effect(() => {
-		resetKey;
-		return untrack(() => {
-			resetRef.current?.();
-		});
+		resetToken;
+		untrack(() => resetRef.current?.());
 	});
+
 	$effect(() => {
-		disabled;
-		return untrack(() => {
-			if (disabled) cancelRef.current?.();
-		});
+		if (isDisabled) untrack(() => cancelRef.current?.());
 	});
+
 	const shadowFilter = $derived(
-		shadow
-			? `drop-shadow(0 6px 10px rgb(0 0 0 / ${clamp(finite(shadowOpacity, 0.08), 0, 1)}))`
-			: undefined,
+		shadow ? `drop-shadow(0 6px 10px rgb(0 0 0 / ${clamp(finite(shadowOpacity, 0.08), 0, 1)}))` : undefined
 	);
+	const rootStyle = $derived(`height: ${sceneHeight}px;${style ? ` ${style}` : ''}`);
+	const visibility = $derived(status === 'ready' ? 'visible' : 'hidden');
 </script>
 
 <div
-	bind:this={rootRef.current}
-	class={`relative isolate w-full overflow-hidden ${className}`}
-	style={css({ height: sceneHeight, ...style })}
+	bind:this={rootEl}
+	class="relative isolate w-full overflow-hidden {className}"
+	style={rootStyle}
 	data-status={status}
 >
 	<canvas
-		bind:this={canvasRef.current}
+		bind:this={canvasEl}
 		class="pointer-events-none absolute inset-0 block h-full w-full"
 		aria-hidden="true"
-		style={css({ visibility: status === 'ready' ? 'visible' : 'hidden', filter: shadowFilter })}
+		style:visibility
+		style:filter={shadowFilter}
 	></canvas>
-	{#if status !== 'ready'}<img
+	{#if status !== 'ready'}
+		<img
 			class="pointer-events-none absolute left-1/2 top-1/2 h-[var(--pc-image-height,72%)] w-[var(--pc-image-width,60%)] select-none"
 			src={src || undefined}
 			{alt}
-			draggable={false}
-			style={css({
-				objectFit: imageFit,
-				transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-				filter: shadowFilter,
-			})}
-		/>{/if}
+			draggable="false"
+			style:object-fit={imageFit}
+			style:transform="translate(-50%, -50%) rotate({rotation}deg)"
+			style:filter={shadowFilter}
+		/>
+	{/if}
 	<button
-		bind:this={hitRef.current}
+		bind:this={hitEl}
 		type="button"
 		class="peer absolute left-0 top-0 m-0 cursor-grab touch-none appearance-none select-none rounded-[2px] border-0 bg-transparent p-0 !shadow-none !outline-none [-webkit-tap-highlight-color:transparent] data-[held=true]:cursor-grabbing focus:!outline-none focus-visible:!outline-none disabled:cursor-default"
 		disabled={disabled || status !== 'ready'}
-		aria-label={`${alt}. Hold to crumple and drag. Keyboard: hold Space or Enter, arrow keys to move, Escape to reset.`}
+		aria-label="{alt}. Hold to crumple and drag. Keyboard: hold Space or Enter, arrow keys to move, Escape to reset."
 		aria-pressed="false"
-		style={css({ visibility: status === 'ready' ? 'visible' : 'hidden' })}
+		style:visibility
 	></button>
 	<span
 		class="pointer-events-none absolute bottom-6 left-[calc(50%-2px)] h-1 w-1 rounded-full bg-current opacity-0 peer-focus-visible:opacity-55 peer-data-[pointer=true]:!opacity-0"

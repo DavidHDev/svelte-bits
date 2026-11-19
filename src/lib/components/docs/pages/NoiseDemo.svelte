@@ -2,98 +2,227 @@
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
+	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
+	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
-	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
-	import Noise from '$lib/components/library/Animations/Noise/Noise.svelte';
-	import noiseSource from '$lib/components/library/Animations/Noise/Noise.svelte?raw';
+	import CodeExample from '$lib/components/docs/preview/CodeExample.svelte';
+	import { createComponentProps } from '$lib/components/docs/preview/lib/componentProps.svelte';
+	import Noise, { type NoiseBlendMode } from '$lib/components/library/Animations/Noise/Noise.svelte';
+	import source from '$lib/components/library/Animations/Noise/Noise.svelte?raw';
+	import { DEFAULT_PROPS, PRESET_OPTIONS, presetProps, type NoiseScene } from './presets/Noise';
 
-	const DEFAULTS = {
-		patternSize: 250,
-		patternScaleX: 2,
-		patternScaleY: 2,
-		patternAlpha: 15
+	const PHOTO = 'https://images.unsplash.com/photo-1762846818262-33c197852fa8?w=1600&q=80&auto=format&fit=crop';
+
+	const SCENES: Record<NoiseScene, { background: string }> = {
+		photo: { background: `center / cover no-repeat url("${PHOTO}")` },
+		studio: {
+			background:
+				'radial-gradient(70% 90% at 50% 34%, #a29b92 0%, #7a746d 30%, #4b4743 62%, #262422 88%, #1c1b1a 100%)'
+		},
+		dark: { background: '#0b0b0d' },
+		paper: { background: '#f3efe6' }
 	};
 
-	let patternSize = $state(DEFAULTS.patternSize);
-	let patternScaleX = $state(DEFAULTS.patternScaleX);
-	let patternScaleY = $state(DEFAULTS.patternScaleY);
-	let patternAlpha = $state(DEFAULTS.patternAlpha);
-	let renderKey = $state(0);
-
-	const hasChanges = $derived(
-		patternSize !== DEFAULTS.patternSize ||
-			patternScaleX !== DEFAULTS.patternScaleX ||
-			patternScaleY !== DEFAULTS.patternScaleY ||
-			patternAlpha !== DEFAULTS.patternAlpha
-	);
-
-	function forceRerender() {
-		renderKey += 1;
-	}
-
-	function reset() {
-		patternSize = DEFAULTS.patternSize;
-		patternScaleX = DEFAULTS.patternScaleX;
-		patternScaleY = DEFAULTS.patternScaleY;
-		patternAlpha = DEFAULTS.patternAlpha;
-		forceRerender();
-	}
-
-	const usage = $derived(`${'<' + 'script lang="ts">'}
-  import Noise from '$lib/components/Noise.svelte';
-${'</' + 'script>'}
-
-<div style="position:relative;width:100%;height:600px;overflow:hidden;">
-  <Noise
-    patternSize={${patternSize}}
-    patternScaleX={${patternScaleX}}
-    patternScaleY={${patternScaleY}}
-    patternAlpha={${patternAlpha}}
-  />
-</div>`);
-
-	const props: PropRow[] = [
-		{ name: 'patternSize', type: 'number', default: '250', description: 'Defines the size of the grain pattern.' },
-		{ name: 'patternScaleX', type: 'number', default: '1', description: 'Scaling factor for the X-axis of the grain pattern.' },
-		{ name: 'patternScaleY', type: 'number', default: '1', description: 'Scaling factor for the Y-axis of the grain pattern.' },
-		{ name: 'patternRefreshInterval', type: 'number', default: '2', description: 'Number of frames between regenerations of the grain.' },
-		{ name: 'patternAlpha', type: 'number', default: '15', description: 'Opacity of the grain pattern (0-255).' }
+	const BLEND_OPTIONS = [
+		{ value: 'normal', label: 'Normal' },
+		{ value: 'overlay', label: 'Overlay' },
+		{ value: 'soft-light', label: 'Soft Light' },
+		{ value: 'multiply', label: 'Multiply' },
+		{ value: 'screen', label: 'Screen' },
+		{ value: 'difference', label: 'Difference' }
 	];
+
+	const propData: PropRow[] = [
+		{ name: 'opacity', type: 'number', default: '0.2', description: 'Strength of the grain, from 0 to 1.' },
+		{
+			name: 'size',
+			type: 'number',
+			default: '1',
+			description: 'Size of each grain in CSS pixels. 0.5 is one device pixel on retina screens.'
+		},
+		{
+			name: 'fps',
+			type: 'number',
+			default: '24',
+			description: 'How many times per second the grain changes. 0 keeps it still, like a paper texture.'
+		},
+		{
+			name: 'blendMode',
+			type: "'normal' | 'overlay' | 'soft-light' | 'multiply' | 'screen' | 'difference'",
+			default: "'overlay'",
+			description:
+				'How the grain mixes with what is underneath. Overlay and soft light add texture without graying the image.'
+		},
+		{
+			name: 'contrast',
+			type: 'number',
+			default: '0.6',
+			description: 'From soft, fine grain at 0 to harsh, punchy grain at 1.'
+		},
+		{
+			name: 'dust',
+			type: 'number',
+			default: '0',
+			description: 'Specks, hairs and fibers that flicker over the frame like dust on a film print, from 0 to 1.'
+		},
+		{
+			name: 'scratches',
+			type: 'number',
+			default: '0',
+			description: 'How often thin vertical scratches run down the frame for a few seconds, from 0 to 1.'
+		},
+		{ name: 'colored', type: 'boolean', default: 'false', description: 'Uses colored grain instead of gray.' },
+		{
+			name: 'scanlines',
+			type: 'number',
+			default: '0',
+			description: 'Adds rolling horizontal lines, like an old screen, from 0 to 1.'
+		},
+		{
+			name: 'flicker',
+			type: 'number',
+			default: '0',
+			description: 'Makes the grain strength jump a little every frame, like a film projector.'
+		},
+		{
+			name: 'fixed',
+			type: 'boolean',
+			default: 'false',
+			description: 'Covers the whole viewport instead of the nearest positioned parent.'
+		},
+		{ name: 'zIndex', type: 'number', default: '-', description: 'Stacking order of the overlay.' },
+		{ name: 'class', type: 'string', default: "''", description: 'Extra class names for the overlay.' },
+		{ name: 'style', type: 'string', default: '-', description: 'Inline styles for the overlay.' }
+	];
+
+	const usage = `<script lang="ts">
+  import Noise from '$lib/components/Noise.svelte';
+</${'script'}>
+
+<div style="position: relative; width: 100%; height: 500px;">
+  <img src="/photo.jpg" alt="" style="width: 100%; height: 100%; object-fit: cover;" />
+  <Noise
+    opacity={0.2}
+    size={1}
+    fps={24}
+    blendMode="overlay"
+    contrast={0.6}
+    colored={false}
+    dust={0}
+    scratches={0}
+    scanlines={0}
+    flicker={0}
+  />
+</div>`;
+
+	const demo = createComponentProps(DEFAULT_PROPS, { lightProps: null });
+	const settings = $derived(demo.props);
+	const componentProps = $derived.by(() => {
+		const { preset: _preset, scene: _scene, ...rest } = settings;
+		return rest;
+	});
+	const look = $derived(SCENES[settings.scene as NoiseScene] ?? SCENES.photo);
+
+	const applyPreset = (value: string) => {
+		demo.updateProps({ ...presetProps(value), preset: value });
+	};
 </script>
 
-<svelte:head>
-	<title>Noise - svelte-bits</title>
-</svelte:head>
-
-<h1 class="sub-category">Noise</h1>
-
-<TabsLayout onreset={reset} {hasChanges} componentName="Noise" {usage} source={noiseSource} {props}>
-	{#snippet preview()}
-		<div class="relative min-h-[400px] w-full overflow-hidden rounded-[14px] bg-[#111]">
-			<p class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-[clamp(3rem,12vw,6rem)] font-black leading-none text-[#333]">
-				Ooh, edgy!
-			</p>
-			{#key renderKey}
-				<Noise {patternSize} {patternScaleX} {patternScaleY} {patternAlpha} />
-			{/key}
+<TabsLayout
+	propsState={demo}
+	componentName="Noise"
+	{usage}
+	{source}
+	{propData}
+	demoOnlyProps={['preset', 'scene']}
+>
+	{#snippet previewTab()}
+		<div
+			class="demo-container"
+			style="position: relative; height: 500px; padding: 0; overflow: hidden; background: {look.background};"
+		>
+			<Noise {...componentProps} />
 		</div>
-	{/snippet}
-	{#snippet code()}
-		<DemoCodeTab slug="noise" {usage} source={noiseSource} />
-	{/snippet}
-	{#snippet customize()}
+
 		<Customize>
-			<PreviewSlider title="Pattern Size" min={50} max={500} step={10} value={patternSize} valueUnit="px"
-				onChange={(v) => { patternSize = v; forceRerender(); }} />
-			<PreviewSlider title="Scale X" min={0.1} max={5} step={0.1} value={patternScaleX}
-				onChange={(v) => { patternScaleX = v; forceRerender(); }} />
-			<PreviewSlider title="Scale Y" min={0.1} max={5} step={0.1} value={patternScaleY}
-				onChange={(v) => { patternScaleY = v; forceRerender(); }} />
-			<PreviewSlider title="Pattern Alpha" min={0} max={25} step={5} value={patternAlpha}
-				onChange={(v) => { patternAlpha = v; forceRerender(); }} />
+			<PreviewSelect title="Preset" options={PRESET_OPTIONS} value={settings.preset} onChange={applyPreset} />
+			<PreviewSlider
+				title="Opacity"
+				min={0}
+				max={1}
+				step={0.01}
+				value={settings.opacity}
+				onChange={(v) => demo.updateProp('opacity', v)}
+			/>
+			<PreviewSlider
+				title="Size"
+				min={0.5}
+				max={4}
+				step={0.5}
+				value={settings.size}
+				valueUnit="px"
+				onChange={(v) => demo.updateProp('size', v)}
+			/>
+			<PreviewSlider
+				title="FPS"
+				min={0}
+				max={60}
+				step={1}
+				value={settings.fps}
+				onChange={(v) => demo.updateProp('fps', v)}
+			/>
+			<PreviewSelect
+				title="Blend"
+				options={BLEND_OPTIONS}
+				value={settings.blendMode}
+				onChange={(v) => demo.updateProp('blendMode', v as NoiseBlendMode)}
+			/>
+			<PreviewSlider
+				title="Contrast"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.contrast}
+				onChange={(v) => demo.updateProp('contrast', v)}
+			/>
+			<PreviewSlider
+				title="Dust"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.dust}
+				onChange={(v) => demo.updateProp('dust', v)}
+			/>
+			<PreviewSlider
+				title="Scratches"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.scratches}
+				onChange={(v) => demo.updateProp('scratches', v)}
+			/>
+			<PreviewSlider
+				title="Scanlines"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.scanlines}
+				onChange={(v) => demo.updateProp('scanlines', v)}
+			/>
+			<PreviewSlider
+				title="Flicker"
+				min={0}
+				max={1}
+				step={0.05}
+				value={settings.flicker}
+				onChange={(v) => demo.updateProp('flicker', v)}
+			/>
+			<PreviewSwitch title="Colored" isChecked={settings.colored} onChange={(v) => demo.updateProp('colored', v)} />
 		</Customize>
+
+		<PropTable data={propData} />
 	{/snippet}
-	{#snippet propTable()}
-		<PropTable rows={props} />
+	{#snippet codeTab()}
+		<CodeExample />
 	{/snippet}
 </TabsLayout>

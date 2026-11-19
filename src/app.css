@@ -6,17 +6,24 @@
 @import './lib/css/misc.css';
 @import './lib/css/landing.css';
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  a {
+    font-weight: 500;
+    text-decoration: none;
+    color: inherit;
+  }
 }
 
 :root {
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
+  color: var(--text-primary);
   background-color: var(--bg-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -24,20 +31,28 @@
 
 html {
   scroll-behavior: smooth;
+  min-height: 100%;
+  background: var(--bg-body);
 }
 
-a {
-  font-weight: 500;
-  text-decoration: none;
-  color: inherit;
+::selection {
+  background: rgba(255, 138, 76, 0.42);
+  color: #ffffff;
+  text-shadow: none;
+}
+
+:root[data-theme='light'] ::selection {
+  background: rgba(255, 62, 0, 0.2);
+  color: #18181b;
 }
 
 body {
   font-family: 'Geist', sans-serif;
   margin: 0;
   min-width: 100%;
-  background: var(--bg-body);
+  min-height: 100%;
   color: var(--text-primary);
+  background: var(--bg-body);
 }
 
 .app-container {

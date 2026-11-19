@@ -1,12 +1,12 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
 	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import ScrubField, {
@@ -95,8 +95,8 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedAccent = $derived(accent);
-	const renderedChip = $derived(chipColor);
+	const renderedAccent = $derived(theme.isLight ? (accent === DEFAULT_PROPS.accent ? '#18181b' : accent) : accent);
+	const renderedChip = $derived(theme.isLight ? (chipColor === DEFAULT_PROPS.chipColor ? '#f6f6f6' : chipColor) : chipColor);
 	const propData: PropRow[] = [
 		{
 			name: 'label',
@@ -275,8 +275,6 @@
 	const hasChanges = $derived(JSON.stringify(props) !== JSON.stringify(DEFAULT_PROPS));
 </script>
 
-<svelte:head><title>Scrub Field - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Scrub Field</h1>
 <TabsLayout
 	onreset={reset}
 	{hasChanges}
@@ -289,20 +287,20 @@
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:400px;"
 			>
-				{#key epoch}<ScrubField {...props} />{/key}
+				{#key epoch}<ScrubField {...props} accent={renderedAccent} chipColor={renderedChip} />{/key}
 			</div>{/key}{/snippet}
 	{#snippet code()}<DemoCodeTab slug="scrub-field" {usage} {source} />{/snippet}
 	{#snippet customize()}<Customize>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Accent"
-				value={renderedAccent}
+				color={renderedAccent}
 				onChange={(val) => updateProp('accent', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Chip"
-				value={renderedChip}
+				color={renderedChip}
 				onChange={(val) => updateProp('chipColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewInput
 				title="Label"
 				value={String(label)}

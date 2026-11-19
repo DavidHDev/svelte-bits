@@ -1,10 +1,23 @@
 <!doctype html>
-<html lang="en" style="background: #120F17">
+<html lang="en" data-theme="dark">
 	<head>
 		<!-- Basic Meta Tags -->
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="theme-color" content="#120F17" />
+		<script>
+			(() => {
+				let theme = 'dark';
+				try {
+					if (localStorage.getItem('svelte-bits-theme') === 'light') theme = 'light';
+				} catch {}
+				document.documentElement.setAttribute('data-theme', theme);
+			})();
+		</script>
+		<style>
+			:root { background: #14110e; }
+			:root[data-theme='light'] { background: #ffffff; }
+		</style>
+		<meta name="theme-color" content="#14110E" />
 		<meta name="author" content="David Haz" />
 		<meta
 			name="description"
@@ -18,7 +31,7 @@
 		<!-- Fonts -->
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Press+Start+2P&family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
 		<link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&display=swap" rel="stylesheet" />
 		<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,100..1000&display=swap" rel="stylesheet" />
 
@@ -35,10 +48,10 @@
 			property="og:description"
 			content="An open source collection of high quality, animated, interactive & fully customizable Svelte components for building stunning, memorable user interfaces."
 		/>
-		<meta property="og:image" content="https://sveltebits.xyz/og-pic.png" />
+		<meta property="og:image" content="https://sveltebits.xyz/og.jpg" />
 		<meta
 			property="og:image:alt"
-			content="The Svelte Bits landing page design, showcasing the logo and a subtitle."
+			content="Svelte Bits: free animated components for Svelte."
 		/>
 		<meta property="og:image:width" content="1200" />
 		<meta property="og:image:height" content="630" />
@@ -53,10 +66,10 @@
 			name="twitter:description"
 			content="An open source collection of high quality, animated, interactive & fully customizable Svelte components for building stunning, memorable user interfaces."
 		/>
-		<meta name="twitter:image" content="https://sveltebits.xyz/og-pic.png" />
+		<meta name="twitter:image" content="https://sveltebits.xyz/og.jpg" />
 		<meta
 			name="twitter:image:alt"
-			content="The Svelte Bits landing page design, showcasing the logo and a subtitle."
+			content="Svelte Bits: free animated components for Svelte."
 		/>
 		<meta name="twitter:creator" content="@davidhaz" />
 
@@ -72,7 +85,7 @@
 				"name": "Svelte Bits",
 				"url": "https://sveltebits.xyz",
 				"description": "An open source collection of high quality, animated, interactive & fully customizable Svelte components for building stunning, memorable user interfaces.",
-				"image": "https://sveltebits.xyz/og-pic.png",
+				"image": "https://sveltebits.xyz/og.jpg",
 				"author": {
 					"@type": "Person",
 					"name": "David Haz",

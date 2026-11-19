@@ -1,12 +1,11 @@
 <script lang="ts">
-	import ReplayButton from '$lib/components/docs/preview/ReplayButton.svelte';
+	import { theme } from '$lib/theme.svelte';
 	import TabsLayout from '$lib/components/docs/preview/TabsLayout.svelte';
 	import Customize from '$lib/components/docs/preview/Customize.svelte';
 	import PreviewSlider from '$lib/components/docs/preview/PreviewSlider.svelte';
 	import PreviewSwitch from '$lib/components/docs/preview/PreviewSwitch.svelte';
 	import PreviewSelect from '$lib/components/docs/preview/PreviewSelect.svelte';
-	import PreviewInput from '$lib/components/docs/preview/PreviewInput.svelte';
-	import PreviewColorPicker from '$lib/components/docs/preview/PreviewColorPicker.svelte';
+	import PreviewColorPickerCustom from '$lib/components/docs/preview/PreviewColorPickerCustom.svelte';
 	import DemoCodeTab from '$lib/components/docs/preview/DemoCodeTab.svelte';
 	import PropTable, { type PropRow } from '$lib/components/docs/preview/PropTable.svelte';
 	import FlipCard, {
@@ -98,9 +97,9 @@
 	function updateProp<K extends keyof typeof props>(key: K, value: unknown) {
 		props[key] = value as (typeof props)[K];
 	}
-	const renderedBackground = $derived(background);
-	const renderedColor = $derived(color);
-	const renderedShadowOpacity = $derived(shadowOpacity);
+	const renderedBackground = $derived(theme.isLight ? (background === DEFAULT_PROPS.background ? '#f6f6f6' : background) : background);
+	const renderedColor = $derived(theme.isLight ? (color === DEFAULT_PROPS.color ? '#18181b' : color) : color);
+	const renderedShadowOpacity = $derived(theme.isLight ? (shadowOpacity === DEFAULT_PROPS.shadowOpacity ? 0.2 : shadowOpacity) : shadowOpacity);
 	const propData: PropRow[] = [
 		{
 			name: 'front',
@@ -384,14 +383,12 @@
 			</div>
 		</div>
 	</div>{/snippet}
-<svelte:head><title>Flip Card - svelte-bits</title></svelte:head>
-<h1 class="sub-category">Flip Card</h1>
 <TabsLayout onreset={reset} {hasChanges} componentName="FlipCard" {usage} {source} props={propData}>
 	{#snippet preview()}{#key epoch}<div
 				class="demo-container relative flex items-center justify-center overflow-hidden"
 				style="height:500px;"
 			>
-				{#key epoch}<FlipCard {...props}
+				{#key epoch}<FlipCard {...props} background={renderedBackground} color={renderedColor} shadowOpacity={renderedShadowOpacity}
 						>{#snippet front()}{@render Front()}{/snippet}{#snippet back()}{@render Back()}{/snippet}</FlipCard
 					>{/key}
 			</div>{/key}{/snippet}
@@ -506,23 +503,23 @@
 				valueUnit="px"
 				onChange={(val) => updateProp('radius', val)}
 			></PreviewSlider>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Background"
-				value={renderedBackground}
+				color={renderedBackground}
 				onChange={(val) => updateProp('background', val)}
-			></PreviewColorPicker>
-			<PreviewColorPicker
+			></PreviewColorPickerCustom>
+			<PreviewColorPickerCustom
 				title="Color"
-				value={renderedColor}
+				color={renderedColor}
 				onChange={(val) => updateProp('color', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSwitch title="Shadow" checked={shadow} onChange={(val) => updateProp('shadow', val)}
 			></PreviewSwitch>
-			<PreviewColorPicker
+			<PreviewColorPickerCustom
 				title="Shadow Color"
-				value={shadowColor}
+				color={shadowColor}
 				onChange={(val) => updateProp('shadowColor', val)}
-			></PreviewColorPicker>
+			></PreviewColorPickerCustom>
 			<PreviewSlider
 				title="Shadow Opacity"
 				min={0}

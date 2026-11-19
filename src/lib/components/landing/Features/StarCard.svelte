@@ -1,7 +1,16 @@
 <script lang="ts">
+	import { animate } from 'motion';
 	import { useStars } from '$lib/hooks/useStars.svelte';
 
 	const stars = useStars();
+
+	let line = $state<SVGPathElement | null>(null);
+
+	$effect(() => {
+		if (!line) return;
+		const animation = animate(line, { pathLength: [0, 1] }, { duration: 2, ease: 'easeOut' });
+		return () => animation.stop();
+	});
 </script>
 
 <div class="ln-feat-stars">
@@ -20,12 +29,11 @@
 				fill="url(#starFill)"
 			/>
 			<path
-				class="ln-feat-stars-line"
+				bind:this={line}
 				d="M0 45 C15 43,30 40,45 36 C60 32,75 30,90 26 C105 22,115 24,125 20 C140 15,155 12,170 10 C180 8,190 5,200 3"
 				stroke="rgba(255,255,255,0.5)"
 				stroke-width="1.5"
 				stroke-linecap="round"
-				pathLength="1"
 			/>
 		</svg>
 	</div>
